@@ -7,7 +7,16 @@ import {
   createRewindPoint,
 } from "../helpers.js";
 import { parseBodyText } from "../middleware.js";
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmdirSync,
+  unlinkSync,
+  writeFileSync,
+} from "fs";
+import { sep } from "path";
 import { spawnSync } from "child_process";
 import multer from "multer";
 import { applyPatch } from "../../../public/vendor/diff.js";
@@ -22,14 +31,41 @@ const upload = multer({
 });
 
 function addPostRoutes(app) {
+  // (Reversibly, thanks to git) delete a file
+  app.delete(`/delete/:slug*`, (req, res) => {
+    const fileName = req.params.slug + req.params[0];
+    const filePath = `${req.session.dir}/${fileName}`;
+    try {
+      unlinkSync(filePath);
+      res.send(`deleted`);
+      createRewindPoint(req);
+    } catch (e) {
+      console.error(e);
+      res.status(400).send(`could not delete ${filePath}`);
+    }
+  });
+
+  app.delete(`/delete-dir/:slug*`, (req, res) => {
+    const dirName = req.params.slug + req.params[0];
+    const dirPath = `${req.session.dir}/${dirName}`;
+    try {
+      rmdirSync(dirPath, { recursive: true });
+      res.send(`deleted`);
+      createRewindPoint(req);
+    } catch (e) {
+      console.error(e);
+      res.status(400).send(`could not delete ${dirPath}`);
+    }
+  });
+
   // A route to trigger on-disk code formatting, based on file extension.
   app.post(`/format/:slug*`, (req, res) => {
     let formatted = false;
-    const filename = `${req.session.dir}/${req.params.slug + req.params[0]}`;
-    const ext = filename.substring(filename.lastIndexOf(`.`), filename.length);
+    const fileName = `${req.session.dir}/${req.params.slug + req.params[0]}`;
+    const ext = fileName.substring(fileName.lastIndexOf(`.`), fileName.length);
     if ([`.js`, `.css`, `.html`].includes(ext)) {
       console.log(`running prettier...`);
-      spawnSync(npm, [`run`, `prettier`, `--`, filename], { stdio: `inherit` });
+      spawnSync(npm, [`run`, `prettier`, `--`, fileName], { stdio: `inherit` });
       formatted = true;
     }
     res.json({ formatted });
@@ -53,9 +89,32 @@ function addPostRoutes(app) {
     const slug = full.substring(full.lastIndexOf(`/`) + 1);
     const dirs = full.replace(`/${slug}`, ``);
     mkdirSync(dirs, { recursive: true });
-    if (!existsSync(full)) writeFileSync(full, ``);
+    console.log(`what's in new:`, full, slug, dirs);
+    if (!existsSync(full)) {
+      if (slug.includes(`.`)) {
+        writeFileSync(full, ``);
+      } else {
+        mkdirSync(dirs + sep + slug);
+      }
+    }
     res.send(`ok`);
     createRewindPoint(req);
+  });
+
+  // Rename a file
+  app.post(`/rename/:slug*`, upload.none(), (req, res) => {
+    const slug = req.params.slug + req.params[0];
+    const parts = slug.split(`:`);
+    const oldName = `${req.session.dir}/${parts[0]}`;
+    const newName = `${req.session.dir}/${parts[1]}`;
+    console.log(`rename attempt:`, oldName, `->`, newName);
+    try {
+      renameSync(oldName, newName);
+      res.send(`ok`);
+      createRewindPoint(req);
+    } catch (e) {
+      res.status(400).send(`failed`);
+    }
   });
 
   // Instead of a true rewind, revert the files, but *keep* the git history,
@@ -87,12 +146,12 @@ function addPostRoutes(app) {
 
   // Synchronize file changes from the browser to the on-disk file, by applying a diff patch
   app.post(`/sync/:slug*`, parseBodyText, (req, res) => {
-    const filename = `${req.session.dir}/${req.params.slug + req.params[0]}`;
-    let data = readFileSync(filename).toString(`utf8`);
+    const fileName = `${req.session.dir}/${req.params.slug + req.params[0]}`;
+    let data = readFileSync(fileName).toString(`utf8`);
     const patch = req.body;
     const patched = applyPatch(data, patch);
-    if (patched) writeFileSync(filename, patched);
-    const hash = "" + getFileSum(req.session.dir, filename, true);
+    if (patched) writeFileSync(fileName, patched);
+    const hash = "" + getFileSum(req.session.dir, fileName, true);
     res.send(hash);
     createRewindPoint(req);
   });
@@ -107,20 +166,5 @@ function addPostRoutes(app) {
     writeFileSync(full, data);
     res.send(`ok`);
     createRewindPoint(req);
-  });
-
-  // OMG CHEATING, THE NEXT ONE'S A DELETE ROUTE!!
-
-  // (Reversibly, thanks to git) delete a file
-  app.delete(`/delete/:slug*`, (req, res) => {
-    const filename = req.params.slug + req.params[0];
-    const filepath = `${req.session.dir}/${filename}`;
-    try {
-      unlinkSync(filepath);
-      res.send(`deleted`);
-      createRewindPoint(req);
-    } catch (e) {
-      res.status(400).send(`could not delete ${filepath}`);
-    }
   });
 }

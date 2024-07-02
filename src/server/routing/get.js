@@ -8,22 +8,19 @@ import {
   reloadPageInstruction,
 } from "../helpers.js";
 import { posix } from "path";
-import { DirTree } from "../../../public/dirtree.js";
 import { __dirname } from "../../constants.js";
 
 function addGetRoutes(app) {
-  // Get the current file tree from the server, and send it over in a way
-  // that lets the receiver reconstitute it as a DirTree object.
+  // Get the current file tree from the server
   app.get(`/dir`, async (req, res) => {
     const osResponse = await readContentDir(req.session.dir);
-    if (osResponse === false) return reloadPageInstruction(res);
-    const dir = osResponse.map((v) => v.replace(__dirname + posix.sep, ``));
-    const dirTree = new DirTree(dir, {
-      getFileValue: (filename) =>
-        getFileSum(req.session.dir, filename.replace(__dirname, ``)),
-      ignore: [`.git`],
-    });
-    res.json(dirTree.tree);
+    if (osResponse === false) return reloadPageInstruction(req, res);
+    const dir = osResponse
+      // strip out the absolute path prefix
+      .map((v) => v.replace(__dirname + posix.sep, ``))
+      // and filter out the .git directory
+      .filter((v) => !v.startsWith(`.git`));
+    res.json(dir);
   });
 
   // Add an extra job when loading the editor that destroys old

@@ -66,9 +66,13 @@ function createRewindPoint(req, reason = `Autosave`) {
  * There's a few files we want to watch in order to rebuild the browser bundle.
  */
 function watchForRebuild() {
-  [`./src/script.js`, `./public/dirtree.js`].forEach((filename) =>
-    watch(filename, () => rebuild())
-  );
+  [
+    `./src/script.js`,
+    `./public/file-tree/file-tree.js`,
+    `./public/file-tree/dir-entry.js`,
+    `./public/file-tree/file-entry.js`,
+    `./public/file-tree/deps.js`,
+  ].forEach((filename) => watch(filename, () => rebuild()));
   rebuild();
 }
 
@@ -87,8 +91,9 @@ function getFileSum(dir, filename, noFill = false) {
 /**
  * Send a response that triggers a page-reload in the browser.
  */
-function reloadPageInstruction(res, status = 400) {
-  res.status(status).json({ reloadPage: true });
+function reloadPageInstruction(req, res, status = 400) {
+  req.session.destroy();
+  res.status(status).header(`x-reload-page`, `1`).send();
 }
 
 /**
@@ -121,11 +126,7 @@ async function readContentDir(dir) {
 
   const allFileListing = dirListing
     .split(/\r?\n/)
-    .map((v) => {
-      let stats = statSync(v);
-      if (stats.isDirectory()) return false;
-      return v.split(sep).join(posix.sep).replace(`${dir}${posix.sep}`, ``);
-    })
+    .map((v) => v.split(sep).join(posix.sep).replace(`${dir}${posix.sep}`, ``))
     .filter((v) => !!v);
   return allFileListing;
 }

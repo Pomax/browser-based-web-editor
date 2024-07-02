@@ -62,7 +62,7 @@ function verifyOwnership(req, res, next) {
   if (!req.url.startsWith(`/${req.session.name}`)) {
     req.session.name = undefined;
     req.session.dir = undefined;
-    return reloadPageInstruction(res, 403);
+    return reloadPageInstruction(req, res, 403);
   }
   next();
 }
@@ -89,14 +89,16 @@ function addMiddleware(app) {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        maxAge: 24 * 3600 * 1000
-      }
+        maxAge: 24 * 3600 * 1000,
+      },
     })
   );
 
   app.use(async (req, res, next) => {
     if (!req.session.dir) {
-      switchUser(req, `anonymous-${Date.now()}`);
+      const name = `anonymous-${Date.now()}`;
+      console.log(`switching to userdir ${name}`);
+      switchUser(req, name);
     }
     next();
   });

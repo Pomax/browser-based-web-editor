@@ -10,12 +10,11 @@ import { markdown } from "@codemirror/lang-markdown";
 // See https://github.com/orgs/codemirror/repositories?q=lang for more options
 
 import { createPatch } from "../public/vendor/diff.js";
-import { DirTree } from "../public/dirtree.js";
+import "../public/file-tree/index.js";
 
 // This is *technically* unnecessary, but it's better to be explicit.
 const changeUser = document.getElementById(`switch`);
 const all = document.getElementById(`all`);
-const add = document.getElementById(`add`);
 const format = document.getElementById(`format`);
 const left = document.getElementById(`left`);
 const right = document.getElementById(`right`);
@@ -27,38 +26,15 @@ const preview = document.getElementById(`preview`);
 const user = document.querySelector(`.username`)?.textContent;
 let CONTENT_DIR = `content/${user ?? `anonymous`}`;
 const cmInstances = {};
-let dirTree = { tree: {} };
-let dirList = [];
 
 // Let's try to load our content!
 await setupPage();
-
-// Session expiry handling
-if (window.location.toString().includes(`reload=forced`)) {
-  let url = window.location
-    .toString()
-    .replace(`?reload=forced`, ``)
-    .replace(`&reload=forced`, ``);
-  history.replaceState(undefined, undefined, url);
-  alert(`Your session expired, please log in again.`);
-}
 
 /**
  * Our main entry point
  */
 async function setupPage() {
-  await refreshDirTree();
-
-  // Load every file into memory. Because everything has enough RAM for that.
-  dirList = dirTree.flat();
-  await Promise.all(
-    dirList.map(async (filename) => {
-      const data = await fetchFileContents(filename);
-      cmInstances[filename] ??= {};
-      cmInstances[filename].content = data;
-    })
-  );
-
+  await setupFileTree();
   addGlobalEventHandling();
   updatePreview();
 }
@@ -77,16 +53,9 @@ async function fetchFileContents(filename) {
 async function fetchSafe(url, options) {
   const response = await fetch(url, options);
   if (response.status !== 200) {
-    try {
-      const data = await response.json();
-      if (data.reloadPage) {
-        window.location =
-          location.toString() +
-          (url.includes(`?`) ? `&` : `?`) +
-          `reload=forced`;
-      }
-    } catch (e) {
-      console.error(e);
+    if (response.headers.get(`x-reload-page`)) {
+      alert(`Your session expired, please reload.\n(error code: 29X784FH)`);
+      throw new Error(`Page needs reloading`);
     }
   }
   return response;
@@ -95,11 +64,10 @@ async function fetchSafe(url, options) {
 /**
  * Make sure we're in sync with the server...
  */
-async function refreshDirTree() {
+async function setupFileTree() {
   const dirData = await fetchSafe(`/dir`).then((r) => r.json());
-  dirTree = new DirTree();
-  dirTree.tree = dirData;
-  buildDirTreeUI(dirTree);
+  document.querySelector(`file-tree`).setFiles(dirData);
+  addFileTreeHandling();
 }
 
 /**
@@ -109,41 +77,16 @@ function addGlobalEventHandling() {
   changeUser.addEventListener(`click`, async () => {
     const name = prompt(`Username?`).trim();
     if (name) {
-      const response = await fetchSafe(`/login/${name}`, { method: `post` });
-      if (response.status === 200) {
-        location.reload();
-      } else {
-        alert(await response.text());
-      }
+      await fetchSafe(`/login/${name}`, { method: `post` });
+      location.reload();
     }
   });
 
   all.addEventListener(`click`, async () => {
-    document.querySelectorAll(`li.file`).forEach((e) => e.click());
+    document.querySelectorAll(`file-entry`).forEach((e) => e.click());
   });
 
   addTabScrollHandling();
-
-  add.addEventListener(`click`, async () => {
-    const filename = prompt(
-      "Please specify a filename.\nUse / as directory delimiter (e.g. cake/yum.js)"
-    );
-    if (filename) {
-      await fetchSafe(`/new/${filename}`, { method: `post` });
-      await refreshDirTree();
-      const qs = filename
-        .split(`/`)
-        .map((v, i, list) => {
-          if (i === list.length - 1) {
-            return `li.file[title="${v}"]`;
-          }
-          return `li.dir[title="${v}"]`;
-        })
-        .join(` `);
-      document.querySelector(qs)?.click();
-      setTimeout(() => cmInstances[filename].view.focus(), 100);
-    }
-  });
 
   format.addEventListener(`click`, async () => {
     const tab = document.querySelector(`.active`);
@@ -161,8 +104,162 @@ function addGlobalEventHandling() {
       },
     });
   });
+}
 
-  addFileDropFunctionality();
+/**
+ * Deal with all the events that might be coming from the file tree
+ */
+function addFileTreeHandling() {
+  // TODO: lots of duplication happening here
+  filetree.addEventListener(`filetree:file:click`, async (evt) => {
+    const { fullPath, commit } = evt.detail;
+    commit();
+    getOrCreateFileEditTab(fullPath);
+    // we handle selection in the file tree as part of editor reveals,
+    // so we do not call the event's own commit() function.
+  });
+
+  filetree.addEventListener(`filetree:file:create`, async (evt) => {
+    const { fileName, commit } = evt.detail;
+    const response = await fetchSafe(`/new/${fileName}`, { method: `post` });
+    if (response.status === 200) {
+      const entry = commit();
+      getOrCreateFileEditTab(entry.getAttribute(`path`));
+    } else {
+      console.error(`Could not create ${fileName} (status:${response.status})`);
+    }
+  });
+
+  filetree.addEventListener(`filetree:file:rename`, async (evt) => {
+    const { oldName, newName, commit } = evt.detail;
+    const response = await fetchSafe(`/rename/${oldName}:${newName}`, {
+      method: `post`,
+    });
+    if (response.status === 200) {
+      commit();
+      let key = oldName.replace(CONTENT_DIR, ``);
+      const entry = cmInstances[key];
+      if (entry) {
+        delete cmInstances[key];
+        key = newName.replace(CONTENT_DIR, ``);
+        cmInstances[key] = entry;
+        const { tab, panel } = entry;
+        entry.filename = key;
+        tab.title = key;
+        tab.childNodes.forEach((n) => {
+          if (n.nodeName === `#text`) {
+            n.textContent = key;
+          }
+        });
+        panel.title = panel.id = key;
+      }
+    } else {
+      console.error(
+        `Could not rename ${oldName} to ${newName} (status:${response.status})`
+      );
+    }
+  });
+
+  filetree.addEventListener(`filetree:file:upload`, async (evt) => {
+    const { fileName, content, commit } = evt.detail;
+    const form = new FormData();
+    form.append(`filename`, fileName);
+    form.append(`content`, content);
+    const response = await fetchSafe(`/upload/${fileName}`, {
+      method: `post`,
+      body: form,
+    });
+    if (response.status === 200) {
+      commit();
+    } else {
+      console.error(`Could not upload ${fileName} (status:${response.status})`);
+    }
+  });
+
+  filetree.addEventListener(`filetree:file:move`, async (evt) => {
+    const { oldPath, newPath, commit } = evt.detail;
+    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
+      method: `post`,
+    });
+    if (response.status === 200) {
+      commit();
+    } else {
+      console.error(
+        `Could not move ${oldPath} to ${newPath} (status:${response.status})`
+      );
+    }
+  });
+
+  filetree.addEventListener(`filetree:file:delete`, async (evt) => {
+    const { path: fileName, commit } = evt.detail;
+    if (fileName) {
+      try {
+        const response = await fetchSafe(`/delete/${fileName}`, {
+          method: `delete`,
+        });
+        if (response.status === 200) {
+          commit();
+          cmInstances[fileName]?.close?.click();
+        } else {
+          console.error(
+            `Could not delete ${fileName} (status:${response.status})`
+          );
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  });
+
+  filetree.addEventListener(`filetree:dir:create`, async (evt) => {
+    const { dirName, commit } = evt.detail;
+    const response = await fetchSafe(`/new/${dirName}`, { method: `post` });
+    if (response.status === 200) {
+      commit();
+    } else {
+      console.error(`Could not create ${dirName} (status:${response.status})`);
+    }
+  });
+
+  filetree.addEventListener(`filetree:dir:rename`, async (evt) => {
+    const { oldPath, newPath, commit } = evt.detail;
+    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
+      method: `post`,
+    });
+    if (response.status === 200) {
+      commit();
+    } else {
+      console.error(
+        `Could not rename ${oldPath} to ${newPath} (status:${response.status})`
+      );
+    }
+  });
+
+  filetree.addEventListener(`filetree:dir:move`, async (evt) => {
+    const { oldPath, newPath, commit } = evt.detail;
+    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
+      method: `post`,
+    });
+    if (response.status === 200) {
+      commit();
+    } else {
+      console.error(
+        `Could not move ${oldPath} to ${newPath} (status:${response.status})`
+      );
+    }
+  });
+
+  filetree.addEventListener(`filetree:dir:delete`, async (evt) => {
+    const { path, commit } = evt.detail;
+    const response = await fetchSafe(`/delete-dir/${path}`, {
+      method: `delete`,
+    });
+    if (response.status === 200) {
+      commit();
+    } else {
+      console.error(`Could not delete ${path} (status:${response.status})`);
+    }
+  });
 }
 
 /**
@@ -199,77 +296,6 @@ function addTabScrollHandling() {
 }
 
 /**
- * Make sure we can drop files (and entire dirs) onto the file tree:
- */
-function addFileDropFunctionality() {
-  // fie drag and drop
-  filetree.addEventListener(`dragover`, function dropHandler(ev) {
-    ev.preventDefault();
-    filetree.classList.add(`drop`);
-  });
-
-  filetree.addEventListener(`dragenter`, function dropHandler(ev) {
-    ev.preventDefault();
-    filetree.classList.add(`drop`);
-  });
-
-  filetree.addEventListener(`dragleave`, function dropHandler(ev) {
-    ev.preventDefault();
-    filetree.classList.remove(`drop`);
-  });
-
-  /*async*/ function getFileContent(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = ({ target }) => resolve(target.result);
-      reader.onerror = reject;
-      reader.readAsText(file);
-    });
-  }
-
-  filetree.addEventListener(`drop`, async function dropHandler(ev) {
-    filetree.classList.remove(`drop`);
-
-    async function traverseFileTree(item, path) {
-      path = path || "";
-      if (item.isFile) {
-        item.file(async (file) => {
-          const content = await getFileContent(file);
-          const destination = path + file.name;
-          const form = new FormData();
-          form.append(`filename`, destination);
-          form.append(`content`, content);
-          await fetchSafe(`/upload/${destination}`, {
-            method: `post`,
-            body: form,
-          });
-          console.log("File:", path + file.name);
-          console.log("File content:", content);
-        });
-      } else if (item.isDirectory) {
-        item.createReader().readEntries(function (entries) {
-          entries.forEach(async (entry) => {
-            await traverseFileTree(entry, path + item.name + "/");
-          });
-        });
-      }
-    }
-
-    // Prevent default behavior (Prevent file from being opened)
-    ev.preventDefault();
-    await Promise.all(
-      [...ev.dataTransfer.items].map(async (item) =>
-        traverseFileTree(item.webkitGetAsEntry())
-      )
-    );
-
-    // Not a fan, we should be tallying what we need to upload,
-    // then upload that, then run this after all uploads finish.
-    setTimeout(refreshDirTree, 1000);
-  });
-}
-
-/**
  * nicer than always typing document.createElement
  */
 function create(tag) {
@@ -288,23 +314,13 @@ function getFileSum(data) {
 }
 
 /**
- * Walk the dir tree and set up clickable entries that create (or
- * switch to) an associated editor for that file's content.
- * TODO: make sure we switch when we click a file with an open editor
- */
-function buildDirTreeUI(tree) {
-  filetree.innerHTML = ``;
-  tree.addToPage((filename) => createFileEditTab(filename), filetree);
-}
-
-/**
  * Create the collection of pqge UI elements and associated editor
  * component for a given file.
  */
-async function createFileEditTab(filename) {
+async function getOrCreateFileEditTab(filename, onTabClick) {
   const entry = cmInstances[filename];
   if (entry?.view) {
-    return entry.tab?.click();
+    return entry.tab?.click(onTabClick);
   }
 
   const panel = setupEditorPanel(filename);
@@ -324,6 +340,7 @@ async function createFileEditTab(filename) {
   const properties = {
     filename,
     tab,
+    close,
     panel,
     view,
     content: view.state.doc.toString(),
@@ -370,8 +387,6 @@ function getInitialState(filename, data) {
     })
   );
 
-  console.log(extensions);
-
   return EditorState.create({ doc, extensions });
 }
 
@@ -393,6 +408,7 @@ function setupEditorTab(filename) {
   const tab = create(`div`);
   tab.title = filename;
   tab.textContent = filename;
+  // TODO: make tabs draggable so users can reorder them
   document
     .querySelectorAll(`.active`)
     .forEach((e) => e.classList.remove(`active`));
@@ -436,6 +452,8 @@ function addEventHandling(filename, panel, tab, close, view) {
       .forEach((e) => e.classList.remove(`active`));
     tab.classList.add(`active`);
     tab.scrollIntoView();
+    filetree.select(filename);
+    view.focus();
   });
 
   close.addEventListener(`click`, () => {
@@ -448,7 +466,11 @@ function addEventHandling(filename, panel, tab, close, view) {
     }
     tab.remove();
     panel.remove();
-    delete cmInstances[filename];
+    // get current label
+    const label = [...tab.childNodes].find(
+      (c) => c.nodeName === `#text`
+    ).textContent;
+    delete cmInstances[label];
   });
 }
 

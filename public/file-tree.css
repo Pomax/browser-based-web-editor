@@ -1,0 +1,57 @@
+file-tree {
+  display: block;
+  padding: 0.5em !important;
+  border: 1px solid #333;
+
+  button {
+    min-width: 1.5em;
+    padding: 2px 1px;
+  }
+
+  dir-entry {
+    display: block;
+    cursor: pointer;
+
+    &.dragging {
+      opacity: 0.2;
+    }
+
+    &.drop {
+      background: #e3fff4;
+    }
+
+    &[path] {
+      --padding: 1em;
+      padding-left: var(--padding);
+
+      &:before {
+        content: "📁";
+        margin-left: calc(0px - var(--padding));
+      }
+    }
+  }
+
+  file-entry {
+    display: block;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:before {
+      content: "📄";
+      margin-right: 0.25em;
+    }
+
+    &.dragging {
+      opacity: 0.2;
+    }
+
+    &.selected {
+      background: #e3f6ff;
+      border: 1px solid blue;
+      padding-left: 0.25em;
+      box-sizing: border-box;
+      margin: -1px;
+      margin-left: calc(-1px - 0.25em);
+    }
+  }
+}

@@ -13,7 +13,13 @@ process.env.HOSTNAME = HOSTNAME;
 // Set up the core server
 const app = express();
 app.set("etag", false);
-nunjucks.configure("public", { autoescape: true, express: app });
+nunjucks.configure("public", { autoescape: true, noCache: true, express: app });
+
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.url}`);
+  next();
+});
+
 addMiddleware(app);
 addGetRoutes(app);
 addPostRoutes(app);

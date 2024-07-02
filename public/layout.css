@@ -28,9 +28,9 @@ main {
 
 #filetree {
   grid-area: filetree;
-  resize: horizontal;
   margin: 0;
   padding: 0;
+  overflow: auto;
   resize: horizontal;
 }
 
@@ -62,9 +62,10 @@ main {
   display: flex;
   grid-area: editors;
   width: 46em;
-  resize: horizontal;
   margin: 0;
   padding: 0;
+  overflow: auto;
+  resize: horizontal;
 }
 
 #preview {

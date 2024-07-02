@@ -8,6 +8,7 @@
     <link  <link rel="icon" type="image/png" href="favicon.png" />
     <link rel="stylesheet" href="./layout.css" />
     <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./file-tree.css" />
     <link rel="stylesheet" href="./cm6.css" />
   </head>
   <body>
@@ -16,10 +17,10 @@
         <span class="username">{{ name }}</span>
         <button id="switch" title="Switch to a different user">switch</button>
         <button id="all" title="Open all files">!!!</button>
-        <button id="add" title="Create a new file">+</button>
         <button id="format" title="Make my code pretty!">🤩</button>
       </li>
-      <ul id="filetree"></ul>
+
+      <file-tree id="filetree"></file-tree>
 
       <div id="tabnav">
         <div id="left">
