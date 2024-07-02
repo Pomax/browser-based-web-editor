@@ -1,6 +1,21 @@
 import { FileEntry } from "./file-entry.js";
 import { create, registry, LocalCustomElement, dispatchEvent } from "./deps.js";
 
+/**
+ * ...
+ */
+export /*async*/ function getFileContent(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = ({ target }) => resolve(target.result);
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+/**
+ * ...
+ */
 function inThisDir(dir, el) {
   if (el === dir) return true;
   if (dir.contains(el)) {
@@ -106,6 +121,7 @@ function addDropZone(dir) {
                 );
                 dir.appendChild(entry);
                 dir.sort();
+                return { oldPath, newPath };
               }
             );
           }
@@ -213,9 +229,12 @@ export class DirEntry extends LocalCustomElement {
             `filetree:dir:rename`,
             { oldPath, newPath },
             () => {
+              const oldPath = this.getAttribute(`path`);
               this.heading.textContent = newName;
               this.setAttribute(`name`, newName);
               this.setAttribute(`path`, newPath);
+              this.relocateContent(oldPath, newPath);
+              return { oldPath, newPath };
             }
           );
         }
@@ -321,6 +340,12 @@ export class DirEntry extends LocalCustomElement {
     if (recursive) {
       this.querySelectorAll(`dir-entry`).forEach((d) => d.sort());
     }
+  }
+
+  relocateContent(oldPath, newPath) {
+    Array.from(this.children).forEach((c) =>
+      c?.relocateContent?.(oldPath, newPath)
+    );
   }
 
   select(filePath) {

@@ -169,19 +169,26 @@ current value, which leads to errors when a file gets renamed.
 
 ## filetree:dir:create
 
-- [ ]
+- [x] in the root
+- [x] in another dir
 
 ## filetree:dir:rename
 
-- [ ]
+- [x] in the root
+  - [x] file content updates name/path, heading, and editor bindings
+- [x] in another dir
+  - [x] file content updates name/path, heading, and editor bindings
 
 ## dir related part of filetree:file:upload
 
-- [ ] drag-and-drop entire dir
+- [x] drag-and-drop a file
+- [x] drag-and-drop multiple files
+- [x] drag-and-drop entire dir with content
 
 ## filetree:dir:move
 
-- [ ]
+- [x] from the root to another dir
+- [x] from a dir to the root
 
 ## filetree:dir:delete
 

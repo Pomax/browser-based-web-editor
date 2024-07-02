@@ -97,6 +97,17 @@ export class FileEntry extends LocalCustomElement {
     this.classList.toggle(`selected`, filePath === localPath);
   }
 
+  relocateContent(oldPath, newPath) {
+    this.heading.textContent = this.heading.textContent.replace(
+      oldPath,
+      newPath
+    );
+    this.setAttribute(
+      `path`,
+      this.getAttribute(`path`).replace(oldPath, newPath)
+    );
+  }
+
   remove(filePath) {
     const localPath = this.getAttribute(`path`);
     if (localPath === filePath) {

@@ -140,6 +140,7 @@ function addFileTreeHandling() {
       let key = oldName.replace(CONTENT_DIR, ``);
       const entry = cmInstances[key];
       if (entry) {
+        // FIXME: DEDUPE, THIS CODE OCCURS FOUR TIMES NOW
         delete cmInstances[key];
         key = newName.replace(CONTENT_DIR, ``);
         cmInstances[key] = entry;
@@ -158,6 +159,7 @@ function addFileTreeHandling() {
         `Could not rename ${oldName} to ${newName} (status:${response.status})`
       );
     }
+    updatePreview();
   });
 
   filetree.addEventListener(`filetree:file:upload`, async (evt) => {
@@ -174,6 +176,7 @@ function addFileTreeHandling() {
     } else {
       console.error(`Could not upload ${fileName} (status:${response.status})`);
     }
+    updatePreview();
   });
 
   filetree.addEventListener(`filetree:file:move`, async (evt) => {
@@ -186,10 +189,9 @@ function addFileTreeHandling() {
       let key = oldPath.replace(CONTENT_DIR, ``);
       const entry = cmInstances[key];
       if (entry) {
-        console.log(`removing old entry for ${key}`);
+        // FIXME: DEDUPE, THIS CODE OCCURS FOUR TIMES NOW
         delete cmInstances[key];
         key = newPath.replace(CONTENT_DIR, ``);
-        console.log(`rebinding entry on ${key}`);
         cmInstances[key] = entry;
         const { tab, panel } = entry;
         entry.filename = key;
@@ -206,6 +208,7 @@ function addFileTreeHandling() {
         `Could not move ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
+    updatePreview();
   });
 
   filetree.addEventListener(`filetree:file:delete`, async (evt) => {
@@ -227,6 +230,7 @@ function addFileTreeHandling() {
         console.error(e);
       }
     }
+    updatePreview();
   });
 
   filetree.addEventListener(`filetree:dir:create`, async (evt) => {
@@ -245,12 +249,32 @@ function addFileTreeHandling() {
       method: `post`,
     });
     if (response.status === 200) {
-      commit();
+      const { oldPath, newPath } = commit();
+      // update all cmInstances
+      Object.entries(cmInstances).forEach(([key, entry]) => {
+        if (key.startsWith(oldPath)) {
+          // FIXME: DEDUPE, THIS CODE OCCURS FOUR TIMES NOW
+          delete cmInstances[key];
+          key = key.replace(oldPath, newPath);
+          cmInstances[key] = entry;
+          const { tab, panel } = entry;
+          entry.filename = key;
+          tab.title = key;
+          tab.childNodes.forEach((n) => {
+            if (n.nodeName === `#text`) {
+              n.textContent = key;
+            }
+          });
+          panel.title = panel.id = key;
+          updatePreview();
+        }
+      });
     } else {
       console.error(
         `Could not rename ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
+    updatePreview();
   });
 
   filetree.addEventListener(`filetree:dir:move`, async (evt) => {
@@ -259,12 +283,32 @@ function addFileTreeHandling() {
       method: `post`,
     });
     if (response.status === 200) {
-      commit();
+      const { oldPath, newPath } = commit();
+      // update all cmInstances
+      Object.entries(cmInstances).forEach(([key, entry]) => {
+        if (key.startsWith(oldPath)) {
+          // FIXME: DEDUPE, THIS CODE OCCURS FOUR TIMES NOW
+          delete cmInstances[key];
+          key = key.replace(oldPath, newPath);
+          cmInstances[key] = entry;
+          const { tab, panel } = entry;
+          entry.filename = key;
+          tab.title = key;
+          tab.childNodes.forEach((n) => {
+            if (n.nodeName === `#text`) {
+              n.textContent = key;
+            }
+          });
+          panel.title = panel.id = key;
+          updatePreview();
+        }
+      });
     } else {
       console.error(
         `Could not move ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
+    updatePreview();
   });
 
   filetree.addEventListener(`filetree:dir:delete`, async (evt) => {
@@ -277,6 +321,7 @@ function addFileTreeHandling() {
     } else {
       console.error(`Could not delete ${path} (status:${response.status})`);
     }
+    updatePreview();
   });
 }
 
@@ -336,10 +381,8 @@ function getFileSum(data) {
  * component for a given file.
  */
 async function getOrCreateFileEditTab(filename) {
-  console.log(`looking up ${filename}`);
   const entry = cmInstances[filename];
   if (entry?.view) {
-    console.log(`entry found`, entry);
     return entry.tab?.click();
   }
 

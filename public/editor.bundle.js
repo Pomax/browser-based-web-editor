@@ -29227,6 +29227,16 @@ var FileEntry = class extends LocalCustomElement {
     const localPath = this.getAttribute(`path`);
     this.classList.toggle(`selected`, filePath === localPath);
   }
+  relocateContent(oldPath, newPath) {
+    this.heading.textContent = this.heading.textContent.replace(
+      oldPath,
+      newPath
+    );
+    this.setAttribute(
+      `path`,
+      this.getAttribute(`path`).replace(oldPath, newPath)
+    );
+  }
   remove(filePath) {
     const localPath = this.getAttribute(`path`);
     if (localPath === filePath) {
@@ -29241,6 +29251,14 @@ registry.define(`file-entry`, FileEntry);
 registry.define(`file-heading`, FileHeading);
 
 // public/file-tree/dir-entry.js
+function getFileContent(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = ({ target }) => resolve(target.result);
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
 function inThisDir(dir, el) {
   if (el === dir) return true;
   if (dir.contains(el)) {
@@ -29326,6 +29344,7 @@ function addDropZone(dir) {
                 );
                 dir.appendChild(entry);
                 dir.sort();
+                return { oldPath, newPath };
               }
             );
           }
@@ -29421,9 +29440,12 @@ var DirEntry = class _DirEntry extends LocalCustomElement {
             `filetree:dir:rename`,
             { oldPath, newPath },
             () => {
+              const oldPath2 = this.getAttribute(`path`);
               this.heading.textContent = newName;
               this.setAttribute(`name`, newName);
               this.setAttribute(`path`, newPath);
+              this.relocateContent(oldPath2, newPath);
+              return { oldPath: oldPath2, newPath };
             }
           );
         }
@@ -29520,6 +29542,11 @@ var DirEntry = class _DirEntry extends LocalCustomElement {
     if (recursive) {
       this.querySelectorAll(`dir-entry`).forEach((d) => d.sort());
     }
+  }
+  relocateContent(oldPath, newPath) {
+    Array.from(this.children).forEach(
+      (c) => c?.relocateContent?.(oldPath, newPath)
+    );
   }
   select(filePath) {
     Array.from(this.children).forEach((c) => c?.select?.(filePath));
@@ -29693,6 +29720,7 @@ function addFileTreeHandling() {
         `Could not rename ${oldName} to ${newName} (status:${response.status})`
       );
     }
+    updatePreview();
   });
   filetree.addEventListener(`filetree:file:upload`, async (evt) => {
     const { fileName, content: content2, commit } = evt.detail;
@@ -29708,6 +29736,7 @@ function addFileTreeHandling() {
     } else {
       console.error(`Could not upload ${fileName} (status:${response.status})`);
     }
+    updatePreview();
   });
   filetree.addEventListener(`filetree:file:move`, async (evt) => {
     const { oldPath, newPath, commit } = evt.detail;
@@ -29719,10 +29748,8 @@ function addFileTreeHandling() {
       let key = oldPath.replace(CONTENT_DIR, ``);
       const entry = cmInstances[key];
       if (entry) {
-        console.log(`removing old entry for ${key}`);
         delete cmInstances[key];
         key = newPath.replace(CONTENT_DIR, ``);
-        console.log(`rebinding entry on ${key}`);
         cmInstances[key] = entry;
         const { tab, panel } = entry;
         entry.filename = key;
@@ -29739,6 +29766,7 @@ function addFileTreeHandling() {
         `Could not move ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
+    updatePreview();
   });
   filetree.addEventListener(`filetree:file:delete`, async (evt) => {
     const { path: fileName, commit } = evt.detail;
@@ -29759,6 +29787,7 @@ function addFileTreeHandling() {
         console.error(e);
       }
     }
+    updatePreview();
   });
   filetree.addEventListener(`filetree:dir:create`, async (evt) => {
     const { dirName, commit } = evt.detail;
@@ -29775,12 +29804,30 @@ function addFileTreeHandling() {
       method: `post`
     });
     if (response.status === 200) {
-      commit();
+      const { oldPath: oldPath2, newPath: newPath2 } = commit();
+      Object.entries(cmInstances).forEach(([key, entry]) => {
+        if (key.startsWith(oldPath2)) {
+          delete cmInstances[key];
+          key = key.replace(oldPath2, newPath2);
+          cmInstances[key] = entry;
+          const { tab, panel } = entry;
+          entry.filename = key;
+          tab.title = key;
+          tab.childNodes.forEach((n) => {
+            if (n.nodeName === `#text`) {
+              n.textContent = key;
+            }
+          });
+          panel.title = panel.id = key;
+          updatePreview();
+        }
+      });
     } else {
       console.error(
         `Could not rename ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
+    updatePreview();
   });
   filetree.addEventListener(`filetree:dir:move`, async (evt) => {
     const { oldPath, newPath, commit } = evt.detail;
@@ -29788,12 +29835,30 @@ function addFileTreeHandling() {
       method: `post`
     });
     if (response.status === 200) {
-      commit();
+      const { oldPath: oldPath2, newPath: newPath2 } = commit();
+      Object.entries(cmInstances).forEach(([key, entry]) => {
+        if (key.startsWith(oldPath2)) {
+          delete cmInstances[key];
+          key = key.replace(oldPath2, newPath2);
+          cmInstances[key] = entry;
+          const { tab, panel } = entry;
+          entry.filename = key;
+          tab.title = key;
+          tab.childNodes.forEach((n) => {
+            if (n.nodeName === `#text`) {
+              n.textContent = key;
+            }
+          });
+          panel.title = panel.id = key;
+          updatePreview();
+        }
+      });
     } else {
       console.error(
         `Could not move ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
+    updatePreview();
   });
   filetree.addEventListener(`filetree:dir:delete`, async (evt) => {
     const { path, commit } = evt.detail;
@@ -29805,6 +29870,7 @@ function addFileTreeHandling() {
     } else {
       console.error(`Could not delete ${path} (status:${response.status})`);
     }
+    updatePreview();
   });
 }
 function addTabScrollHandling() {
@@ -29840,10 +29906,8 @@ function getFileSum(data2) {
   return enc.encode(data2).reduce((t2, e) => t2 + e, 0);
 }
 async function getOrCreateFileEditTab(filename) {
-  console.log(`looking up ${filename}`);
   const entry = cmInstances[filename];
   if (entry?.view) {
-    console.log(`entry found`, entry);
     return entry.tab?.click();
   }
   const panel = setupEditorPanel(filename);
@@ -29978,6 +30042,7 @@ async function syncContent(filename) {
   entry.debounce = false;
 }
 function updatePreview(find2, replace) {
+  console.log(`updating preview`);
   const iframe = preview.querySelector(`iframe`);
   const newFrame = document.createElement(`iframe`);
   newFrame.onload = () => {
