@@ -28,5 +28,8 @@
  *
  * TODO: Consider adding a <file-tree> attribute that automatically calls the commit() function
  *       for dispatched events (e.g. you don't care about/don't want to wait for API results)
+ *
+ * TODO: Rewrite event old/new var names to oldPath/newPath because it doesn't matter if we
+ *       moved/renamed a file or directory, both at based on paths.
  */
 export { FileTree } from "./file-tree.js";

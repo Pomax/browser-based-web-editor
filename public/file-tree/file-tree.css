@@ -24,6 +24,10 @@ file-tree {
       --padding: 1em;
       padding-left: var(--padding);
 
+      &[path="."] {
+        height: 100%;
+      }
+
       &:before {
         content: "📁";
         margin-left: calc(0px - var(--padding));

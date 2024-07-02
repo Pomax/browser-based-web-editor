@@ -5,7 +5,6 @@ import { create, registry, LocalCustomElement, dispatchEvent } from "./deps.js";
  */
 export class FileEntry extends LocalCustomElement {
   setName(fileName, fullPath) {
-    console.log(`fileEntry.setName`, fileName, fullPath);
     this.setAttribute(`name`, fileName);
     this.setAttribute(`path`, fullPath);
 

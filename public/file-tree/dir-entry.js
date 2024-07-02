@@ -1,39 +1,167 @@
 import { FileEntry } from "./file-entry.js";
-import {
-  create,
-  registry,
-  LocalCustomElement,
-  dispatchEvent,
-  addDropZone,
-} from "./deps.js";
+import { create, registry, LocalCustomElement, dispatchEvent } from "./deps.js";
+
+function inThisDir(dir, el) {
+  if (el === dir) return true;
+  if (dir.contains(el)) {
+    // make sure this element is not inside *another* dir
+    const parentDir = el.closest(`dir-entry`);
+    return parentDir === dir;
+  }
+  return false;
+}
+
+/**
+ * Add file and dir drop-zone functionality to the file tree
+ */
+function addDropZone(dir) {
+  const abort = new AbortController();
+
+  // fie drag and drop
+  dir.addEventListener(
+    `dragover`,
+    function dropHandler(evt) {
+      const el = evt.target;
+
+      if (inThisDir(dir, el)) {
+        evt.preventDefault();
+        dir.classList.add(`drop`);
+      }
+    },
+    { signal: abort.signal }
+  );
+
+  dir.addEventListener(
+    `dragenter`,
+    function dropHandler(evt) {
+      evt.preventDefault();
+      dir.classList.add(`drop`);
+    },
+    { signal: abort.signal }
+  );
+
+  dir.addEventListener(
+    `dragleave`,
+    function dropHandler(evt) {
+      evt.preventDefault();
+      dir.classList.remove(`drop`);
+    },
+    { signal: abort.signal }
+  );
+
+  dir.addEventListener(
+    `drop`,
+    async function dropHandler(evt) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      dir.classList.remove(`drop`);
+
+      // file-entry drop?
+      const entryId = evt.dataTransfer.getData(`id`);
+      if (entryId) {
+        const entry = document.querySelector(`[data-id="${entryId}"]`);
+        delete entry.dataset.id;
+        entry.classList.remove(`dragging`);
+
+        const oldPath = entry.getAttribute(`path`);
+        const dirPath = dir.getAttribute(`path`);
+
+        if (entry instanceof FileEntry) {
+          const newPath =
+            (dirPath !== `.` ? dirPath : ``) +
+            oldPath.substring(oldPath.lastIndexOf(`/`) + 1);
+
+          if (oldPath !== newPath) {
+            dispatchEvent(
+              dir,
+              `filetree:file:move`,
+              { oldPath, newPath },
+              () => {
+                entry.setAttribute(`path`, newPath);
+                dir.appendChild(entry);
+                dir.sort();
+              }
+            );
+          }
+        }
+
+        if (entry instanceof DirEntry) {
+          const newPath =
+            (dirPath !== `.` ? dirPath : ``) + entry.heading.textContent + `/`;
+          if (oldPath !== newPath) {
+            dispatchEvent(
+              dir,
+              `filetree:dir:move`,
+              { oldPath, newPath },
+              () => {
+                entry.querySelectorAll(`[path]`).forEach((e) => {
+                  e.setAttribute(
+                    `path`,
+                    e.getAttribute(`path`).replace(oldPath, newPath)
+                  );
+                });
+                entry.setAttribute(
+                  `path`,
+                  entry.getAttribute(`path`).replace(oldPath, newPath)
+                );
+                dir.appendChild(entry);
+                dir.sort();
+              }
+            );
+          }
+        }
+        return;
+      }
+
+      async function traverseFileTree(item, path = ``) {
+        if (item.isFile) {
+          item.file(async (file) => {
+            const content = await getFileContent(file);
+            const fileName = path + file.name;
+            dir.processFileUpload(fileName, content);
+          });
+        } else if (item.isDirectory) {
+          item.createReader().readEntries(function (entries) {
+            entries.forEach(async (entry) => {
+              await traverseFileTree(entry, path + item.name + "/");
+            });
+          });
+        }
+      }
+
+      await Promise.all(
+        [...evt.dataTransfer.items].map(async (item, index) =>
+          traverseFileTree(item.webkitGetAsEntry())
+        )
+      );
+    },
+    { signal: abort.signal }
+  );
+
+  return () => abort.abort();
+}
 
 function addFileToDir(dirEntry, dir) {
   let fileName = prompt(
     "Please specify a filename.\nUse / as directory delimiter (e.g. cake/yum.js)"
   )?.trim();
   if (fileName) {
+    let prompted = fileName;
     if (dir !== `.`) {
       fileName = dir + fileName;
     }
     if (fileName.includes(`.`)) {
-      console.log(`creating file ${fileName}...`);
       dispatchEvent(dirEntry, `filetree:file:create`, { fileName }, () => {
-        const fullPath = fileName;
-        if (dir !== `.`) {
-          fileName = fileName.replace(dir, ``);
-        }
-        return dirEntry.addFile(fileName, fullPath);
+        return dirEntry.addFile(prompted, fileName);
       });
     } else {
       if (confirm(`Did you mean to create a new directory ${fileName}?`)) {
-        console.log(`creating dir ${fileName}...`);
         dispatchEvent(
           dirEntry,
           `filetree:dir:create`,
           { dirName: fileName },
           () => {
-            // TODO: implement this
-            console.log(`[TODO] add dir "${fileName}".`);
+            dirEntry.addDirectory(prompted + `/`, fileName + `/`);
           }
         );
       }
@@ -130,7 +258,7 @@ export class DirEntry extends LocalCustomElement {
 
   processFileUpload(fileName, content) {
     const localPath = this.getAttribute(`path`);
-    const fullPath = localPath + fileName;
+    const fullPath = (localPath !== `.` ? localPath : ``) + fileName;
     dispatchEvent(
       this,
       `filetree:file:upload`,
@@ -143,7 +271,6 @@ export class DirEntry extends LocalCustomElement {
   }
 
   addFile(fileName, fullPath = fileName) {
-    console.log(`addFile`, fileName, fullPath);
     if (!fileName.includes(`/`)) {
       if (fileName.includes(`.`)) {
         return this.addFileDirectly(fileName, fullPath);
@@ -164,7 +291,6 @@ export class DirEntry extends LocalCustomElement {
   }
 
   addFileDirectly(fileName, fullPath) {
-    console.log(`addFileDirectly`, fileName, fullPath);
     const file = new FileEntry();
     file.setName(fileName, fullPath);
     this.appendChild(file);
@@ -173,7 +299,6 @@ export class DirEntry extends LocalCustomElement {
   }
 
   addDirectory(dirName, fullPath) {
-    console.log(`addDirectory`, dirName, fullPath);
     const dir = new DirEntry();
     dir.setName(dirName, fullPath);
     this.appendChild(dir);

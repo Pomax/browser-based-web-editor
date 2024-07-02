@@ -183,6 +183,24 @@ function addFileTreeHandling() {
     });
     if (response.status === 200) {
       commit();
+      let key = oldPath.replace(CONTENT_DIR, ``);
+      const entry = cmInstances[key];
+      if (entry) {
+        console.log(`removing old entry for ${key}`);
+        delete cmInstances[key];
+        key = newPath.replace(CONTENT_DIR, ``);
+        console.log(`rebinding entry on ${key}`);
+        cmInstances[key] = entry;
+        const { tab, panel } = entry;
+        entry.filename = key;
+        tab.title = key;
+        tab.childNodes.forEach((n) => {
+          if (n.nodeName === `#text`) {
+            n.textContent = key;
+          }
+        });
+        panel.title = panel.id = key;
+      }
     } else {
       console.error(
         `Could not move ${oldPath} to ${newPath} (status:${response.status})`
@@ -317,10 +335,12 @@ function getFileSum(data) {
  * Create the collection of pqge UI elements and associated editor
  * component for a given file.
  */
-async function getOrCreateFileEditTab(filename, onTabClick) {
+async function getOrCreateFileEditTab(filename) {
+  console.log(`looking up ${filename}`);
   const entry = cmInstances[filename];
   if (entry?.view) {
-    return entry.tab?.click(onTabClick);
+    console.log(`entry found`, entry);
+    return entry.tab?.click();
   }
 
   const panel = setupEditorPanel(filename);
@@ -333,6 +353,11 @@ async function getOrCreateFileEditTab(filename, onTabClick) {
   const initialState = getInitialState(filename, data);
   const view = setupView(panel, initialState);
 
+  // FIXME: this feels like a hack, but there doesn't appear to be
+  //        a clean way to associate data with an editor such that
+  //        the onChange handler can access the right key...
+  view.tabElement = tab;
+
   // Add tab and tab-close event hanlding:
   addEventHandling(filename, panel, tab, close, view);
 
@@ -344,7 +369,7 @@ async function getOrCreateFileEditTab(filename, onTabClick) {
     panel,
     view,
     content: view.state.doc.toString(),
-    sync: () => syncContent(filename),
+    sync: () => syncContent(tab.title),
   };
 
   if (entry) {
@@ -377,8 +402,9 @@ function getInitialState(filename, data) {
   // Add debounced content change syncing
   extensions.push(
     EditorView.updateListener.of((e) => {
-      if (e.docChanged) {
-        const entry = cmInstances[filename];
+      const tab = e.view.tabElement;
+      if (tab && e.docChanged) {
+        const entry = cmInstances[tab.title];
         if (entry.debounce) {
           clearTimeout(entry.debounce);
         }
@@ -442,7 +468,7 @@ function setupView(parent, state) {
  */
 function addEventHandling(filename, panel, tab, close, view) {
   tab.addEventListener(`click`, () => {
-    if (!cmInstances[filename]) return;
+    if (!cmInstances[tab.title]) return;
     document
       .querySelectorAll(`.editor`)
       .forEach((e) => e.setAttribute(`hidden`, `hidden`));
@@ -452,14 +478,14 @@ function addEventHandling(filename, panel, tab, close, view) {
       .forEach((e) => e.classList.remove(`active`));
     tab.classList.add(`active`);
     tab.scrollIntoView();
-    filetree.select(filename);
+    filetree.select(tab.title);
     view.focus();
   });
 
   close.addEventListener(`click`, () => {
     if (tab.classList.contains(`active`)) {
       const tabs = Object.keys(cmInstances);
-      const tabPos = tabs.indexOf(filename);
+      const tabPos = tabs.indexOf(tab.title);
       let newTab = tabPos === 0 ? tabs[1] : tabs[tabPos - 1];
       // newTab might exist as entry but not have an editor associated with it.
       if (newTab) cmInstances[newTab].tab?.click();

@@ -113,7 +113,7 @@ function execPromise(command, options = {}) {
  */
 async function readContentDir(dir) {
   let dirListing;
-  let listCommand = isWindows ? `dir /b/o/s "${dir}"` : `find ${dir}`;
+  let listCommand = isWindows ? `dir /b/o/s "${dir}"` : `find -empty ${dir}`;
 
   try {
     dirListing = await execPromise(listCommand);
