@@ -22,6 +22,8 @@
  *   - for Windows, that's "dir /b/o/s dirname", as an array
  *   - for everything else, that's "find dirname", as an array
  *
+ * TODO: Add touch equivalents of all mouse actions.
+ *
  * TODO: Consider whether to allow auto-dir-deletion when you move the last file in a dir out.
  *       Becuase this shouldn't be an automatic "delete dir" action: accidentally moving a file
  *       is way too easy to do.
