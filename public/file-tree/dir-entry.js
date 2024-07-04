@@ -272,7 +272,7 @@ export class DirEntry extends LocalCustomElement {
     files.forEach((fileName) => {
       this.addFile(fileName, fileName);
     });
-    this.sort();
+    this.sort(true);
   }
 
   processFileUpload(fileName, content) {
@@ -328,8 +328,23 @@ export class DirEntry extends LocalCustomElement {
   sort(recursive = true) {
     const children = [...this.children];
     children.sort((a, b) => {
-      if (!a.tagName.startsWith(`FILE-`)) return -1;
-      if (!b.tagName.startsWith(`FILE-`)) return 1;
+      // dir heading, then buttons, then dirs, then files
+      if (a.tagName === `DIR-HEADING`) return -1;
+      if (b.tagName === `DIR-HEADING`) return 1;
+      if (a.tagName === `BUTTON`) return -1;
+      if (b.tagName === `BUTTON`) return 1;
+      // dirs?
+      if (a.tagName === `DIR-ENTRY` && b.tagName === `DIR-ENTRY`) {
+        a = a.getAttribute(`path`);
+        b = b.getAttribute(`path`);
+        return a < b ? -1 : 1;
+      } else if (a.tagName === `DIR-ENTRY`) {
+        return -1;
+      } else if (b.tagName === `DIR-ENTRY`) {
+        return 1;
+      }
+
+      // files.
       a = a.getAttribute(`path`);
       b = b.getAttribute(`path`);
       return a < b ? -1 : 1;

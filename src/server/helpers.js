@@ -113,7 +113,9 @@ function execPromise(command, options = {}) {
  */
 async function readContentDir(dir) {
   let dirListing;
-  let listCommand = isWindows ? `dir /b/o/s "${dir}"` : `find -empty ${dir}`;
+  let listCommand = isWindows ? `dir /b/o/s "${dir}"` : `find ${dir}`;
+
+  console.log(dir, listCommand);
 
   try {
     dirListing = await execPromise(listCommand);
@@ -124,10 +126,14 @@ async function readContentDir(dir) {
     return false;
   }
 
+  console.log(dirListing);
+
   const allFileListing = dirListing
     .split(/\r?\n/)
     .map((v) => v.split(sep).join(posix.sep).replace(`${dir}${posix.sep}`, ``))
-    .filter((v) => !!v);
+    .filter((v) => !!v && !v.startsWith(`.git`) && v !== dir);
+
+  console.log(allFileListing);
   return allFileListing;
 }
 

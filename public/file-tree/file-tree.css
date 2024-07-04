@@ -32,6 +32,10 @@ file-tree {
         content: "📁";
         margin-left: calc(0px - var(--padding));
       }
+
+      dir-heading {
+        margin-left: 0.25em;
+      }
     }
   }
 

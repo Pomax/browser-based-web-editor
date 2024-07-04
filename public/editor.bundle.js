@@ -29480,7 +29480,7 @@ var DirEntry = class _DirEntry extends LocalCustomElement {
     files.forEach((fileName) => {
       this.addFile(fileName, fileName);
     });
-    this.sort();
+    this.sort(true);
   }
   processFileUpload(fileName, content2) {
     const localPath = this.getAttribute(`path`);
@@ -29530,8 +29530,19 @@ var DirEntry = class _DirEntry extends LocalCustomElement {
   sort(recursive = true) {
     const children = [...this.children];
     children.sort((a, b) => {
-      if (!a.tagName.startsWith(`FILE-`)) return -1;
-      if (!b.tagName.startsWith(`FILE-`)) return 1;
+      if (a.tagName === `DIR-HEADING`) return -1;
+      if (b.tagName === `DIR-HEADING`) return 1;
+      if (a.tagName === `BUTTON`) return -1;
+      if (b.tagName === `BUTTON`) return 1;
+      if (a.tagName === `DIR-ENTRY` && b.tagName === `DIR-ENTRY`) {
+        a = a.getAttribute(`path`);
+        b = b.getAttribute(`path`);
+        return a < b ? -1 : 1;
+      } else if (a.tagName === `DIR-ENTRY`) {
+        return -1;
+      } else if (b.tagName === `DIR-ENTRY`) {
+        return 1;
+      }
       a = a.getAttribute(`path`);
       b = b.getAttribute(`path`);
       return a < b ? -1 : 1;
@@ -30042,7 +30053,6 @@ async function syncContent(filename) {
   entry.debounce = false;
 }
 function updatePreview(find2, replace) {
-  console.log(`updating preview`);
   const iframe = preview.querySelector(`iframe`);
   const newFrame = document.createElement(`iframe`);
   newFrame.onload = () => {
