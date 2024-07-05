@@ -2,7 +2,7 @@ import express from "express";
 import nunjucks from "nunjucks";
 import { addMiddleware, pageNotFound, verifyOwnership } from "./middleware.js";
 import { addGetRoutes, addPostRoutes } from "./routing/index.js";
-import { watchForRebuild } from "./helpers.js";
+import { watchForRebuild } from "./watcher.js";
 
 const PORT = process.env.PORT ?? 8000;
 process.env.PORT = PORT;

@@ -12,7 +12,7 @@ import {
   mkdirSync,
   readFileSync,
   renameSync,
-  rmdirSync,
+  rmSync,
   unlinkSync,
   writeFileSync,
 } from "fs";
@@ -47,9 +47,10 @@ function addPostRoutes(app) {
 
   app.delete(`/delete-dir/:slug*`, (req, res) => {
     const dirName = req.params.slug + req.params[0];
+    if (dirName === `.`) return res.status(400).send(`absolutely not`);
     const dirPath = `${req.session.dir}/${dirName}`;
     try {
-      rmdirSync(dirPath, { recursive: true });
+      rmSync(dirPath, { recursive: true });
       res.send(`deleted`);
       createRewindPoint(req);
     } catch (e) {
@@ -106,6 +107,7 @@ function addPostRoutes(app) {
     const slug = req.params.slug + req.params[0];
     const parts = slug.split(`:`);
     const oldName = `${req.session.dir}/${parts[0]}`;
+    if (oldName === `.`) return res.status(400).send(`absolutely not`);
     const newName = `${req.session.dir}/${parts[1]}`;
     console.log(`rename attempt:`, oldName, `->`, newName);
     try {
@@ -140,7 +142,7 @@ function addPostRoutes(app) {
       // TODO: add the actual git commit? rewind needs work.
       res.send(`ok`);
     } catch (err) {
-      res.status(400).send(`no`);
+      res.status(400).send(`unable to comply`);
     }
   });
 

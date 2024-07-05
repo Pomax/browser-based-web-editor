@@ -5,11 +5,9 @@ export {
   execPromise,
   getFileSum,
   readContentDir,
-  rebuild,
   setupGit,
   switchUser,
   reloadPageInstruction,
-  watchForRebuild,
 };
 
 import {
@@ -19,15 +17,12 @@ import {
   mkdirSync,
   readFileSync,
   rmSync,
-  statSync,
-  watch,
 } from "fs";
 
 // Are we on Windows, or something unixy?
 import { sep, posix } from "path";
-import { exec, execSync, spawnSync } from "child_process";
+import { exec, execSync } from "child_process";
 const isWindows = process.platform === `win32`;
-const npm = isWindows ? `npm.cmd` : `npm`;
 
 // Set up the vars we need for pointing to the right dirs
 const CONTENT_BASE = process.env.CONTENT_BASE ?? `content`;
@@ -60,20 +55,6 @@ function createRewindPoint(req, reason = `Autosave`) {
     }
     COMMIT_TIMEOUTS[name] = undefined;
   }, COMMIT_TIMEOUT_MS);
-}
-
-/**
- * There's a few files we want to watch in order to rebuild the browser bundle.
- */
-function watchForRebuild() {
-  [
-    `./src/script.js`,
-    `./public/file-tree/file-tree.js`,
-    `./public/file-tree/dir-entry.js`,
-    `./public/file-tree/file-entry.js`,
-    `./public/file-tree/deps.js`,
-  ].forEach((filename) => watch(filename, () => rebuild()));
-  rebuild();
 }
 
 /**
@@ -115,8 +96,6 @@ async function readContentDir(dir) {
   let dirListing;
   let listCommand = isWindows ? `dir /b/o/s "${dir}"` : `find ${dir}`;
 
-  console.log(dir, listCommand);
-
   try {
     dirListing = await execPromise(listCommand);
   } catch (e) {
@@ -126,27 +105,11 @@ async function readContentDir(dir) {
     return false;
   }
 
-  console.log(dirListing);
-
-  const allFileListing = dirListing
+  const removal = new RegExp(`.*${dir}\\/`);
+  return dirListing
     .split(/\r?\n/)
-    .map((v) => v.split(sep).join(posix.sep).replace(`${dir}${posix.sep}`, ``))
+    .map((v) => v.split(sep).join(posix.sep).replace(removal, ``))
     .filter((v) => !!v && !v.startsWith(`.git`) && v !== dir);
-
-  console.log(allFileListing);
-  return allFileListing;
-}
-
-/**
- * Trigger a rebuild by telling npm to run the `build` script from package.json.
- */
-function rebuild() {
-  console.log(`rebuilding`);
-  const start = Date.now();
-  spawnSync(npm, [`run`, `build`], {
-    stdio: `inherit`,
-  });
-  console.log(`Build took ${Date.now() - start}ms`), 8;
 }
 
 /**

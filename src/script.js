@@ -10,7 +10,8 @@ import { markdown } from "@codemirror/lang-markdown";
 // See https://github.com/orgs/codemirror/repositories?q=lang for more options
 
 import { createPatch } from "../public/vendor/diff.js";
-import "../public/file-tree/index.js";
+import "../public/file-tree.esm.min.js";
+import { unzip } from "../public/vendor/unzipit.module.js";
 
 // This is *technically* unnecessary, but it's better to be explicit.
 const changeUser = document.getElementById(`switch`);
@@ -55,7 +56,7 @@ async function fetchSafe(url, options) {
   if (response.status !== 200) {
     if (response.headers.get(`x-reload-page`)) {
       alert(`Your session expired, please reload.\n(error code: 29X784FH)`);
-      throw new Error(`Page needs reloading`);
+      return new Error(`Page needs reloading`);
     }
   }
   return response;
@@ -66,6 +67,7 @@ async function fetchSafe(url, options) {
  */
 async function setupFileTree() {
   const dirData = await fetchSafe(`/dir`).then((r) => r.json());
+  if (dirData instanceof Error) return;
   document.querySelector(`file-tree`).setFiles(dirData);
   addFileTreeHandling();
 }
@@ -77,7 +79,8 @@ function addGlobalEventHandling() {
   changeUser.addEventListener(`click`, async () => {
     const name = prompt(`Username?`).trim();
     if (name) {
-      await fetchSafe(`/login/${name}`, { method: `post` });
+      const result = await fetchSafe(`/login/${name}`, { method: `post` });
+      if (result instanceof Error) return;
       location.reload();
     }
   });
@@ -93,7 +96,8 @@ function addGlobalEventHandling() {
     const entry = Object.values(cmInstances).find((e) => e.tab === tab);
     const filename = entry.filename;
     format.hidden = true;
-    await fetchSafe(`/format/${filename}`, { method: `post` });
+    const result = await fetchSafe(`/format/${filename}`, { method: `post` });
+    if (result instanceof Error) return;
     entry.content = await fetchFileContents(filename);
     format.hidden = false;
     entry.view.dispatch({
@@ -111,32 +115,37 @@ function addGlobalEventHandling() {
  */
 function addFileTreeHandling() {
   // TODO: lots of duplication happening here
-  filetree.addEventListener(`filetree:file:click`, async (evt) => {
-    const { fullPath, commit } = evt.detail;
-    commit();
-    getOrCreateFileEditTab(fullPath);
+  filetree.addEventListener(`file:click`, async (evt) => {
+    const { path } = evt.detail;
+    getOrCreateFileEditTab(path);
     // we handle selection in the file tree as part of editor reveals,
-    // so we do not call the event's own commit() function.
+    // so we do not call the event's own grant() function.
   });
 
-  filetree.addEventListener(`filetree:file:create`, async (evt) => {
-    const { fileName, commit } = evt.detail;
+  filetree.addEventListener(`dir:click`, async (evt) => {
+    evt.detail.grant();
+  });
+
+  filetree.addEventListener(`file:create`, async (evt) => {
+    const { fileName, grant } = evt.detail;
     const response = await fetchSafe(`/new/${fileName}`, { method: `post` });
+    if (response instanceof Error) return;
     if (response.status === 200) {
-      const entry = commit();
+      const entry = grant();
       getOrCreateFileEditTab(entry.getAttribute(`path`));
     } else {
       console.error(`Could not create ${fileName} (status:${response.status})`);
     }
   });
 
-  filetree.addEventListener(`filetree:file:rename`, async (evt) => {
-    const { oldName, newName, commit } = evt.detail;
+  filetree.addEventListener(`file:rename`, async (evt) => {
+    const { oldName, newName, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldName}:${newName}`, {
       method: `post`,
     });
+    if (response instanceof Error) return;
     if (response.status === 200) {
-      commit();
+      grant();
       let key = oldName.replace(CONTENT_DIR, ``);
       const entry = cmInstances[key];
       if (entry) {
@@ -162,8 +171,7 @@ function addFileTreeHandling() {
     updatePreview();
   });
 
-  filetree.addEventListener(`filetree:file:upload`, async (evt) => {
-    const { fileName, content, commit } = evt.detail;
+  async function uploadFile(fileName, content, grant) {
     const form = new FormData();
     form.append(`filename`, fileName);
     form.append(`content`, content);
@@ -171,21 +179,41 @@ function addFileTreeHandling() {
       method: `post`,
       body: form,
     });
+    if (response instanceof Error) return;
     if (response.status === 200) {
-      commit();
+      grant?.();
     } else {
       console.error(`Could not upload ${fileName} (status:${response.status})`);
+    }
+  }
+
+  filetree.addEventListener(`file:upload`, async (evt) => {
+    const { fileName, content, grant } = evt.detail;
+    if (fileName.endsWith(`.zip`) && confirm(`Unpack zip file?`)) {
+      const basePath = fileName.substring(0, fileName.lastIndexOf(`/`) + 1);
+      const { entries } = await unzip(new Uint8Array(content).buffer);
+      for await (let [fileName, entry] of Object.entries(entries)) {
+        const arrayBuffer = await entry.arrayBuffer();
+        const content = new TextDecoder().decode(arrayBuffer);
+        if (content.trim()) {
+          fileName = basePath + fileName;
+          uploadFile(fileName, content, () => filetree.addEntry(fileName))
+        }
+      }
+    } else {
+      uploadFile(fileName, content, grant);
     }
     updatePreview();
   });
 
-  filetree.addEventListener(`filetree:file:move`, async (evt) => {
-    const { oldPath, newPath, commit } = evt.detail;
+  filetree.addEventListener(`file:move`, async (evt) => {
+    const { oldPath, newPath, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
       method: `post`,
     });
+    if (response instanceof Error) return;
     if (response.status === 200) {
-      commit();
+      grant();
       let key = oldPath.replace(CONTENT_DIR, ``);
       const entry = cmInstances[key];
       if (entry) {
@@ -211,15 +239,16 @@ function addFileTreeHandling() {
     updatePreview();
   });
 
-  filetree.addEventListener(`filetree:file:delete`, async (evt) => {
-    const { path: fileName, commit } = evt.detail;
+  filetree.addEventListener(`file:delete`, async (evt) => {
+    const { path: fileName, grant } = evt.detail;
     if (fileName) {
       try {
         const response = await fetchSafe(`/delete/${fileName}`, {
           method: `delete`,
         });
+        if (response instanceof Error) return;
         if (response.status === 200) {
-          commit();
+          grant();
           cmInstances[fileName]?.close?.click();
         } else {
           console.error(
@@ -233,23 +262,25 @@ function addFileTreeHandling() {
     updatePreview();
   });
 
-  filetree.addEventListener(`filetree:dir:create`, async (evt) => {
-    const { dirName, commit } = evt.detail;
+  filetree.addEventListener(`dir:create`, async (evt) => {
+    const { dirName, grant } = evt.detail;
     const response = await fetchSafe(`/new/${dirName}`, { method: `post` });
+    if (response instanceof Error) return;
     if (response.status === 200) {
-      commit();
+      grant();
     } else {
       console.error(`Could not create ${dirName} (status:${response.status})`);
     }
   });
 
-  filetree.addEventListener(`filetree:dir:rename`, async (evt) => {
-    const { oldPath, newPath, commit } = evt.detail;
+  filetree.addEventListener(`dir:rename`, async (evt) => {
+    const { oldPath, newPath, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
       method: `post`,
     });
+    if (response instanceof Error) return;
     if (response.status === 200) {
-      const { oldPath, newPath } = commit();
+      const { oldPath, newPath } = grant();
       // update all cmInstances
       Object.entries(cmInstances).forEach(([key, entry]) => {
         if (key.startsWith(oldPath)) {
@@ -277,13 +308,14 @@ function addFileTreeHandling() {
     updatePreview();
   });
 
-  filetree.addEventListener(`filetree:dir:move`, async (evt) => {
-    const { oldPath, newPath, commit } = evt.detail;
+  filetree.addEventListener(`dir:move`, async (evt) => {
+    const { oldPath, newPath, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
       method: `post`,
     });
+    if (response instanceof Error) return;
     if (response.status === 200) {
-      const { oldPath, newPath } = commit();
+      grant();
       // update all cmInstances
       Object.entries(cmInstances).forEach(([key, entry]) => {
         if (key.startsWith(oldPath)) {
@@ -311,13 +343,14 @@ function addFileTreeHandling() {
     updatePreview();
   });
 
-  filetree.addEventListener(`filetree:dir:delete`, async (evt) => {
-    const { path, commit } = evt.detail;
+  filetree.addEventListener(`dir:delete`, async (evt) => {
+    const { path, grant } = evt.detail;
     const response = await fetchSafe(`/delete-dir/${path}`, {
       method: `delete`,
     });
+    if (response instanceof Error) return;
     if (response.status === 200) {
-      commit();
+      grant();
     } else {
       console.error(`Could not delete ${path} (status:${response.status})`);
     }
@@ -521,7 +554,7 @@ function addEventHandling(filename, panel, tab, close, view) {
       .forEach((e) => e.classList.remove(`active`));
     tab.classList.add(`active`);
     tab.scrollIntoView();
-    filetree.select(tab.title);
+    filetree.selectEntry(tab.title);
     view.focus();
   });
 
