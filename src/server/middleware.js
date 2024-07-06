@@ -3,6 +3,7 @@ export {
   deleteExpiredAnonymousContent,
   pageNotFound,
   parseBodyText,
+  parseBodyData,
   verifyOwnership,
 };
 
@@ -75,6 +76,26 @@ function parseBodyText(req, res, next) {
   req.on("data", (chunk) => chunks.push(chunk));
   req.on("end", () => {
     req.body = Buffer.concat(chunks).toString(`utf-8`);
+    next();
+  });
+}
+
+function parseBodyData(req, res, next) {
+  // FIXME: this probably doesn't work for multiple parts, but that's not today's concern.
+  let boundary = req.headers["content-type"];
+  boundary = `--` + boundary.substring(boundary.indexOf(`boundary=`) + 9);
+  let chunks = [];
+  req.on("data", (chunk) => {
+    const ctt = chunk.indexOf(`Content-Type`, 0, `ascii`);
+    if (ctt > -1) {
+      const start = chunk.indexOf(`\r\n\r\n`, ctt, `ascii`) + 4;
+      const end = chunk.indexOf(boundary, start, `ascii`);
+      const data = chunk.slice(start, end);
+      chunks.push(data);
+    }
+  });
+  req.on("end", () => {
+    req.body = Buffer.concat(chunks);
     next();
   });
 }

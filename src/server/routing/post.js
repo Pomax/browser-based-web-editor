@@ -6,7 +6,7 @@ import {
   switchUser,
   createRewindPoint,
 } from "../helpers.js";
-import { parseBodyText } from "../middleware.js";
+import { parseBodyText, parseBodyData } from "../middleware.js";
 import {
   existsSync,
   mkdirSync,
@@ -159,11 +159,15 @@ function addPostRoutes(app) {
   });
 
   // Create a fully qualified file.
-  app.post(`/upload/:slug*`, upload.none(), (req, res) => {
+  app.post(`/upload/:slug*`, parseBodyData, (req, res) => {
     const full = `${req.session.dir}/${req.params.slug + req.params[0]}`;
     const slug = full.substring(full.lastIndexOf(`/`) + 1);
     const dirs = full.replace(`/${slug}`, ``);
-    const data = req.body.content;
+    const data = req.body;
+    const fileSize = data.length;
+    if (fileSize > 1_000_000) {
+      return res.status(400).send(`Upload too large`);
+    }
     mkdirSync(dirs, { recursive: true });
     writeFileSync(full, data);
     res.send(`ok`);

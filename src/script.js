@@ -172,9 +172,18 @@ function addFileTreeHandling() {
   });
 
   async function uploadFile(fileName, content, grant) {
+    const fileSize = content.byteLength;
+    if (fileSize > 1_000_000) {
+      return alert(`File uploads are limited to 1MB`);
+    }
     const form = new FormData();
     form.append(`filename`, fileName);
-    form.append(`content`, content);
+    form.append(
+      `content`,
+      typeof content === "string"
+        ? content
+        : new Blob([content], { type: getMimeType(fileName) })
+    );
     const response = await fetchSafe(`/upload/${fileName}`, {
       method: `post`,
       body: form,
@@ -197,7 +206,7 @@ function addFileTreeHandling() {
         const content = new TextDecoder().decode(arrayBuffer);
         if (content.trim()) {
           fileName = basePath + fileName;
-          uploadFile(fileName, content, () => filetree.addEntry(fileName))
+          uploadFile(fileName, content, () => filetree.addEntry(fileName));
         }
       }
     } else {
@@ -638,4 +647,16 @@ function updatePreview(find, replace) {
   } else {
     newFrame.src = src;
   }
+}
+
+function getMimeType(fileName) {
+  const ext = fileName.substring(fileName.lastIndexOf(`.`) + 1);
+  const type = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    mp3: "audio/mpeg",
+    mp4: "video/mp4",
+  }[ext];
+  return type || "text/plain";
 }

@@ -30464,9 +30464,16 @@ function addFileTreeHandling() {
     updatePreview();
   });
   async function uploadFile(fileName, content2, grant) {
+    const fileSize = content2.byteLength;
+    if (fileSize > 1e6) {
+      return alert(`File uploads are limited to 1MB`);
+    }
     const form = new FormData();
     form.append(`filename`, fileName);
-    form.append(`content`, content2);
+    form.append(
+      `content`,
+      typeof content2 === "string" ? content2 : new Blob([content2], { type: getMimeType(fileName) })
+    );
     const response = await fetchSafe(`/upload/${fileName}`, {
       method: `post`,
       body: form
@@ -30823,4 +30830,15 @@ function updatePreview(find2, replace) {
   } else {
     newFrame.src = src;
   }
+}
+function getMimeType(fileName) {
+  const ext = fileName.substring(fileName.lastIndexOf(`.`) + 1);
+  const type = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    mp3: "audio/mpeg",
+    mp4: "video/mp4"
+  }[ext];
+  return type || "text/plain";
 }
