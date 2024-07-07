@@ -7593,9 +7593,9 @@ handlers.paste = (view, event) => {
   if (view.state.readOnly)
     return true;
   view.observer.flush();
-  let data2 = brokenClipboardAPI ? null : event.clipboardData;
-  if (data2) {
-    doPaste(view, data2.getData("text/plain") || data2.getData("text/uri-list"));
+  let data3 = brokenClipboardAPI ? null : event.clipboardData;
+  if (data3) {
+    doPaste(view, data3.getData("text/plain") || data3.getData("text/uri-list"));
     return true;
   } else {
     capturePaste(view);
@@ -7650,10 +7650,10 @@ handlers.copy = handlers.cut = (view, event) => {
       scrollIntoView: true,
       userEvent: "delete.cut"
     });
-  let data2 = brokenClipboardAPI ? null : event.clipboardData;
-  if (data2) {
-    data2.clearData();
-    data2.setData("text/plain", text);
+  let data3 = brokenClipboardAPI ? null : event.clipboardData;
+  if (data3) {
+    data3.clearData();
+    data3.setData("text/plain", text);
     return true;
   } else {
     captureCopy(view, text);
@@ -13521,8 +13521,8 @@ var Tree = class _Tree {
   Build a tree from a postfix-ordered buffer of node information,
   or a cursor over such a buffer.
   */
-  static build(data2) {
-    return buildTree(data2);
+  static build(data3) {
+    return buildTree(data3);
   }
 };
 Tree.empty = new Tree(NodeType.none, [], [], 0);
@@ -14383,9 +14383,9 @@ var TreeCursor = class {
 function hasChild(tree) {
   return tree.children.some((ch) => ch instanceof TreeBuffer || !ch.type.isAnonymous || hasChild(ch));
 }
-function buildTree(data2) {
+function buildTree(data3) {
   var _a2;
-  let { buffer, nodeSet, maxBufferLength = DefaultBufferLength, reused = [], minRepeatType = nodeSet.types.length } = data2;
+  let { buffer, nodeSet, maxBufferLength = DefaultBufferLength, reused = [], minRepeatType = nodeSet.types.length } = data3;
   let cursor = Array.isArray(buffer) ? new FlatBufferCursor(buffer, buffer.length) : buffer;
   let types2 = nodeSet.types;
   let contextHash = 0, lookAhead = 0;
@@ -14412,11 +14412,11 @@ function buildTree(data2) {
     let type = types2[id2], node, buffer2;
     let startPos = start - parentStart;
     if (end - start <= maxBufferLength && (buffer2 = findBufferSize(cursor.pos - minPos, inRepeat))) {
-      let data3 = new Uint16Array(buffer2.size - buffer2.skip);
-      let endPos = cursor.pos - buffer2.size, index = data3.length;
+      let data4 = new Uint16Array(buffer2.size - buffer2.skip);
+      let endPos = cursor.pos - buffer2.size, index = data4.length;
       while (cursor.pos > endPos)
-        index = copyToBuffer(buffer2.start, data3, index);
-      node = new TreeBuffer(data3, end - buffer2.start, nodeSet);
+        index = copyToBuffer(buffer2.start, data4, index);
+      node = new TreeBuffer(data4, end - buffer2.start, nodeSet);
       startPos = buffer2.start - parentStart;
     } else {
       let endPos = cursor.pos - size;
@@ -14580,9 +14580,9 @@ function buildTree(data2) {
   }
   let children = [], positions = [];
   while (cursor.pos > 0)
-    takeNode(data2.start || 0, data2.bufferStart || 0, children, positions, -1, 0);
-  let length = (_a2 = data2.length) !== null && _a2 !== void 0 ? _a2 : children.length ? positions[0] + children[0].length : 0;
-  return new Tree(types2[data2.topID], children.reverse(), positions.reverse(), length);
+    takeNode(data3.start || 0, data3.bufferStart || 0, children, positions, -1, 0);
+  let length = (_a2 = data3.length) !== null && _a2 !== void 0 ? _a2 : children.length ? positions[0] + children[0].length : 0;
+  return new Tree(types2[data3.topID], children.reverse(), positions.reverse(), length);
 }
 var nodeSizeCache = /* @__PURE__ */ new WeakMap();
 function nodeSize(balanceType, node) {
@@ -15885,8 +15885,8 @@ var Language = class {
   configure your parser to [attach](https://codemirror.net/6/docs/ref/#language.languageDataProp) it
   to the language's outer syntax node.
   */
-  constructor(data2, parser5, extraExtensions = [], name2 = "") {
-    this.data = data2;
+  constructor(data3, parser5, extraExtensions = [], name2 = "") {
+    this.data = data3;
     this.name = name2;
     if (!EditorState.prototype.hasOwnProperty("tree"))
       Object.defineProperty(EditorState.prototype, "tree", { get() {
@@ -15896,16 +15896,16 @@ var Language = class {
     this.extension = [
       language.of(this),
       EditorState.languageData.of((state, pos, side) => {
-        let top2 = topNodeAt(state, pos, side), data3 = top2.type.prop(languageDataProp);
-        if (!data3)
+        let top2 = topNodeAt(state, pos, side), data4 = top2.type.prop(languageDataProp);
+        if (!data4)
           return [];
-        let base2 = state.facet(data3), sub = top2.type.prop(sublanguageProp);
+        let base2 = state.facet(data4), sub = top2.type.prop(sublanguageProp);
         if (sub) {
           let innerNode = top2.resolve(pos - top2.from, side);
           for (let sublang of sub)
             if (sublang.test(innerNode, state)) {
-              let data4 = state.facet(sublang.facet);
-              return sublang.type == "replace" ? data4 : data4.concat(base2);
+              let data5 = state.facet(sublang.facet);
+              return sublang.type == "replace" ? data5 : data5.concat(base2);
             }
         }
         return base2;
@@ -15979,17 +15979,17 @@ function topNodeAt(state, pos, side) {
   return tree;
 }
 var LRLanguage = class _LRLanguage extends Language {
-  constructor(data2, parser5, name2) {
-    super(data2, parser5, [], name2);
+  constructor(data3, parser5, name2) {
+    super(data3, parser5, [], name2);
     this.parser = parser5;
   }
   /**
   Define a language from a parser.
   */
   static define(spec) {
-    let data2 = defineLanguageFacet(spec.languageData);
-    return new _LRLanguage(data2, spec.parser.configure({
-      props: [languageDataProp.add((type) => type.isTop ? data2 : void 0)]
+    let data3 = defineLanguageFacet(spec.languageData);
+    return new _LRLanguage(data3, spec.parser.configure({
+      props: [languageDataProp.add((type) => type.isTop ? data3 : void 0)]
     }), spec.name);
   }
   /**
@@ -17514,8 +17514,8 @@ var toggleBlockCommentByLine = /* @__PURE__ */ command(
   /* CommentOption.Toggle */
 );
 function getConfig(state, pos) {
-  let data2 = state.languageDataAt("commentTokens", pos);
-  return data2.length ? data2[0] : {};
+  let data3 = state.languageDataAt("commentTokens", pos);
+  return data3.length ? data3[0] : {};
 }
 var SearchMargin = 50;
 function findBlockComment(state, { open, close }, from, to) {
@@ -22704,8 +22704,8 @@ var InputStream = class {
   }
 };
 var TokenGroup = class {
-  constructor(data2, id2) {
-    this.data = data2;
+  constructor(data3, id2) {
+    this.data = data3;
     this.id = id2;
   }
   token(input, stack) {
@@ -22715,10 +22715,10 @@ var TokenGroup = class {
 };
 TokenGroup.prototype.contextual = TokenGroup.prototype.fallback = TokenGroup.prototype.extend = false;
 var LocalTokenGroup = class {
-  constructor(data2, precTable, elseToken) {
+  constructor(data3, precTable, elseToken) {
     this.precTable = precTable;
     this.elseToken = elseToken;
-    this.data = typeof data2 == "string" ? decodeArray(data2) : data2;
+    this.data = typeof data3 == "string" ? decodeArray(data3) : data3;
   }
   token(input, stack) {
     let start = input.pos, skipped = 0;
@@ -22757,35 +22757,35 @@ var ExternalTokenizer = class {
     this.extend = !!options.extend;
   }
 };
-function readToken(data2, input, stack, group, precTable, precOffset) {
+function readToken(data3, input, stack, group, precTable, precOffset) {
   let state = 0, groupMask = 1 << group, { dialect } = stack.p.parser;
   scan: for (; ; ) {
-    if ((groupMask & data2[state]) == 0)
+    if ((groupMask & data3[state]) == 0)
       break;
-    let accEnd = data2[state + 1];
+    let accEnd = data3[state + 1];
     for (let i = state + 3; i < accEnd; i += 2)
-      if ((data2[i + 1] & groupMask) > 0) {
-        let term = data2[i];
+      if ((data3[i + 1] & groupMask) > 0) {
+        let term = data3[i];
         if (dialect.allows(term) && (input.token.value == -1 || input.token.value == term || overrides(term, input.token.value, precTable, precOffset))) {
           input.acceptToken(term);
           break;
         }
       }
-    let next = input.next, low = 0, high = data2[state + 2];
-    if (input.next < 0 && high > low && data2[accEnd + high * 3 - 3] == 65535) {
-      state = data2[accEnd + high * 3 - 1];
+    let next = input.next, low = 0, high = data3[state + 2];
+    if (input.next < 0 && high > low && data3[accEnd + high * 3 - 3] == 65535) {
+      state = data3[accEnd + high * 3 - 1];
       continue scan;
     }
     for (; low < high; ) {
       let mid = low + high >> 1;
       let index = accEnd + mid + (mid << 1);
-      let from = data2[index], to = data2[index + 1] || 65536;
+      let from = data3[index], to = data3[index + 1] || 65536;
       if (next < from)
         high = mid;
       else if (next >= to)
         low = mid + 1;
       else {
-        state = data2[index + 2];
+        state = data3[index + 2];
         input.advance();
         continue scan;
       }
@@ -22793,8 +22793,8 @@ function readToken(data2, input, stack, group, precTable, precOffset) {
     break;
   }
 }
-function findOffset(data2, start, term) {
-  for (let i = start, next; (next = data2[i]) != 65535; i++)
+function findOffset(data3, start, term) {
+  for (let i = start, next; (next = data3[i]) != 65535; i++)
     if (next == term)
       return i - start;
   return -1;
@@ -23007,24 +23007,24 @@ var TokenCache = class {
     return index;
   }
   addActions(stack, token, end, index) {
-    let { state } = stack, { parser: parser5 } = stack.p, { data: data2 } = parser5;
+    let { state } = stack, { parser: parser5 } = stack.p, { data: data3 } = parser5;
     for (let set = 0; set < 2; set++) {
       for (let i = parser5.stateSlot(
         state,
         set ? 2 : 1
         /* ParseState.Actions */
       ); ; i += 3) {
-        if (data2[i] == 65535) {
-          if (data2[i + 1] == 1) {
-            i = pair(data2, i + 2);
+        if (data3[i] == 65535) {
+          if (data3[i + 1] == 1) {
+            i = pair(data3, i + 2);
           } else {
-            if (index == 0 && data2[i + 1] == 2)
-              index = this.putAction(pair(data2, i + 2), token, end, index);
+            if (index == 0 && data3[i + 1] == 2)
+              index = this.putAction(pair(data3, i + 2), token, end, index);
             break;
           }
         }
-        if (data2[i] == token)
-          index = this.putAction(pair(data2, i + 1), token, end, index);
+        if (data3[i] == token)
+          index = this.putAction(pair(data3, i + 1), token, end, index);
       }
     }
     return index;
@@ -23436,23 +23436,23 @@ var LRParser = class _LRParser extends Parser {
   Check if this state has an action for a given terminal @internal
   */
   hasAction(state, terminal) {
-    let data2 = this.data;
+    let data3 = this.data;
     for (let set = 0; set < 2; set++) {
       for (let i = this.stateSlot(
         state,
         set ? 2 : 1
         /* ParseState.Actions */
       ), next; ; i += 3) {
-        if ((next = data2[i]) == 65535) {
-          if (data2[i + 1] == 1)
-            next = data2[i = pair(data2, i + 2)];
-          else if (data2[i + 1] == 2)
-            return pair(data2, i + 2);
+        if ((next = data3[i]) == 65535) {
+          if (data3[i + 1] == 1)
+            next = data3[i = pair(data3, i + 2)];
+          else if (data3[i + 1] == 2)
+            return pair(data3, i + 2);
           else
             break;
         }
         if (next == terminal || next == 0)
-          return pair(data2, i + 1);
+          return pair(data3, i + 1);
       }
     }
     return 0;
@@ -23635,8 +23635,8 @@ var LRParser = class _LRParser extends Parser {
     return new _LRParser(spec);
   }
 };
-function pair(data2, off) {
-  return data2[off] | data2[off + 1] << 16;
+function pair(data3, off) {
+  return data3[off] | data3[off + 1] << 16;
 }
 function findFinished(stacks) {
   let best = null;
@@ -28160,7 +28160,7 @@ var Emoji = {
 };
 
 // node_modules/@codemirror/lang-markdown/dist/index.js
-var data = /* @__PURE__ */ defineLanguageFacet({ commentTokens: { block: { open: "<!--", close: "-->" } } });
+var data2 = /* @__PURE__ */ defineLanguageFacet({ commentTokens: { block: { open: "<!--", close: "-->" } } });
 var headingProp = /* @__PURE__ */ new NodeProp();
 var commonmark = /* @__PURE__ */ parser4.configure({
   props: [
@@ -28172,7 +28172,7 @@ var commonmark = /* @__PURE__ */ parser4.configure({
       Document: () => null
     }),
     /* @__PURE__ */ languageDataProp.add({
-      Document: data
+      Document: data2
     })
   ]
 });
@@ -28207,7 +28207,7 @@ var headerIndent = /* @__PURE__ */ foldService.of((state, start, end) => {
   return null;
 });
 function mkLang(parser5) {
-  return new Language(data, parser5, [headerIndent], "markdown");
+  return new Language(data2, parser5, [headerIndent], "markdown");
 }
 var commonmarkLanguage = /* @__PURE__ */ mkLang(commonmark);
 var extended = /* @__PURE__ */ commonmark.configure([GFM, Subscript, Superscript, Emoji, {
@@ -28539,6 +28539,97 @@ function htmlTagCompletions() {
   return _tagCompletions = result ? result.options : [];
 }
 
+// src/content-types.js
+function equals(a1, a2) {
+  if (a1.length !== a2.length) return false;
+  console.log(`comparing`, a1, a2);
+  return a1.every((v2, i) => a2[i] === v2);
+}
+function getViewType(filename, data3) {
+  const ext = filename.substring(filename.lastIndexOf(`.`) + 1);
+  console.log(`ext:`, ext);
+  const editables = {
+    css: `text/css`,
+    csv: `text/csv`,
+    htm: `text/html`,
+    html: `text/html`,
+    java: `application/java`,
+    js: `text/javascript`,
+    json: `application/json`,
+    jsx: `text/javascript`,
+    md: `text/markdown`,
+    py: `application/python`,
+    ts: `text/javascript`,
+    rs: `application/rust`,
+    tsx: `text/javascript`,
+    txt: `text/plain`,
+    xml: `application/xml`
+  };
+  let type = editables[ext];
+  if (type) {
+    return {
+      editable: true,
+      type
+    };
+  }
+  const previewable = {
+    gif: `image/gif`,
+    jpg: `image/jpg`,
+    jpeg: `image/jpg`,
+    png: `image/png`,
+    mp3: `audio/mpeg`,
+    mp4: `video/mp4`,
+    wav: `audio/wav`
+  };
+  type = previewable[ext];
+  if (type) {
+    return {
+      previewable: true,
+      type
+    };
+  }
+  return false;
+}
+function verifyViewType(type, data3) {
+  const bytes = new Uint8Array(data3);
+  if (type.startsWith(`text`) || type.startsWith(`application`)) return true;
+  if (type === `image/gif`) return verifyGIF(bytes);
+  if (type === `image/jpg`) return verifyJPG(bytes);
+  if (type === `image/png`) return verifyPNG(bytes);
+  if (type === `audio/mpeg`) return verifyMP3(bytes);
+  if (type === `audio/wav`) return verifyWave(bytes);
+  if (type === `video/mp4`) return verifyMP4(bytes);
+  return false;
+}
+function verifyGIF(bytes) {
+  console.log(`GIF`, bytes.slice(0, 4));
+  return equals(bytes.slice(0, 4), [71, 73, 70, 56]);
+}
+function verifyJPG(bytes) {
+  console.log(`jpg`, bytes.slice(0, 4));
+  return equals(bytes.slice(0, 4), [255, 216, 255, 219]) || equals(bytes.slice(0, 4), [255, 216, 255, 224]) || equals(bytes.slice(0, 4), [255, 216, 255, 225]) || equals(bytes.slice(0, 4), [255, 216, 255, 238]);
+}
+function verifyPNG(bytes) {
+  console.log(`png`, bytes.slice(0, 4));
+  return equals(bytes.slice(0, 4), [137, 80, 78, 71]);
+}
+function verifyMP3(bytes) {
+  console.log(`mp3`, bytes.slice(0, 3));
+  return equals(bytes.slice(0, 3), [73, 68, 51]);
+}
+function verifyMP4(bytes) {
+  console.log(`mp4`, bytes.slice(0, 4));
+  return equals(bytes.slice(0, 4), [102, 116, 121, 112]);
+}
+function verifyWave(bytes) {
+  console.log(`wave`, data.slice(8, 12));
+  return verifyRIFF(bytes) && equals(bytes.slice(8, 12), [87, 65, 86, 4]);
+}
+function verifyRIFF(bytes) {
+  console.log(`riff`, bytes.slice(0, 4));
+  return equals(data.substring(0, 4), [82, 73, 70, 6]);
+}
+
 // public/vendor/diff.js
 function Diff() {
 }
@@ -28707,7 +28798,7 @@ Diff.prototype = {
     basePath.oldPos = oldPos;
     return newPos;
   },
-  equals: function equals(left2, right2) {
+  equals: function equals2(left2, right2) {
     if (this.options.comparator) {
       return this.options.comparator(left2, right2);
     } else {
@@ -29542,24 +29633,24 @@ var BlobReader = class {
     return this.blob.slice(offset, offset + length, type);
   }
 };
-function inflate(data2, buf) {
+function inflate(data3, buf) {
   var u8 = Uint8Array;
-  if (data2[0] == 3 && data2[1] == 0) return buf ? buf : new u8(0);
+  if (data3[0] == 3 && data3[1] == 0) return buf ? buf : new u8(0);
   var bitsF = _bitsF, bitsE = _bitsE, decodeTiny = _decodeTiny, get17 = _get17;
   var noBuf = buf == null;
-  if (noBuf) buf = new u8(data2.length >>> 2 << 3);
+  if (noBuf) buf = new u8(data3.length >>> 2 << 3);
   var BFINAL = 0, BTYPE = 0, HLIT = 0, HDIST = 0, HCLEN = 0, ML = 0, MD = 0;
   var off = 0, pos = 0;
   var lmap, dmap;
   while (BFINAL == 0) {
-    BFINAL = bitsF(data2, pos, 1);
-    BTYPE = bitsF(data2, pos + 1, 2);
+    BFINAL = bitsF(data3, pos, 1);
+    BTYPE = bitsF(data3, pos + 1, 2);
     pos += 3;
     if (BTYPE == 0) {
       if ((pos & 7) != 0) pos += 8 - (pos & 7);
-      var p8 = (pos >>> 3) + 4, len = data2[p8 - 4] | data2[p8 - 3] << 8;
+      var p8 = (pos >>> 3) + 4, len = data3[p8 - 4] | data3[p8 - 3] << 8;
       if (noBuf) buf = _check(buf, off + len);
-      buf.set(new u8(data2.buffer, data2.byteOffset + p8, len), off);
+      buf.set(new u8(data3.buffer, data3.byteOffset + p8, len), off);
       pos = p8 + len << 3;
       off += len;
       continue;
@@ -29572,9 +29663,9 @@ function inflate(data2, buf) {
       MD = (1 << 5) - 1;
     }
     if (BTYPE == 2) {
-      HLIT = bitsE(data2, pos, 5) + 257;
-      HDIST = bitsE(data2, pos + 5, 5) + 1;
-      HCLEN = bitsE(data2, pos + 10, 4) + 4;
+      HLIT = bitsE(data3, pos, 5) + 257;
+      HDIST = bitsE(data3, pos + 5, 5) + 1;
+      HCLEN = bitsE(data3, pos + 10, 4) + 4;
       pos += 14;
       for (var i = 0; i < 38; i += 2) {
         U.itree[i] = 0;
@@ -29582,7 +29673,7 @@ function inflate(data2, buf) {
       }
       var tl = 1;
       for (var i = 0; i < HCLEN; i++) {
-        var l2 = bitsE(data2, pos + i * 3, 3);
+        var l2 = bitsE(data3, pos + i * 3, 3);
         U.itree[(U.ordr[i] << 1) + 1] = l2;
         if (l2 > tl) tl = l2;
       }
@@ -29591,7 +29682,7 @@ function inflate(data2, buf) {
       codes2map(U.itree, tl, U.imap);
       lmap = U.lmap;
       dmap = U.dmap;
-      pos = decodeTiny(U.imap, (1 << tl) - 1, HLIT + HDIST, data2, pos, U.ttree);
+      pos = decodeTiny(U.imap, (1 << tl) - 1, HLIT + HDIST, data3, pos, U.ttree);
       var mx0 = _copyOut(U.ttree, 0, HLIT, U.ltree);
       ML = (1 << mx0) - 1;
       var mx1 = _copyOut(U.ttree, HLIT, HDIST, U.dtree);
@@ -29602,7 +29693,7 @@ function inflate(data2, buf) {
       codes2map(U.dtree, mx1, dmap);
     }
     while (true) {
-      var code = lmap[get17(data2, pos) & ML];
+      var code = lmap[get17(data3, pos) & ML];
       pos += code & 15;
       var lit = code >>> 4;
       if (lit >>> 8 == 0) {
@@ -29613,13 +29704,13 @@ function inflate(data2, buf) {
         var end = off + lit - 254;
         if (lit > 264) {
           var ebs = U.ldef[lit - 257];
-          end = off + (ebs >>> 3) + bitsE(data2, pos, ebs & 7);
+          end = off + (ebs >>> 3) + bitsE(data3, pos, ebs & 7);
           pos += ebs & 7;
         }
-        var dcode = dmap[get17(data2, pos) & MD];
+        var dcode = dmap[get17(data3, pos) & MD];
         pos += dcode & 15;
         var dlit = dcode >>> 4;
-        var dbs = U.ddef[dlit], dst = (dbs >>> 4) + bitsF(data2, pos, dbs & 15);
+        var dbs = U.ddef[dlit], dst = (dbs >>> 4) + bitsF(data3, pos, dbs & 15);
         pos += dbs & 15;
         if (noBuf) buf = _check(buf, off + (1 << 17));
         while (off < end) {
@@ -29641,11 +29732,11 @@ function _check(buf, len) {
   nbuf.set(buf, 0);
   return nbuf;
 }
-function _decodeTiny(lmap, LL, len, data2, pos, tree) {
+function _decodeTiny(lmap, LL, len, data3, pos, tree) {
   var bitsE = _bitsE, get17 = _get17;
   var i = 0;
   while (i < len) {
-    var code = lmap[get17(data2, pos) & LL];
+    var code = lmap[get17(data3, pos) & LL];
     pos += code & 15;
     var lit = code >>> 4;
     if (lit <= 15) {
@@ -29654,14 +29745,14 @@ function _decodeTiny(lmap, LL, len, data2, pos, tree) {
     } else {
       var ll = 0, n2 = 0;
       if (lit == 16) {
-        n2 = 3 + bitsE(data2, pos, 2);
+        n2 = 3 + bitsE(data3, pos, 2);
         pos += 2;
         ll = tree[i - 1];
       } else if (lit == 17) {
-        n2 = 3 + bitsE(data2, pos, 3);
+        n2 = 3 + bitsE(data3, pos, 3);
         pos += 3;
       } else if (lit == 18) {
-        n2 = 11 + bitsE(data2, pos, 7);
+        n2 = 11 + bitsE(data3, pos, 7);
         pos += 7;
       }
       var ni = i + n2;
@@ -29844,13 +29935,13 @@ var waitingForWorkerQueue = [];
 var currentlyProcessingIdToRequestMap = /* @__PURE__ */ new Map();
 function handleResult(e) {
   makeWorkerAvailable(e.target);
-  const { id: id2, error, data: data2 } = e.data;
+  const { id: id2, error, data: data3 } = e.data;
   const request = currentlyProcessingIdToRequestMap.get(id2);
   currentlyProcessingIdToRequestMap.delete(id2);
   if (error) {
     request.reject(error);
   } else {
-    request.resolve(data2);
+    request.resolve(data3);
   }
 }
 function startWorker(url) {
@@ -29879,8 +29970,8 @@ var workerHelper = function() {
         return new Worker2(url);
       },
       addEventListener(worker, fn) {
-        worker.on("message", (data2) => {
-          fn({ target: worker, data: data2 });
+        worker.on("message", (data3) => {
+          fn({ target: worker, data: data3 });
         });
       },
       async terminate(worker) {
@@ -29985,11 +30076,11 @@ async function processWaitingForWorkerQueue() {
   }
   while (waitingForWorkerQueue.length) {
     const { src, uncompressedSize, type, resolve } = waitingForWorkerQueue.shift();
-    let data2 = src;
+    let data3 = src;
     if (isBlob(src)) {
-      data2 = await readBlobAsUint8Array(src);
+      data3 = await readBlobAsUint8Array(src);
     }
-    inflateRawLocal(data2, uncompressedSize, type, resolve);
+    inflateRawLocal(data3, uncompressedSize, type, resolve);
   }
 }
 function inflateRawAsync(src, uncompressedSize, type) {
@@ -30081,12 +30172,12 @@ function decodeBuffer(uint8View, isUTF8) {
 async function findEndOfCentralDirector(reader, totalLength) {
   const size = Math.min(EOCDR_WITHOUT_COMMENT_SIZE + MAX_COMMENT_SIZE, totalLength);
   const readStart = totalLength - size;
-  const data2 = await readAs(reader, readStart, size);
+  const data3 = await readAs(reader, readStart, size);
   for (let i = size - EOCDR_WITHOUT_COMMENT_SIZE; i >= 0; --i) {
-    if (getUint32LE(data2, i) !== EOCDR_SIGNATURE) {
+    if (getUint32LE(data3, i) !== EOCDR_SIGNATURE) {
       continue;
     }
-    const eocdr = new Uint8Array(data2.buffer, data2.byteOffset + i, data2.byteLength - i);
+    const eocdr = new Uint8Array(data3.buffer, data3.byteOffset + i, data3.byteLength - i);
     const diskNumber = getUint16LE(eocdr, 4);
     if (diskNumber !== 0) {
       throw new Error(`multi-volume zip files are not supported. This is volume: ${diskNumber}`);
@@ -30174,11 +30265,11 @@ async function readEntries(reader, centralDirectoryOffset, centralDirectorySize,
       throw new Error("strong encryption is not supported");
     }
     readEntryCursor += 46;
-    const data2 = allEntriesBuffer.subarray(readEntryCursor, readEntryCursor + rawEntry.fileNameLength + rawEntry.extraFieldLength + rawEntry.fileCommentLength);
-    rawEntry.nameBytes = data2.slice(0, rawEntry.fileNameLength);
+    const data3 = allEntriesBuffer.subarray(readEntryCursor, readEntryCursor + rawEntry.fileNameLength + rawEntry.extraFieldLength + rawEntry.fileCommentLength);
+    rawEntry.nameBytes = data3.slice(0, rawEntry.fileNameLength);
     rawEntry.name = decodeBuffer(rawEntry.nameBytes);
     const fileCommentStart = rawEntry.fileNameLength + rawEntry.extraFieldLength;
-    const extraFieldBuffer = data2.slice(rawEntry.fileNameLength, fileCommentStart);
+    const extraFieldBuffer = data3.slice(rawEntry.fileNameLength, fileCommentStart);
     rawEntry.extraFields = [];
     let i = 0;
     while (i < extraFieldBuffer.length - 3) {
@@ -30195,9 +30286,9 @@ async function readEntries(reader, centralDirectoryOffset, centralDirectorySize,
       });
       i = dataEnd;
     }
-    rawEntry.commentBytes = data2.slice(fileCommentStart, fileCommentStart + rawEntry.fileCommentLength);
+    rawEntry.commentBytes = data3.slice(fileCommentStart, fileCommentStart + rawEntry.fileCommentLength);
     rawEntry.comment = decodeBuffer(rawEntry.commentBytes);
-    readEntryCursor += data2.length;
+    readEntryCursor += data3.length;
     if (rawEntry.uncompressedSize === 4294967295 || rawEntry.compressedSize === 4294967295 || rawEntry.relativeOffsetOfLocalHeader === 4294967295) {
       const zip64ExtraField = rawEntry.extraFields.find((e2) => e2.id === 1);
       if (!zip64ExtraField) {
@@ -30362,8 +30453,11 @@ async function setupPage() {
   addGlobalEventHandling();
   updatePreview();
 }
-async function fetchFileContents(filename) {
-  return fetchSafe(`./${CONTENT_DIR}/${filename}`).then((r) => r.text());
+async function fetchFileContents(filename, type = `text/plain`) {
+  const response = await fetchSafe(`./${CONTENT_DIR}/${filename}`);
+  if (type.startsWith(`text`) || type.startsWith(`application`))
+    return response.text();
+  return response.arrayBuffer();
 }
 async function fetchSafe(url, options) {
   const response = await fetch(url, options);
@@ -30672,9 +30766,9 @@ function addTabScrollHandling() {
 function create(tag) {
   return document.createElement(tag);
 }
-function getFileSum(data2) {
+function getFileSum(data3) {
   const enc = new TextEncoder();
-  return enc.encode(data2).reduce((t2, e) => t2 + e, 0);
+  return enc.encode(data3).reduce((t2, e) => t2 + e, 0);
 }
 async function getOrCreateFileEditTab(filename) {
   const entry = cmInstances[filename];
@@ -30685,9 +30779,27 @@ async function getOrCreateFileEditTab(filename) {
   editors.appendChild(panel);
   const { tab, close } = setupEditorTab(filename);
   tabs.appendChild(tab);
-  const data2 = await fetchFileContents(filename);
-  const initialState = getInitialState(filename, data2);
-  const view = setupView(panel, initialState);
+  const viewType = getViewType(filename);
+  console.log(`viewtype`, viewType);
+  const data3 = await fetchFileContents(filename, viewType.type);
+  const verified = verifyViewType(viewType.type, data3);
+  if (!verified) return alert(`File contents does not match extension.`);
+  let view;
+  if (viewType.editable) {
+    const initialState = getInitialState(filename, data3);
+    view = setupView(panel, initialState);
+  } else if (viewType.previewable) {
+    const { type } = viewType;
+    if (type.startsWith(`image`)) {
+      view = create(`img`);
+    } else if (type.startsWith(`audio`)) {
+      view = create(`audio`);
+    } else if (type.startsWith(`video`)) {
+      view = create(`video`);
+    }
+    view.src = `${CONTENT_DIR}/${filename}`;
+    panel.appendChild(view);
+  }
   view.tabElement = tab;
   addEventHandling(filename, panel, tab, close, view);
   const properties2 = {
@@ -30696,8 +30808,10 @@ async function getOrCreateFileEditTab(filename) {
     close,
     panel,
     view,
-    content: view.state.doc.toString(),
-    sync: () => syncContent(tab.title)
+    content: viewType.editable ? view.state.doc.toString() : data3,
+    sync: viewType.editable ? () => syncContent(tab.title) : () => {
+    },
+    noSync: !viewType.editable
   };
   if (entry) {
     Object.assign(entry, properties2);
@@ -30706,8 +30820,8 @@ async function getOrCreateFileEditTab(filename) {
   }
   tab.click();
 }
-function getInitialState(filename, data2) {
-  const doc2 = data2.toString();
+function getInitialState(filename, data3) {
+  const doc2 = data3.toString();
   const extensions = [basicSetup];
   const ext = filename.substring(filename.lastIndexOf(`.`) + 1);
   const syntax = {
@@ -30782,6 +30896,7 @@ function addEventHandling(filename, panel, tab, close, view) {
 }
 async function syncContent(filename) {
   const entry = cmInstances[filename];
+  if (entry.noSync) return;
   const currentContent = entry.content;
   const newContent = entry.view.state.doc.toString();
   const changes = createPatch(filename, currentContent, newContent);

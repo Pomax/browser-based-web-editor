@@ -1,6 +1,6 @@
 import express from "express";
 import nunjucks from "nunjucks";
-import { addMiddleware, pageNotFound, verifyOwnership } from "./middleware.js";
+import { addMiddleware, pageNotFound, verifyOwnership } from "./middleware/middleware.js";
 import { addGetRoutes, addPostRoutes } from "./routing/index.js";
 import { watchForRebuild } from "./watcher.js";
 

@@ -1,6 +1,6 @@
 export { addGetRoutes };
 
-import { deleteExpiredAnonymousContent } from "../middleware.js";
+import { deleteExpiredAnonymousContent } from "../middleware/middleware.js";
 import {
   getFileSum,
   execPromise,

@@ -9,6 +9,7 @@ import { javascript } from "@codemirror/lang-javascript";
 import { markdown } from "@codemirror/lang-markdown";
 // See https://github.com/orgs/codemirror/repositories?q=lang for more options
 
+import { getViewType, verifyViewType } from "./content-types.js";
 import { createPatch } from "../public/vendor/diff.js";
 import "../public/file-tree.esm.min.js";
 import { unzip } from "../public/vendor/unzipit.module.js";
@@ -43,8 +44,11 @@ async function setupPage() {
 /**
  * helper function for getting file text content:
  */
-async function fetchFileContents(filename) {
-  return fetchSafe(`./${CONTENT_DIR}/${filename}`).then((r) => r.text());
+async function fetchFileContents(filename, type = `text/plain`) {
+  const response = await fetchSafe(`./${CONTENT_DIR}/${filename}`);
+  if (type.startsWith(`text`) || type.startsWith(`application`))
+    return response.text();
+  return response.arrayBuffer();
 }
 
 /**
@@ -434,9 +438,30 @@ async function getOrCreateFileEditTab(filename) {
   const { tab, close } = setupEditorTab(filename);
   tabs.appendChild(tab);
 
-  const data = await fetchFileContents(filename);
-  const initialState = getInitialState(filename, data);
-  const view = setupView(panel, initialState);
+  // Is this editable content, previewable content, or binary data?
+  const viewType = getViewType(filename);
+  console.log(`viewtype`, viewType);
+  const data = await fetchFileContents(filename, viewType.type);
+  const verified = verifyViewType(viewType.type, data);
+
+  if (!verified) return alert(`File contents does not match extension.`);
+
+  let view;
+  if (viewType.editable) {
+    const initialState = getInitialState(filename, data);
+    view = setupView(panel, initialState);
+  } else if (viewType.previewable) {
+    const { type } = viewType;
+    if (type.startsWith(`image`)) {
+      view = create(`img`);
+    } else if (type.startsWith(`audio`)) {
+      view = create(`audio`);
+    } else if (type.startsWith(`video`)) {
+      view = create(`video`);
+    }
+    view.src = `${CONTENT_DIR}/${filename}`;
+    panel.appendChild(view);
+  }
 
   // FIXME: this feels like a hack, but there doesn't appear to be
   //        a clean way to associate data with an editor such that
@@ -453,8 +478,9 @@ async function getOrCreateFileEditTab(filename) {
     close,
     panel,
     view,
-    content: view.state.doc.toString(),
-    sync: () => syncContent(tab.title),
+    content: viewType.editable ? view.state.doc.toString() : data,
+    sync: viewType.editable ? () => syncContent(tab.title) : () => {},
+    noSync: !viewType.editable,
   };
 
   if (entry) {
@@ -594,6 +620,7 @@ function addEventHandling(filename, panel, tab, close, view) {
  */
 async function syncContent(filename) {
   const entry = cmInstances[filename];
+  if (entry.noSync) return;
   const currentContent = entry.content;
   const newContent = entry.view.state.doc.toString();
   const changes = createPatch(filename, currentContent, newContent);

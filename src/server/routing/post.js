@@ -6,7 +6,12 @@ import {
   switchUser,
   createRewindPoint,
 } from "../helpers.js";
-import { parseBodyText, parseBodyData } from "../middleware.js";
+
+import {
+  parseBodyText,
+  parseMultiPartBody,
+} from "../middleware/body-parsing.js";
+
 import {
   existsSync,
   mkdirSync,
@@ -159,17 +164,18 @@ function addPostRoutes(app) {
   });
 
   // Create a fully qualified file.
-  app.post(`/upload/:slug*`, parseBodyData, (req, res) => {
+  app.post(`/upload/:slug*`, parseMultiPartBody, (req, res) => {
     const full = `${req.session.dir}/${req.params.slug + req.params[0]}`;
     const slug = full.substring(full.lastIndexOf(`/`) + 1);
     const dirs = full.replace(`/${slug}`, ``);
-    const data = req.body;
-    const fileSize = data.length;
+    const fileName = req.body.filename.value;
+    const fileData = req.body.content.value;
+    const fileSize = fileData.length;
     if (fileSize > 1_000_000) {
       return res.status(400).send(`Upload too large`);
     }
     mkdirSync(dirs, { recursive: true });
-    writeFileSync(full, data);
+    writeFileSync(full, fileData, `ascii`);
     res.send(`ok`);
     createRewindPoint(req);
   });
