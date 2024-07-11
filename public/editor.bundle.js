@@ -1,3 +1,482 @@
+// public/file-tree.esm.min.js
+var d = (n2) => document.createElement(n2);
+var y = (n2) => n2.split("/").at(-1).includes(".");
+var h = globalThis.customElements;
+var E = globalThis.HTMLElement ?? class {
+};
+var l = class extends E {
+  get removeEmpty() {
+    return this.root.getAttribute("remove-empty");
+  }
+  get name() {
+    return this.getAttribute("name");
+  }
+  set name(t2) {
+    this.setAttribute("name", t2);
+  }
+  get path() {
+    return this.getAttribute("path");
+  }
+  set path(t2) {
+    this.setAttribute("path", t2);
+  }
+  get root() {
+    return this.tagName === "FILE-TREE" ? this : this.closest("file-tree");
+  }
+  get parentDir() {
+    return this.closest("dir-entry");
+  }
+  emit(t2, i = {}, e = () => {
+  }) {
+    i.grant = e, this.root.dispatchEvent(new CustomEvent(t2, { detail: i }));
+  }
+  find(t2) {
+    return this.querySelector(t2);
+  }
+  findInTree(t2) {
+    return this.root.querySelector(t2);
+  }
+  findAll(t2) {
+    return Array.from(this.querySelectorAll(t2));
+  }
+  findAllInTree(t2) {
+    return Array.from(this.root.querySelectorAll(t2));
+  }
+};
+var c = class extends l {
+  init(t2, i) {
+    this.name = t2, this.path = i;
+    let e = this.heading = d("file-heading");
+    e.textContent = t2, this.appendChild(e);
+    let r = d("button");
+    r.title = "rename file", r.textContent = "\u270F\uFE0F", this.appendChild(r), r.addEventListener("click", (a) => {
+      a.preventDefault(), a.stopPropagation();
+      let o = prompt("New file name?", this.heading.textContent)?.trim();
+      if (o) {
+        if (o.includes("/")) return alert("If you want to relocate a file, just move it.");
+        let g = this.path, C2 = g.replace(this.heading.textContent, o), x = this.path;
+        this.emit("file:rename", { oldName: g, newName: C2 }, () => {
+          this.path = x.replace(this.heading.textContent, o), this.name = o, this.heading.textContent = o;
+        });
+      }
+    });
+    let s = d("button");
+    s.title = "delete file", s.textContent = "\u{1F5D1}\uFE0F", this.appendChild(s), s.addEventListener("click", (a) => {
+      if (a.preventDefault(), a.stopPropagation(), confirm("are you sure you want to delete this file?")) {
+        let o = this.parentDir;
+        this.emit("file:delete", { path: this.path }, () => {
+          o.removeChild(this), o.checkEmpty();
+        });
+      }
+    }), this.addEventListener("click", () => {
+      this.emit("file:click", { path: this.path }, () => {
+        this.findAllInTree(".selected").forEach((a) => a.classList.remove("selected")), this.classList.add("selected");
+      });
+    }), this.draggable = true, this.addEventListener("dragstart", (a) => {
+      a.stopPropagation(), this.classList.add("dragging"), this.dataset.id = `${Date.now()}-${Math.random()}`, a.dataTransfer.setData("id", this.dataset.id);
+    });
+  }
+  relocateContent(t2, i) {
+    this.heading.textContent = this.heading.textContent.replace(t2, i), this.path = this.path.replace(t2, i);
+  }
+  removeEntry(t2) {
+    this.path === t2 && this.remove();
+  }
+  selectEntry(t2) {
+    this.classList.toggle("selected", t2 === this.path);
+  }
+  toJSON() {
+    return JSON.stringify(this.toValue());
+  }
+  toString() {
+    return this.path;
+  }
+  toValue() {
+    return [this.toString()];
+  }
+};
+var u = class extends l {
+};
+h.define("file-entry", c);
+h.define("file-heading", u);
+var f = class n extends l {
+  init(t2, i = t2) {
+    this.setNameAndPath(t2, i), this.addButtons(t2, i);
+  }
+  connectedCallback() {
+    this.clickListener = (t2) => {
+      if (t2.stopPropagation(), t2.preventDefault(), this.path === ".") return;
+      let i = t2.target.tagName;
+      if (i !== "DIR-ENTRY" && i !== "DIR-HEADING") return;
+      let e = this.classList.contains("closed");
+      this.emit("dir:click", { path: this.path, currentState: e ? "closed" : "open" }, () => this.classList.toggle("closed"));
+    }, this.addEventListener("click", this.clickListener), this.removeListener = w(this), this.path === "." && (this.draggable = false);
+  }
+  disconnectedCallback() {
+    this.removeListener(), this.removeEventListener("click", this.clickListener);
+  }
+  setNameAndPath(t2, i) {
+    this.name = t2, this.path = i;
+    let e = this.find("dir-heading");
+    (!e || e.parentNode !== this) && (e = this.heading = d("dir-heading"), this.appendChild(e)), e.textContent = t2.replace("/", "");
+  }
+  addButtons(t2, i) {
+    this.addNewEntryButton(t2, i), this.addUploadButton(t2, i), this.addRenameButton(t2, i), this.addDeleteButton(t2, i);
+  }
+  addNewEntryButton(t2, i) {
+    let e = d("button");
+    e.title = "add new file", e.textContent = "+", e.addEventListener("click", () => N(this, i)), this.appendChild(e);
+  }
+  addUploadButton(t2, i) {
+    let e = d("button");
+    e.title = "upload files from your device", e.textContent = "\u{1F4BB}", e.addEventListener("click", () => T(this)), this.appendChild(e);
+  }
+  addRenameButton(t2, i) {
+    if (this.path !== ".") {
+      let e = d("button");
+      e.title = "rename dir", e.textContent = "\u270F\uFE0F", this.appendChild(e), e.addEventListener("click", () => A(this));
+    }
+  }
+  addDeleteButton(t2, i) {
+    let e = d("button");
+    e.title = "delete dir", e.textContent = "\u{1F5D1}\uFE0F", this.appendChild(e), e.addEventListener("click", () => k(this));
+  }
+  setFiles(t2 = []) {
+    for (let i of t2) this.addEntry(i, i);
+    this.sort();
+  }
+  addEntry(t2, i = t2) {
+    if (!t2.includes("/")) return t2.includes(".") ? this.addFile(t2, i) : this.addDirectory(t2 + "/", i + "/");
+    let e = t2.substring(0, t2.indexOf("/") + 1), r = (this.path === "." ? "" : this.path) + e, s = this.find(`& > dir-entry[name="${e}"]`);
+    return s || (s = new n(), s.init(e, r), this.appendChild(s)), this.sort(), s.addEntry(t2.replace(e, ""), i);
+  }
+  addFile(t2, i) {
+    let e = this.find(`& > file-entry[name="${t2}"]`);
+    return e || (e = new c(), e.init(t2, i), this.appendChild(e), this.sort(false)), e;
+  }
+  addFileFromUpload(t2, i) {
+    let e = this.path, r = (e !== "." ? e : "") + t2;
+    this.emit("file:upload", { fileName: r, content: i }, () => {
+      this.addEntry(t2, r), this.sort();
+    });
+  }
+  addDirectory(t2, i) {
+    let e = this.find(`& > dir-entry[name="${t2}"]`);
+    return e || (e = new n(), e.init(t2, i), this.appendChild(e), this.sort(false)), e;
+  }
+  sort(t2 = true) {
+    let i = [...this.children];
+    i.sort((e, r) => e.tagName === "DIR-HEADING" ? -1 : r.tagName === "DIR-HEADING" ? 1 : e.tagName === "BUTTON" ? -1 : r.tagName === "BUTTON" ? 1 : e.tagName === "DIR-ENTRY" && r.tagName === "DIR-ENTRY" ? (e = e.path, r = r.path, e < r ? -1 : 1) : e.tagName === "DIR-ENTRY" ? -1 : r.tagName === "DIR-ENTRY" ? 1 : (e = e.path, r = r.path, e < r ? -1 : 1)), i.forEach((e) => this.appendChild(e)), t2 && this.findAll("& > dir-entry").forEach((e) => e.sort(t2));
+  }
+  relocateContent(t2, i) {
+    for (let e of this.children) e.relocateContent?.(t2, i);
+  }
+  removeEntry(t2) {
+    if (t2 === this.path) return this.remove();
+    for (let i of this.children) i.removeEntry?.(t2);
+  }
+  selectEntry(t2) {
+    for (let i of this.children) i.selectEntry?.(t2);
+  }
+  checkEmpty() {
+    this.removeEmpty && (this.find("file-entry") || this.emit("dir:delete", { path: this.path }, () => {
+      this.parentNode.removeChild(this);
+    }));
+  }
+  toJSON() {
+    return JSON.stringify(this.toValue());
+  }
+  toString() {
+    return this.toValue().join(",");
+  }
+  toValue() {
+    return [this.findAll("& > dir-entry").map((t2) => t2.toValue()), this.findAll("& > file-entry").map((t2) => t2.toValue())].flat(1 / 0);
+  }
+};
+var p = class extends l {
+};
+h.define("dir-entry", f);
+h.define("dir-heading", p);
+function D(n2) {
+  return new Promise((t2, i) => {
+    let e = new FileReader();
+    e.onloadend = ({ target: r }) => t2(r.result), e.onerror = i, e.readAsArrayBuffer(n2);
+  });
+}
+function L(n2, t2) {
+  return t2 === n2 ? true : t2.parentDir === n2;
+}
+function w(n2) {
+  let t2 = new AbortController();
+  n2.draggable = true;
+  let i = () => {
+    n2.findAllInTree(".drop-target").forEach((e) => e.classList.remove("drop-target"));
+  };
+  return n2.addEventListener("dragstart", (e) => {
+    e.stopPropagation(), n2.classList.add("dragging"), n2.dataset.id = `${Date.now()}-${Math.random()}`, e.dataTransfer.setData("id", n2.dataset.id);
+  }, { signal: t2.signal }), n2.addEventListener("dragenter", (e) => {
+    e.preventDefault(), i(), n2.classList.add("drop-target");
+  }, { signal: t2.signal }), n2.addEventListener("dragover", (e) => {
+    let r = e.target;
+    L(n2, r) && (e.preventDefault(), i(), n2.classList.add("drop-target"));
+  }, { signal: t2.signal }), n2.addEventListener("dragleave", (e) => {
+    e.preventDefault(), i();
+  }, { signal: t2.signal }), n2.addEventListener("drop", async (e) => {
+    e.preventDefault(), e.stopPropagation(), i();
+    let r = e.dataTransfer.getData("id");
+    if (r) return F(n2, r);
+    await v(n2, e.dataTransfer.items);
+  }, { signal: t2.signal }), () => t2.abort();
+}
+function N(n2, t2) {
+  let i = prompt("Please specify a filename.")?.trim();
+  if (i) {
+    if (i.includes("/")) return alert("Just add new files directly to the directory where they should live.");
+    let e = i;
+    if (t2 !== "." && (i = t2 + i), n2.findInTree(`[path="${i}"]`)) return;
+    i.includes(".") ? n2.emit("file:create", { fileName: i }, () => n2.addEntry(e, i)) : confirm(`Did you mean to create a new directory ${i}?`) && n2.emit("dir:create", { dirName: i }, () => {
+      n2.addDirectory(e + "/", i + "/");
+    });
+  }
+}
+function T(n2) {
+  let t2 = d("input");
+  t2.type = "file", t2.multiple = true, confirm('To upload one or more files, press "OK". To upload an entire folder, press "Cancel".') || (t2.webkitdirectory = true), t2.addEventListener("change", () => {
+    let { files: e } = t2;
+    e && v(n2, e);
+  }), t2.click();
+}
+async function v(n2, t2) {
+  async function i(e, r = "") {
+    if (e instanceof File) {
+      let s = await D(e), a = r + (e.webkitRelativePath || e.name);
+      n2.addFileFromUpload(a, s);
+    } else if (e.isFile) e.file(async (s) => {
+      let a = await D(s), o = r + s.name;
+      n2.addFileFromUpload(o, a);
+    });
+    else if (e.isDirectory) {
+      let s = r + e.name + "/";
+      e.createReader().readEntries(async (a) => {
+        for (let o of a) await i(o, s);
+      });
+    }
+  }
+  for await (let e of t2) try {
+    await i(e instanceof File ? e : e.webkitGetAsEntry());
+  } catch {
+    return alert(`Unfortunately, a ${e.kind} is not a file or folder.`);
+  }
+}
+function A(n2) {
+  let t2 = prompt("Choose a new directory name", n2.heading.textContent)?.trim();
+  if (t2) {
+    if (t2.includes("/")) return alert("If you want to relocate a dir, just move it.");
+    let i = n2.heading.textContent, e = n2.path, r = e.replace(i, t2);
+    n2.findInTree(`dir-entry[path="${r}"]`) && confirm("That directory already exists. Move all the content?") && n2.emit("dir:rename", { oldPath: e, newPath: r }, () => {
+      let a = n2.path;
+      return n2.heading.textContent = t2, n2.name = t2, n2.path = r, n2.relocateContent(a, r), { oldPath: a, newPath: r };
+    });
+  }
+}
+function k(n2) {
+  confirm("Are you *sure* you want to delete this directory and everything in it?") && n2.emit("dir:delete", { path: n2.path }, () => {
+    n2.remove();
+  });
+}
+function F(n2, t2) {
+  let i = n2.findInTree(`[data-id="${t2}"]`);
+  if (delete i.dataset.id, i.classList.remove("dragging"), i === n2) return;
+  let e = i.path, r = n2.path;
+  if (i instanceof c) {
+    let s = (r !== "." ? r : "") + e.substring(e.lastIndexOf("/") + 1);
+    if (e !== s) {
+      let a = n2.root.relocateEntry(e, s);
+      a && n2.emit("file:move", { oldPath: e, newPath: s }, a);
+    }
+  }
+  if (i instanceof f) {
+    let s = (r !== "." ? r : "") + i.heading.textContent + "/";
+    if (e !== s) {
+      let a = n2.root.relocateEntry(e, s);
+      a && n2.emit("dir:move", { oldPath: e, newPath: s }, a);
+    }
+  }
+}
+var m = class extends l {
+  get root() {
+    return this;
+  }
+  get parentDir() {
+    return this.rootDir;
+  }
+  setFiles(t2 = []) {
+    let i = this.querySelector('dir-tree[path="."]');
+    i || (i = this.rootDir = new f(), i.init("."), this.appendChild(i)), i.setFiles(t2);
+  }
+  addEntry(t2) {
+    return this.find(`[path="${t2}"]`) ? alert(`${t2} already exists. Overwrite?`) : this.rootDir.addEntry(t2);
+  }
+  relocateEntry(t2, i) {
+    return this.find(`[path="${i}"]`) ? alert(`${i} already exists.`) : y(t2) ? this.relocateFile(t2, i) : this.relocateDir(t2, i);
+  }
+  relocateFile(t2, i) {
+    return () => {
+      let e = this.rootDir.addEntry(i), r = this.find(`[path="${t2}"]`);
+      e.setAttribute("class", r.getAttribute("class")), this.removeEntry(t2);
+    };
+  }
+  relocateDir(t2, i) {
+    let e = this.find(`[path="${t2}"]`, this.rootDir);
+    return () => {
+      e.toValue().forEach((s) => {
+        let a = s.replace(t2, i);
+        this.removeEntry(s), this.rootDir.addEntry(a);
+      }), this.removeEntry(t2), this.rootDir.sort();
+    };
+  }
+  removeEntry(t2) {
+    this.rootDir.removeEntry(t2);
+  }
+  selectEntry(t2) {
+    this.rootDir.selectEntry(t2);
+  }
+  sort() {
+    this.rootDir.sort();
+  }
+  toJSON() {
+    return this.rootDir.toJSON();
+  }
+  toString() {
+    return this.rootDir.toString();
+  }
+  toValue() {
+    return this.toString();
+  }
+};
+h.define("file-tree", m);
+
+// src/client/utils.js
+var noop = () => {
+};
+function create(tag) {
+  return document.createElement(tag);
+}
+async function fetchFileContents(contentDir, filename, type = `text/plain`) {
+  const response = await fetchSafe(`./${contentDir}/${filename}`);
+  if (type.startsWith(`text`) || type.startsWith(`application`))
+    return response.text();
+  return response.arrayBuffer();
+}
+async function fetchSafe(url, options) {
+  const response = await fetch(url, options);
+  if (response.status !== 200) {
+    if (response.headers.get(`x-reload-page`)) {
+      alert(`Your session expired, please reload.
+(error code: 29X784FH)`);
+      return new Error(`Page needs reloading`);
+    }
+  }
+  return response;
+}
+function getFileSum(data3) {
+  const enc = new TextEncoder();
+  return enc.encode(data3).reduce((t2, e) => t2 + e, 0);
+}
+function listEquals(a1, a2) {
+  if (a1.length !== a2.length) return false;
+  return a1.every((v2, i) => a2[i] === v2);
+}
+
+// src/client/content-types.js
+function getMimeType(fileName) {
+  return getViewType(fileName).type;
+}
+function getViewType(filename) {
+  const ext = filename.substring(filename.lastIndexOf(`.`) + 1);
+  const text = {
+    css: `text/css`,
+    csv: `text/csv`,
+    htm: `text/html`,
+    html: `text/html`,
+    java: `application/java`,
+    js: `text/javascript`,
+    json: `application/json`,
+    jsx: `text/javascript`,
+    md: `text/markdown`,
+    py: `application/python`,
+    ts: `text/javascript`,
+    rs: `application/rust`,
+    tsx: `text/javascript`,
+    txt: `text/plain`,
+    xml: `application/xml`
+  };
+  let type = text[ext];
+  if (type) return { type, text: true };
+  const media = {
+    gif: `image/gif`,
+    jpg: `image/jpg`,
+    jpeg: `image/jpg`,
+    png: `image/png`,
+    mp3: `audio/mpeg`,
+    mp4: `video/mp4`,
+    wav: `audio/wav`
+  };
+  type = media[ext];
+  if (type) return { type, media: true };
+  return { type: `text/plain`, unknown: true };
+}
+function verifyViewType(type, data3) {
+  const bytes = new Uint8Array(data3);
+  if (type.startsWith(`text`) || type.startsWith(`application`)) return true;
+  if (type === `image/gif`) return verifyGIF(bytes);
+  if (type === `image/jpg`) return verifyJPG(bytes);
+  if (type === `image/png`) return verifyPNG(bytes);
+  if (type === `audio/mpeg`) return verifyMP3(bytes);
+  if (type === `audio/wav`) return verifyWave(bytes);
+  if (type === `video/mp4`) return verifyMP4(bytes);
+  return false;
+}
+function verifyGIF(bytes) {
+  return listEquals(bytes.slice(0, 4), [71, 73, 70, 56]);
+}
+function verifyJPG(bytes) {
+  return listEquals(bytes.slice(0, 4), [255, 216, 255, 219]) || listEquals(bytes.slice(0, 4), [255, 216, 255, 224]) || listEquals(bytes.slice(0, 4), [255, 216, 255, 225]) || listEquals(bytes.slice(0, 4), [255, 216, 255, 238]);
+}
+function verifyPNG(bytes) {
+  return listEquals(bytes.slice(0, 4), [137, 80, 78, 71]);
+}
+function verifyMP3(bytes) {
+  return listEquals(bytes.slice(0, 3), [73, 68, 51]);
+}
+function verifyMP4(bytes) {
+  return listEquals(bytes.slice(0, 4), [102, 116, 121, 112]);
+}
+function verifyWave(bytes) {
+  return verifyRIFF(bytes) && listEquals(bytes.slice(8, 12), [87, 65, 86, 4]);
+}
+function verifyRIFF(bytes) {
+  return listEquals(data.substring(0, 4), [82, 73, 70, 6]);
+}
+
+// src/client/preview.js
+var preview = document.getElementById(`preview`);
+function updatePreview2() {
+  const iframe = preview.querySelector(`iframe`);
+  const newFrame = document.createElement(`iframe`);
+  newFrame.onload = () => {
+    setTimeout(() => {
+      newFrame.style.opacity = 1;
+      setTimeout(() => iframe.remove(), 750);
+    }, 250);
+  };
+  newFrame.style.opacity = 0;
+  newFrame.style.transition = "opacity 0.25s";
+  preview.append(newFrame);
+  const src = iframe.src ? iframe.src : iframe.dataset.src;
+  newFrame.src = src;
+}
+
 // node_modules/@codemirror/state/dist/index.js
 var Text = class _Text {
   /**
@@ -20955,11 +21434,11 @@ var Snippet = class _Snippet {
     let lineObj = state.doc.lineAt(pos), baseIndent = /^\s*/.exec(lineObj.text)[0];
     for (let line of this.lines) {
       if (text.length) {
-        let indent = baseIndent, tabs2 = /^\t*/.exec(line)[0].length;
-        for (let i = 0; i < tabs2; i++)
+        let indent = baseIndent, tabs3 = /^\t*/.exec(line)[0].length;
+        for (let i = 0; i < tabs3; i++)
           indent += state.facet(indentUnit);
-        lineStart.push(pos + indent.length - tabs2);
-        line = indent + line.slice(tabs2);
+        lineStart.push(pos + indent.length - tabs3);
+        line = indent + line.slice(tabs3);
       }
       text.push(line);
       pos += line.length + 1;
@@ -28539,95 +29018,35 @@ function htmlTagCompletions() {
   return _tagCompletions = result ? result.options : [];
 }
 
-// src/content-types.js
-function equals(a1, a2) {
-  if (a1.length !== a2.length) return false;
-  console.log(`comparing`, a1, a2);
-  return a1.every((v2, i) => a2[i] === v2);
-}
-function getViewType(filename, data3) {
+// src/client/cm6/code-mirror-6.js
+function getInitialState(filename, data3) {
+  const doc2 = data3.toString();
+  const extensions = [basicSetup];
   const ext = filename.substring(filename.lastIndexOf(`.`) + 1);
-  console.log(`ext:`, ext);
-  const editables = {
-    css: `text/css`,
-    csv: `text/csv`,
-    htm: `text/html`,
-    html: `text/html`,
-    java: `application/java`,
-    js: `text/javascript`,
-    json: `application/json`,
-    jsx: `text/javascript`,
-    md: `text/markdown`,
-    py: `application/python`,
-    ts: `text/javascript`,
-    rs: `application/rust`,
-    tsx: `text/javascript`,
-    txt: `text/plain`,
-    xml: `application/xml`
-  };
-  let type = editables[ext];
-  if (type) {
-    return {
-      editable: true,
-      type
-    };
-  }
-  const previewable = {
-    gif: `image/gif`,
-    jpg: `image/jpg`,
-    jpeg: `image/jpg`,
-    png: `image/png`,
-    mp3: `audio/mpeg`,
-    mp4: `video/mp4`,
-    wav: `audio/wav`
-  };
-  type = previewable[ext];
-  if (type) {
-    return {
-      previewable: true,
-      type
-    };
-  }
-  return false;
+  const syntax = {
+    css,
+    html,
+    js: javascript,
+    md: markdown
+  }[ext];
+  if (syntax) extensions.push(syntax());
+  extensions.push(
+    EditorView.updateListener.of((e) => {
+      const tab = e.view.tabElement;
+      if (tab && e.docChanged) {
+        const entry = cmInstances[tab.title];
+        if (entry.debounce) {
+          clearTimeout(entry.debounce);
+        }
+        entry.debounce = setTimeout(entry.sync, 1e3);
+      }
+    })
+  );
+  return EditorState.create({ doc: doc2, extensions });
 }
-function verifyViewType(type, data3) {
-  const bytes = new Uint8Array(data3);
-  if (type.startsWith(`text`) || type.startsWith(`application`)) return true;
-  if (type === `image/gif`) return verifyGIF(bytes);
-  if (type === `image/jpg`) return verifyJPG(bytes);
-  if (type === `image/png`) return verifyPNG(bytes);
-  if (type === `audio/mpeg`) return verifyMP3(bytes);
-  if (type === `audio/wav`) return verifyWave(bytes);
-  if (type === `video/mp4`) return verifyMP4(bytes);
-  return false;
-}
-function verifyGIF(bytes) {
-  console.log(`GIF`, bytes.slice(0, 4));
-  return equals(bytes.slice(0, 4), [71, 73, 70, 56]);
-}
-function verifyJPG(bytes) {
-  console.log(`jpg`, bytes.slice(0, 4));
-  return equals(bytes.slice(0, 4), [255, 216, 255, 219]) || equals(bytes.slice(0, 4), [255, 216, 255, 224]) || equals(bytes.slice(0, 4), [255, 216, 255, 225]) || equals(bytes.slice(0, 4), [255, 216, 255, 238]);
-}
-function verifyPNG(bytes) {
-  console.log(`png`, bytes.slice(0, 4));
-  return equals(bytes.slice(0, 4), [137, 80, 78, 71]);
-}
-function verifyMP3(bytes) {
-  console.log(`mp3`, bytes.slice(0, 3));
-  return equals(bytes.slice(0, 3), [73, 68, 51]);
-}
-function verifyMP4(bytes) {
-  console.log(`mp4`, bytes.slice(0, 4));
-  return equals(bytes.slice(0, 4), [102, 116, 121, 112]);
-}
-function verifyWave(bytes) {
-  console.log(`wave`, data.slice(8, 12));
-  return verifyRIFF(bytes) && equals(bytes.slice(8, 12), [87, 65, 86, 4]);
-}
-function verifyRIFF(bytes) {
-  console.log(`riff`, bytes.slice(0, 4));
-  return equals(data.substring(0, 4), [82, 73, 70, 6]);
+function setupView(parent, state) {
+  const view = new EditorView({ parent, state });
+  return view;
 }
 
 // public/vendor/diff.js
@@ -28798,7 +29217,7 @@ Diff.prototype = {
     basePath.oldPos = oldPos;
     return newPos;
   },
-  equals: function equals2(left2, right2) {
+  equals: function equals(left2, right2) {
     if (this.options.comparator) {
       return this.options.comparator(left2, right2);
     } else {
@@ -29220,363 +29639,135 @@ function createPatch(fileName, oldStr, newStr, oldHeader, newHeader, options) {
   );
 }
 
-// public/file-tree.esm.min.js
-var d = (n2) => document.createElement(n2);
-var y = (n2) => n2.split("/").at(-1).includes(".");
-var h = globalThis.customElements;
-var E = globalThis.HTMLElement ?? class {
-};
-var l = class extends E {
-  get removeEmpty() {
-    return this.root.getAttribute("remove-empty");
-  }
-  get name() {
-    return this.getAttribute("name");
-  }
-  set name(t2) {
-    this.setAttribute("name", t2);
-  }
-  get path() {
-    return this.getAttribute("path");
-  }
-  set path(t2) {
-    this.setAttribute("path", t2);
-  }
-  get root() {
-    return this.tagName === "FILE-TREE" ? this : this.closest("file-tree");
-  }
-  get parentDir() {
-    return this.closest("dir-entry");
-  }
-  emit(t2, i = {}, e = () => {
-  }) {
-    i.grant = e, this.root.dispatchEvent(new CustomEvent(t2, { detail: i }));
-  }
-  find(t2) {
-    return this.querySelector(t2);
-  }
-  findInTree(t2) {
-    return this.root.querySelector(t2);
-  }
-  findAll(t2) {
-    return Array.from(this.querySelectorAll(t2));
-  }
-  findAllInTree(t2) {
-    return Array.from(this.root.querySelectorAll(t2));
-  }
-};
-var c = class extends l {
-  init(t2, i) {
-    this.name = t2, this.path = i;
-    let e = this.heading = d("file-heading");
-    e.textContent = t2, this.appendChild(e);
-    let r = d("button");
-    r.title = "rename file", r.textContent = "\u270F\uFE0F", this.appendChild(r), r.addEventListener("click", (a) => {
-      a.preventDefault(), a.stopPropagation();
-      let o = prompt("New file name?", this.heading.textContent)?.trim();
-      if (o) {
-        if (o.includes("/")) return alert("If you want to relocate a file, just move it.");
-        let g = this.path, C2 = g.replace(this.heading.textContent, o), x = this.path;
-        this.emit("file:rename", { oldName: g, newName: C2 }, () => {
-          this.path = x.replace(this.heading.textContent, o), this.name = o, this.heading.textContent = o;
-        });
+// src/client/sync.js
+async function syncContent(cmInstances2, contentDir, filename) {
+  const entry = cmInstances2[filename];
+  if (entry.noSync) return;
+  const currentContent = entry.content;
+  const newContent = entry.view.state.doc.toString();
+  const changes = createPatch(filename, currentContent, newContent);
+  const response = await fetchSafe(`/sync/${filename}`, {
+    headers: { "Content-Type": `text/plain` },
+    method: `post`,
+    body: changes
+  });
+  const responseHash = parseFloat(await response.text());
+  if (responseHash === getFileSum(newContent)) {
+    entry.content = newContent;
+    updatePreview();
+  } else {
+    console.error(`PRE:`, currentContent);
+    console.error(`POST:`, newContent);
+    console.error(`HASH:`, getFileSum(newContent), responseHash);
+    console.log(`forced sync: fetching file content from server`);
+    entry.content = await fetchFileContents(contentDir, entry.filename);
+    entry.view.dispatch({
+      changes: {
+        from: 0,
+        to: entry.view.state.doc.length,
+        insert: entry.content
       }
     });
-    let s = d("button");
-    s.title = "delete file", s.textContent = "\u{1F5D1}\uFE0F", this.appendChild(s), s.addEventListener("click", (a) => {
-      if (a.preventDefault(), a.stopPropagation(), confirm("are you sure you want to delete this file?")) {
-        let o = this.parentDir;
-        this.emit("file:delete", { path: this.path }, () => {
-          o.removeChild(this), o.checkEmpty();
-        });
-      }
-    }), this.addEventListener("click", () => {
-      this.emit("file:click", { path: this.path }, () => {
-        this.findAllInTree(".selected").forEach((a) => a.classList.remove("selected")), this.classList.add("selected");
-      });
-    }), this.draggable = true, this.addEventListener("dragstart", (a) => {
-      a.stopPropagation(), this.classList.add("dragging"), this.dataset.id = `${Date.now()}-${Math.random()}`, a.dataTransfer.setData("id", this.dataset.id);
-    });
   }
-  relocateContent(t2, i) {
-    this.heading.textContent = this.heading.textContent.replace(t2, i), this.path = this.path.replace(t2, i);
-  }
-  removeEntry(t2) {
-    this.path === t2 && this.remove();
-  }
-  selectEntry(t2) {
-    this.classList.toggle("selected", t2 === this.path);
-  }
-  toJSON() {
-    return JSON.stringify(this.toValue());
-  }
-  toString() {
-    return this.path;
-  }
-  toValue() {
-    return [this.toString()];
-  }
-};
-var u = class extends l {
-};
-h.define("file-entry", c);
-h.define("file-heading", u);
-var f = class n extends l {
-  init(t2, i = t2) {
-    this.setNameAndPath(t2, i), this.addButtons(t2, i);
-  }
-  connectedCallback() {
-    this.clickListener = (t2) => {
-      if (t2.stopPropagation(), t2.preventDefault(), this.path === ".") return;
-      let i = t2.target.tagName;
-      if (i !== "DIR-ENTRY" && i !== "DIR-HEADING") return;
-      let e = this.classList.contains("closed");
-      this.emit("dir:click", { path: this.path, currentState: e ? "closed" : "open" }, () => this.classList.toggle("closed"));
-    }, this.addEventListener("click", this.clickListener), this.removeListener = w(this), this.path === "." && (this.draggable = false);
-  }
-  disconnectedCallback() {
-    this.removeListener(), this.removeEventListener("click", this.clickListener);
-  }
-  setNameAndPath(t2, i) {
-    this.name = t2, this.path = i;
-    let e = this.find("dir-heading");
-    (!e || e.parentNode !== this) && (e = this.heading = d("dir-heading"), this.appendChild(e)), e.textContent = t2.replace("/", "");
-  }
-  addButtons(t2, i) {
-    this.addNewEntryButton(t2, i), this.addUploadButton(t2, i), this.addRenameButton(t2, i), this.addDeleteButton(t2, i);
-  }
-  addNewEntryButton(t2, i) {
-    let e = d("button");
-    e.title = "add new file", e.textContent = "+", e.addEventListener("click", () => N(this, i)), this.appendChild(e);
-  }
-  addUploadButton(t2, i) {
-    let e = d("button");
-    e.title = "upload files from your device", e.textContent = "\u{1F4BB}", e.addEventListener("click", () => T(this)), this.appendChild(e);
-  }
-  addRenameButton(t2, i) {
-    if (this.path !== ".") {
-      let e = d("button");
-      e.title = "rename dir", e.textContent = "\u270F\uFE0F", this.appendChild(e), e.addEventListener("click", () => A(this));
+  entry.debounce = false;
+}
+
+// src/client/cm6/editor-components.js
+var tabs2 = document.getElementById(`tabs`);
+var editors = document.getElementById(`editors`);
+function setupEditorPanel(filename) {
+  const panel = create(`div`);
+  panel.id = filename;
+  panel.title = filename;
+  panel.classList.add(`editor`, `tab`);
+  return panel;
+}
+function setupEditorTab(filename) {
+  const tab = create(`div`);
+  tab.title = filename;
+  tab.textContent = filename;
+  document.querySelectorAll(`.active`).forEach((e) => e.classList.remove(`active`));
+  tab.classList.add(`tab`, `active`);
+  const close = create(`button`);
+  close.textContent = `x`;
+  close.classList.add(`close`);
+  tab.appendChild(close);
+  return { tab, close };
+}
+function addEditorEventHandling(cmInstances2, filename, panel, tab, close, view) {
+  tab.addEventListener(`click`, () => {
+    if (!cmInstances2[tab.title]) return;
+    document.querySelectorAll(`.editor`).forEach((e) => e.setAttribute(`hidden`, `hidden`));
+    panel.removeAttribute(`hidden`);
+    document.querySelectorAll(`.active`).forEach((e) => e.classList.remove(`active`));
+    tab.classList.add(`active`);
+    tab.scrollIntoView();
+    filetree.selectEntry(tab.title);
+    view.focus();
+  });
+  close.addEventListener(`click`, () => {
+    if (tab.classList.contains(`active`)) {
+      const tabs3 = Object.keys(cmInstances2);
+      const tabPos = tabs3.indexOf(tab.title);
+      let newTab = tabPos === 0 ? tabs3[1] : tabs3[tabPos - 1];
+      if (newTab) cmInstances2[newTab].tab?.click();
     }
-  }
-  addDeleteButton(t2, i) {
-    let e = d("button");
-    e.title = "delete dir", e.textContent = "\u{1F5D1}\uFE0F", this.appendChild(e), e.addEventListener("click", () => k(this));
-  }
-  setFiles(t2 = []) {
-    for (let i of t2) this.addEntry(i, i);
-    this.sort();
-  }
-  addEntry(t2, i = t2) {
-    if (!t2.includes("/")) return t2.includes(".") ? this.addFile(t2, i) : this.addDirectory(t2 + "/", i + "/");
-    let e = t2.substring(0, t2.indexOf("/") + 1), r = (this.path === "." ? "" : this.path) + e, s = this.find(`& > dir-entry[name="${e}"]`);
-    return s || (s = new n(), s.init(e, r), this.appendChild(s)), this.sort(), s.addEntry(t2.replace(e, ""), i);
-  }
-  addFile(t2, i) {
-    let e = this.find(`& > file-entry[name="${t2}"]`);
-    return e || (e = new c(), e.init(t2, i), this.appendChild(e), this.sort(false)), e;
-  }
-  addFileFromUpload(t2, i) {
-    let e = this.path, r = (e !== "." ? e : "") + t2;
-    this.emit("file:upload", { fileName: r, content: i }, () => {
-      this.addEntry(t2, r), this.sort();
-    });
-  }
-  addDirectory(t2, i) {
-    let e = this.find(`& > dir-entry[name="${t2}"]`);
-    return e || (e = new n(), e.init(t2, i), this.appendChild(e), this.sort(false)), e;
-  }
-  sort(t2 = true) {
-    let i = [...this.children];
-    i.sort((e, r) => e.tagName === "DIR-HEADING" ? -1 : r.tagName === "DIR-HEADING" ? 1 : e.tagName === "BUTTON" ? -1 : r.tagName === "BUTTON" ? 1 : e.tagName === "DIR-ENTRY" && r.tagName === "DIR-ENTRY" ? (e = e.path, r = r.path, e < r ? -1 : 1) : e.tagName === "DIR-ENTRY" ? -1 : r.tagName === "DIR-ENTRY" ? 1 : (e = e.path, r = r.path, e < r ? -1 : 1)), i.forEach((e) => this.appendChild(e)), t2 && this.findAll("& > dir-entry").forEach((e) => e.sort(t2));
-  }
-  relocateContent(t2, i) {
-    for (let e of this.children) e.relocateContent?.(t2, i);
-  }
-  removeEntry(t2) {
-    if (t2 === this.path) return this.remove();
-    for (let i of this.children) i.removeEntry?.(t2);
-  }
-  selectEntry(t2) {
-    for (let i of this.children) i.selectEntry?.(t2);
-  }
-  checkEmpty() {
-    this.removeEmpty && (this.find("file-entry") || this.emit("dir:delete", { path: this.path }, () => {
-      this.parentNode.removeChild(this);
-    }));
-  }
-  toJSON() {
-    return JSON.stringify(this.toValue());
-  }
-  toString() {
-    return this.toValue().join(",");
-  }
-  toValue() {
-    return [this.findAll("& > dir-entry").map((t2) => t2.toValue()), this.findAll("& > file-entry").map((t2) => t2.toValue())].flat(1 / 0);
-  }
-};
-var p = class extends l {
-};
-h.define("dir-entry", f);
-h.define("dir-heading", p);
-function D(n2) {
-  return new Promise((t2, i) => {
-    let e = new FileReader();
-    e.onloadend = ({ target: r }) => t2(r.result), e.onerror = i, e.readAsArrayBuffer(n2);
+    tab.remove();
+    panel.remove();
+    const label = [...tab.childNodes].find(
+      (c2) => c2.nodeName === `#text`
+    ).textContent;
+    delete cmInstances2[label];
   });
 }
-function L(n2, t2) {
-  return t2 === n2 ? true : t2.parentDir === n2;
-}
-function w(n2) {
-  let t2 = new AbortController();
-  n2.draggable = true;
-  let i = () => {
-    n2.findAllInTree(".drop-target").forEach((e) => e.classList.remove("drop-target"));
+async function getOrCreateFileEditTab(cmInstances2, contentDir, filename) {
+  const entry = cmInstances2[filename];
+  if (entry?.view) {
+    return entry.tab?.click();
+  }
+  const panel = setupEditorPanel(filename);
+  editors.appendChild(panel);
+  const { tab, close } = setupEditorTab(filename);
+  tabs2.appendChild(tab);
+  const viewType = getViewType(filename);
+  const data3 = await fetchFileContents(contentDir, filename, viewType.type);
+  const verified = verifyViewType(viewType.type, data3);
+  if (!verified) return alert(`File contents does not match extension.`);
+  let view;
+  if (viewType.text || viewType.unknown) {
+    const initialState = getInitialState(filename, data3);
+    view = setupView(panel, initialState);
+  } else if (viewType.media) {
+    const { type } = viewType;
+    if (type.startsWith(`image`)) {
+      view = create(`img`);
+    } else if (type.startsWith(`audio`)) {
+      view = create(`audio`);
+    } else if (type.startsWith(`video`)) {
+      view = create(`video`);
+    }
+    view.src = `${contentDir}/${filename}`;
+    panel.appendChild(view);
+  }
+  view.tabElement = tab;
+  addEditorEventHandling(cmInstances2, filename, panel, tab, close, view);
+  const properties2 = {
+    filename,
+    tab,
+    close,
+    panel,
+    view,
+    content: viewType.editable ? view.state.doc.toString() : data3,
+    sync: viewType.editable ? () => syncContent(cmInstances2, contentDir, tab.title) : noop,
+    noSync: !viewType.editable
   };
-  return n2.addEventListener("dragstart", (e) => {
-    e.stopPropagation(), n2.classList.add("dragging"), n2.dataset.id = `${Date.now()}-${Math.random()}`, e.dataTransfer.setData("id", n2.dataset.id);
-  }, { signal: t2.signal }), n2.addEventListener("dragenter", (e) => {
-    e.preventDefault(), i(), n2.classList.add("drop-target");
-  }, { signal: t2.signal }), n2.addEventListener("dragover", (e) => {
-    let r = e.target;
-    L(n2, r) && (e.preventDefault(), i(), n2.classList.add("drop-target"));
-  }, { signal: t2.signal }), n2.addEventListener("dragleave", (e) => {
-    e.preventDefault(), i();
-  }, { signal: t2.signal }), n2.addEventListener("drop", async (e) => {
-    e.preventDefault(), e.stopPropagation(), i();
-    let r = e.dataTransfer.getData("id");
-    if (r) return F(n2, r);
-    await v(n2, e.dataTransfer.items);
-  }, { signal: t2.signal }), () => t2.abort();
+  if (entry) {
+    Object.assign(entry, properties2);
+  } else {
+    cmInstances2[filename] = properties2;
+  }
+  tab.click();
 }
-function N(n2, t2) {
-  let i = prompt("Please specify a filename.")?.trim();
-  if (i) {
-    if (i.includes("/")) return alert("Just add new files directly to the directory where they should live.");
-    let e = i;
-    if (t2 !== "." && (i = t2 + i), n2.findInTree(`[path="${i}"]`)) return;
-    i.includes(".") ? n2.emit("file:create", { fileName: i }, () => n2.addEntry(e, i)) : confirm(`Did you mean to create a new directory ${i}?`) && n2.emit("dir:create", { dirName: i }, () => {
-      n2.addDirectory(e + "/", i + "/");
-    });
-  }
-}
-function T(n2) {
-  let t2 = d("input");
-  t2.type = "file", t2.multiple = true, confirm('To upload one or more files, press "OK". To upload an entire folder, press "Cancel".') || (t2.webkitdirectory = true), t2.addEventListener("change", () => {
-    let { files: e } = t2;
-    e && v(n2, e);
-  }), t2.click();
-}
-async function v(n2, t2) {
-  async function i(e, r = "") {
-    if (e instanceof File) {
-      let s = await D(e), a = r + (e.webkitRelativePath || e.name);
-      n2.addFileFromUpload(a, s);
-    } else if (e.isFile) e.file(async (s) => {
-      let a = await D(s), o = r + s.name;
-      n2.addFileFromUpload(o, a);
-    });
-    else if (e.isDirectory) {
-      let s = r + e.name + "/";
-      e.createReader().readEntries(async (a) => {
-        for (let o of a) await i(o, s);
-      });
-    }
-  }
-  for await (let e of t2) try {
-    await i(e instanceof File ? e : e.webkitGetAsEntry());
-  } catch {
-    return alert(`Unfortunately, a ${e.kind} is not a file or folder.`);
-  }
-}
-function A(n2) {
-  let t2 = prompt("Choose a new directory name", n2.heading.textContent)?.trim();
-  if (t2) {
-    if (t2.includes("/")) return alert("If you want to relocate a dir, just move it.");
-    let i = n2.heading.textContent, e = n2.path, r = e.replace(i, t2);
-    n2.findInTree(`dir-entry[path="${r}"]`) && confirm("That directory already exists. Move all the content?") && n2.emit("dir:rename", { oldPath: e, newPath: r }, () => {
-      let a = n2.path;
-      return n2.heading.textContent = t2, n2.name = t2, n2.path = r, n2.relocateContent(a, r), { oldPath: a, newPath: r };
-    });
-  }
-}
-function k(n2) {
-  confirm("Are you *sure* you want to delete this directory and everything in it?") && n2.emit("dir:delete", { path: n2.path }, () => {
-    n2.remove();
-  });
-}
-function F(n2, t2) {
-  let i = n2.findInTree(`[data-id="${t2}"]`);
-  if (delete i.dataset.id, i.classList.remove("dragging"), i === n2) return;
-  let e = i.path, r = n2.path;
-  if (i instanceof c) {
-    let s = (r !== "." ? r : "") + e.substring(e.lastIndexOf("/") + 1);
-    if (e !== s) {
-      let a = n2.root.relocateEntry(e, s);
-      a && n2.emit("file:move", { oldPath: e, newPath: s }, a);
-    }
-  }
-  if (i instanceof f) {
-    let s = (r !== "." ? r : "") + i.heading.textContent + "/";
-    if (e !== s) {
-      let a = n2.root.relocateEntry(e, s);
-      a && n2.emit("dir:move", { oldPath: e, newPath: s }, a);
-    }
-  }
-}
-var m = class extends l {
-  get root() {
-    return this;
-  }
-  get parentDir() {
-    return this.rootDir;
-  }
-  setFiles(t2 = []) {
-    let i = this.querySelector('dir-tree[path="."]');
-    i || (i = this.rootDir = new f(), i.init("."), this.appendChild(i)), i.setFiles(t2);
-  }
-  addEntry(t2) {
-    return this.find(`[path="${t2}"]`) ? alert(`${t2} already exists. Overwrite?`) : this.rootDir.addEntry(t2);
-  }
-  relocateEntry(t2, i) {
-    return this.find(`[path="${i}"]`) ? alert(`${i} already exists.`) : y(t2) ? this.relocateFile(t2, i) : this.relocateDir(t2, i);
-  }
-  relocateFile(t2, i) {
-    return () => {
-      let e = this.rootDir.addEntry(i), r = this.find(`[path="${t2}"]`);
-      e.setAttribute("class", r.getAttribute("class")), this.removeEntry(t2);
-    };
-  }
-  relocateDir(t2, i) {
-    let e = this.find(`[path="${t2}"]`, this.rootDir);
-    return () => {
-      e.toValue().forEach((s) => {
-        let a = s.replace(t2, i);
-        this.removeEntry(s), this.rootDir.addEntry(a);
-      }), this.removeEntry(t2), this.rootDir.sort();
-    };
-  }
-  removeEntry(t2) {
-    this.rootDir.removeEntry(t2);
-  }
-  selectEntry(t2) {
-    this.rootDir.selectEntry(t2);
-  }
-  sort() {
-    this.rootDir.sort();
-  }
-  toJSON() {
-    return this.rootDir.toJSON();
-  }
-  toString() {
-    return this.rootDir.toString();
-  }
-  toValue() {
-    return this.toString();
-  }
-};
-h.define("file-tree", m);
 
 // public/vendor/unzipit.module.js
 function readBlobAsArrayBuffer(blob) {
@@ -30434,99 +30625,39 @@ async function unzip(source) {
   };
 }
 
-// src/script.js
-var changeUser = document.getElementById(`switch`);
-var all = document.getElementById(`all`);
-var format = document.getElementById(`format`);
-var left = document.getElementById(`left`);
-var right = document.getElementById(`right`);
-var filetree = document.getElementById(`filetree`);
-var tabs = document.getElementById(`tabs`);
-var editors = document.getElementById(`editors`);
-var preview = document.getElementById(`preview`);
-var user = document.querySelector(`.username`)?.textContent;
-var CONTENT_DIR = `content/${user ?? `anonymous`}`;
-var cmInstances = {};
-await setupPage();
-async function setupPage() {
-  await setupFileTree();
-  addGlobalEventHandling();
-  updatePreview();
-}
-async function fetchFileContents(filename, type = `text/plain`) {
-  const response = await fetchSafe(`./${CONTENT_DIR}/${filename}`);
-  if (type.startsWith(`text`) || type.startsWith(`application`))
-    return response.text();
-  return response.arrayBuffer();
-}
-async function fetchSafe(url, options) {
-  const response = await fetch(url, options);
-  if (response.status !== 200) {
-    if (response.headers.get(`x-reload-page`)) {
-      alert(`Your session expired, please reload.
-(error code: 29X784FH)`);
-      return new Error(`Page needs reloading`);
-    }
-  }
-  return response;
-}
-async function setupFileTree() {
+// src/client/cm6/file-tree-utils.js
+var fileTree = document.getElementById(`filetree`);
+async function setupFileTree(test) {
   const dirData = await fetchSafe(`/dir`).then((r) => r.json());
   if (dirData instanceof Error) return;
-  document.querySelector(`file-tree`).setFiles(dirData);
-  addFileTreeHandling();
+  fileTree.setFiles(dirData);
+  addFileTreeHandling(test);
 }
-function addGlobalEventHandling() {
-  changeUser.addEventListener(`click`, async () => {
-    const name2 = prompt(`Username?`).trim();
-    if (name2) {
-      const result = await fetchSafe(`/login/${name2}`, { method: `post` });
-      if (result instanceof Error) return;
-      location.reload();
-    }
-  });
-  all.addEventListener(`click`, async () => {
-    document.querySelectorAll(`file-entry`).forEach((e) => e.click());
-  });
-  addTabScrollHandling();
-  format.addEventListener(`click`, async () => {
-    const tab = document.querySelector(`.active`);
-    const entry = Object.values(cmInstances).find((e) => e.tab === tab);
-    const filename = entry.filename;
-    format.hidden = true;
-    const result = await fetchSafe(`/format/${filename}`, { method: `post` });
-    if (result instanceof Error) return;
-    entry.content = await fetchFileContents(filename);
-    format.hidden = false;
-    entry.view.dispatch({
-      changes: {
-        from: 0,
-        to: entry.view.state.doc.length,
-        insert: entry.content
-      }
-    });
-  });
-}
-function addFileTreeHandling() {
-  filetree.addEventListener(`file:click`, async (evt) => {
+function addFileTreeHandling(test) {
+  const { cmInstances: cmInstances2, contentDir } = test;
+  fileTree.addEventListener(`file:click`, async (evt) => {
     const { path } = evt.detail;
-    getOrCreateFileEditTab(path);
+    getOrCreateFileEditTab(cmInstances2, contentDir, path);
   });
-  filetree.addEventListener(`dir:click`, async (evt) => {
+  fileTree.addEventListener(`dir:click`, async (evt) => {
     evt.detail.grant();
   });
-  filetree.addEventListener(`file:create`, async (evt) => {
+  fileTree.addEventListener(`file:create`, async (evt) => {
     const { fileName, grant } = evt.detail;
     const response = await fetchSafe(`/new/${fileName}`, { method: `post` });
     if (response instanceof Error) return;
     if (response.status === 200) {
       const entry = grant();
-      getOrCreateFileEditTab(entry.getAttribute(`path`));
+      getOrCreateFileEditTab(
+        cmInstances2,
+        contentDir,
+        entry.getAttribute(`path`)
+      );
     } else {
       console.error(`Could not create ${fileName} (status:${response.status})`);
     }
   });
-  filetree.addEventListener(`file:rename`, async (evt) => {
+  fileTree.addEventListener(`file:rename`, async (evt) => {
     const { oldName, newName, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldName}:${newName}`, {
       method: `post`
@@ -30534,12 +30665,12 @@ function addFileTreeHandling() {
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
-      let key = oldName.replace(CONTENT_DIR, ``);
-      const entry = cmInstances[key];
+      let key = oldName.replace(contentDir, ``);
+      const entry = cmInstances2[key];
       if (entry) {
-        delete cmInstances[key];
-        key = newName.replace(CONTENT_DIR, ``);
-        cmInstances[key] = entry;
+        delete cmInstances2[key];
+        key = newName.replace(contentDir, ``);
+        cmInstances2[key] = entry;
         const { tab, panel } = entry;
         entry.filename = key;
         tab.title = key;
@@ -30555,7 +30686,7 @@ function addFileTreeHandling() {
         `Could not rename ${oldName} to ${newName} (status:${response.status})`
       );
     }
-    updatePreview();
+    updatePreview2();
   });
   async function uploadFile(fileName, content2, grant) {
     const fileSize = content2.byteLength;
@@ -30579,7 +30710,7 @@ function addFileTreeHandling() {
       console.error(`Could not upload ${fileName} (status:${response.status})`);
     }
   }
-  filetree.addEventListener(`file:upload`, async (evt) => {
+  fileTree.addEventListener(`file:upload`, async (evt) => {
     const { fileName, content: content2, grant } = evt.detail;
     if (fileName.endsWith(`.zip`) && confirm(`Unpack zip file?`)) {
       const basePath = fileName.substring(0, fileName.lastIndexOf(`/`) + 1);
@@ -30589,15 +30720,15 @@ function addFileTreeHandling() {
         const content3 = new TextDecoder().decode(arrayBuffer);
         if (content3.trim()) {
           fileName2 = basePath + fileName2;
-          uploadFile(fileName2, content3, () => filetree.addEntry(fileName2));
+          uploadFile(fileName2, content3, () => fileTree.addEntry(fileName2));
         }
       }
     } else {
       uploadFile(fileName, content2, grant);
     }
-    updatePreview();
+    updatePreview2();
   });
-  filetree.addEventListener(`file:move`, async (evt) => {
+  fileTree.addEventListener(`file:move`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
       method: `post`
@@ -30605,12 +30736,12 @@ function addFileTreeHandling() {
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
-      let key = oldPath.replace(CONTENT_DIR, ``);
-      const entry = cmInstances[key];
+      let key = oldPath.replace(contentDir, ``);
+      const entry = cmInstances2[key];
       if (entry) {
-        delete cmInstances[key];
-        key = newPath.replace(CONTENT_DIR, ``);
-        cmInstances[key] = entry;
+        delete cmInstances2[key];
+        key = newPath.replace(contentDir, ``);
+        cmInstances2[key] = entry;
         const { tab, panel } = entry;
         entry.filename = key;
         tab.title = key;
@@ -30626,9 +30757,9 @@ function addFileTreeHandling() {
         `Could not move ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
-    updatePreview();
+    updatePreview2();
   });
-  filetree.addEventListener(`file:delete`, async (evt) => {
+  fileTree.addEventListener(`file:delete`, async (evt) => {
     const { path: fileName, grant } = evt.detail;
     if (fileName) {
       try {
@@ -30638,7 +30769,7 @@ function addFileTreeHandling() {
         if (response instanceof Error) return;
         if (response.status === 200) {
           grant();
-          cmInstances[fileName]?.close?.click();
+          cmInstances2[fileName]?.close?.click();
         } else {
           console.error(
             `Could not delete ${fileName} (status:${response.status})`
@@ -30648,9 +30779,9 @@ function addFileTreeHandling() {
         console.error(e);
       }
     }
-    updatePreview();
+    updatePreview2();
   });
-  filetree.addEventListener(`dir:create`, async (evt) => {
+  fileTree.addEventListener(`dir:create`, async (evt) => {
     const { dirName, grant } = evt.detail;
     const response = await fetchSafe(`/new/${dirName}`, { method: `post` });
     if (response instanceof Error) return;
@@ -30660,7 +30791,7 @@ function addFileTreeHandling() {
       console.error(`Could not create ${dirName} (status:${response.status})`);
     }
   });
-  filetree.addEventListener(`dir:rename`, async (evt) => {
+  fileTree.addEventListener(`dir:rename`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
       method: `post`
@@ -30668,11 +30799,11 @@ function addFileTreeHandling() {
     if (response instanceof Error) return;
     if (response.status === 200) {
       const { oldPath: oldPath2, newPath: newPath2 } = grant();
-      Object.entries(cmInstances).forEach(([key, entry]) => {
+      Object.entries(cmInstances2).forEach(([key, entry]) => {
         if (key.startsWith(oldPath2)) {
-          delete cmInstances[key];
+          delete cmInstances2[key];
           key = key.replace(oldPath2, newPath2);
-          cmInstances[key] = entry;
+          cmInstances2[key] = entry;
           const { tab, panel } = entry;
           entry.filename = key;
           tab.title = key;
@@ -30682,7 +30813,7 @@ function addFileTreeHandling() {
             }
           });
           panel.title = panel.id = key;
-          updatePreview();
+          updatePreview2();
         }
       });
     } else {
@@ -30690,9 +30821,9 @@ function addFileTreeHandling() {
         `Could not rename ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
-    updatePreview();
+    updatePreview2();
   });
-  filetree.addEventListener(`dir:move`, async (evt) => {
+  fileTree.addEventListener(`dir:move`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
       method: `post`
@@ -30700,11 +30831,11 @@ function addFileTreeHandling() {
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
-      Object.entries(cmInstances).forEach(([key, entry]) => {
+      Object.entries(cmInstances2).forEach(([key, entry]) => {
         if (key.startsWith(oldPath)) {
-          delete cmInstances[key];
+          delete cmInstances2[key];
           key = key.replace(oldPath, newPath);
-          cmInstances[key] = entry;
+          cmInstances2[key] = entry;
           const { tab, panel } = entry;
           entry.filename = key;
           tab.title = key;
@@ -30714,7 +30845,7 @@ function addFileTreeHandling() {
             }
           });
           panel.title = panel.id = key;
-          updatePreview();
+          updatePreview2();
         }
       });
     } else {
@@ -30722,9 +30853,9 @@ function addFileTreeHandling() {
         `Could not move ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
-    updatePreview();
+    updatePreview2();
   });
-  filetree.addEventListener(`dir:delete`, async (evt) => {
+  fileTree.addEventListener(`dir:delete`, async (evt) => {
     const { path, grant } = evt.detail;
     const response = await fetchSafe(`/delete-dir/${path}`, {
       method: `delete`
@@ -30735,7 +30866,45 @@ function addFileTreeHandling() {
     } else {
       console.error(`Could not delete ${path} (status:${response.status})`);
     }
-    updatePreview();
+    updatePreview2();
+  });
+}
+
+// src/client/cm6/event-handling.js
+var changeUser = document.getElementById(`switch`);
+var all = document.getElementById(`all`);
+var format = document.getElementById(`format`);
+var left = document.getElementById(`left`);
+var right = document.getElementById(`right`);
+function addEventHandling(cmInstances2) {
+  changeUser.addEventListener(`click`, async () => {
+    const name2 = prompt(`Username?`).trim();
+    if (name2) {
+      const result = await fetchSafe(`/login/${name2}`, { method: `post` });
+      if (result instanceof Error) return;
+      location.reload();
+    }
+  });
+  all.addEventListener(`click`, async () => {
+    document.querySelectorAll(`file-entry`).forEach((e) => e.click());
+  });
+  addTabScrollHandling();
+  format.addEventListener(`click`, async () => {
+    const tab = document.querySelector(`.active`);
+    const entry = Object.values(cmInstances2).find((e) => e.tab === tab);
+    const filename = entry.filename;
+    format.hidden = true;
+    const result = await fetchSafe(`/format/${filename}`, { method: `post` });
+    if (result instanceof Error) return;
+    entry.content = await fetchFileContents(CONTENT_DIR, filename);
+    format.hidden = false;
+    entry.view.dispatch({
+      changes: {
+        from: 0,
+        to: entry.view.state.doc.length,
+        insert: entry.content
+      }
+    });
   });
 }
 function addTabScrollHandling() {
@@ -30763,197 +30932,31 @@ function addTabScrollHandling() {
     });
   }
 }
-function create(tag) {
-  return document.createElement(tag);
-}
-function getFileSum(data3) {
-  const enc = new TextEncoder();
-  return enc.encode(data3).reduce((t2, e) => t2 + e, 0);
-}
-async function getOrCreateFileEditTab(filename) {
-  const entry = cmInstances[filename];
-  if (entry?.view) {
-    return entry.tab?.click();
+
+// src/client/classes/browser-editor-test.js
+var BrowserEditorTest = class {
+  constructor() {
+    this.user = document.querySelector(`.username`)?.textContent;
+    this.contentDir = `content/${this.user ?? `anonymous`}`;
+    this.init();
   }
-  const panel = setupEditorPanel(filename);
-  editors.appendChild(panel);
-  const { tab, close } = setupEditorTab(filename);
-  tabs.appendChild(tab);
-  const viewType = getViewType(filename);
-  console.log(`viewtype`, viewType);
-  const data3 = await fetchFileContents(filename, viewType.type);
-  const verified = verifyViewType(viewType.type, data3);
-  if (!verified) return alert(`File contents does not match extension.`);
-  let view;
-  if (viewType.editable) {
-    const initialState = getInitialState(filename, data3);
-    view = setupView(panel, initialState);
-  } else if (viewType.previewable) {
-    const { type } = viewType;
-    if (type.startsWith(`image`)) {
-      view = create(`img`);
-    } else if (type.startsWith(`audio`)) {
-      view = create(`audio`);
-    } else if (type.startsWith(`video`)) {
-      view = create(`video`);
-    }
-    view.src = `${CONTENT_DIR}/${filename}`;
-    panel.appendChild(view);
+  async init() {
+    updatePreview2();
   }
-  view.tabElement = tab;
-  addEventHandling(filename, panel, tab, close, view);
-  const properties2 = {
-    filename,
-    tab,
-    close,
-    panel,
-    view,
-    content: viewType.editable ? view.state.doc.toString() : data3,
-    sync: viewType.editable ? () => syncContent(tab.title) : () => {
-    },
-    noSync: !viewType.editable
-  };
-  if (entry) {
-    Object.assign(entry, properties2);
-  } else {
-    cmInstances[filename] = properties2;
+};
+
+// src/client/classes/code-mirror-6.js
+var CodeMirror6Test = class extends BrowserEditorTest {
+  constructor() {
+    super();
+    this.cmInstances = {};
   }
-  tab.click();
-}
-function getInitialState(filename, data3) {
-  const doc2 = data3.toString();
-  const extensions = [basicSetup];
-  const ext = filename.substring(filename.lastIndexOf(`.`) + 1);
-  const syntax = {
-    css,
-    html,
-    js: javascript,
-    md: markdown
-  }[ext];
-  if (syntax) extensions.push(syntax());
-  extensions.push(
-    EditorView.updateListener.of((e) => {
-      const tab = e.view.tabElement;
-      if (tab && e.docChanged) {
-        const entry = cmInstances[tab.title];
-        if (entry.debounce) {
-          clearTimeout(entry.debounce);
-        }
-        entry.debounce = setTimeout(entry.sync, 1e3);
-      }
-    })
-  );
-  return EditorState.create({ doc: doc2, extensions });
-}
-function setupEditorPanel(filename) {
-  const panel = create(`div`);
-  panel.id = filename;
-  panel.title = filename;
-  panel.classList.add(`editor`, `tab`);
-  return panel;
-}
-function setupEditorTab(filename) {
-  const tab = create(`div`);
-  tab.title = filename;
-  tab.textContent = filename;
-  document.querySelectorAll(`.active`).forEach((e) => e.classList.remove(`active`));
-  tab.classList.add(`tab`, `active`);
-  const close = create(`button`);
-  close.textContent = `x`;
-  close.classList.add(`close`);
-  tab.appendChild(close);
-  return { tab, close };
-}
-function setupView(parent, state) {
-  const view = new EditorView({ parent, state });
-  return view;
-}
-function addEventHandling(filename, panel, tab, close, view) {
-  tab.addEventListener(`click`, () => {
-    if (!cmInstances[tab.title]) return;
-    document.querySelectorAll(`.editor`).forEach((e) => e.setAttribute(`hidden`, `hidden`));
-    panel.removeAttribute(`hidden`);
-    document.querySelectorAll(`.active`).forEach((e) => e.classList.remove(`active`));
-    tab.classList.add(`active`);
-    tab.scrollIntoView();
-    filetree.selectEntry(tab.title);
-    view.focus();
-  });
-  close.addEventListener(`click`, () => {
-    if (tab.classList.contains(`active`)) {
-      const tabs2 = Object.keys(cmInstances);
-      const tabPos = tabs2.indexOf(tab.title);
-      let newTab = tabPos === 0 ? tabs2[1] : tabs2[tabPos - 1];
-      if (newTab) cmInstances[newTab].tab?.click();
-    }
-    tab.remove();
-    panel.remove();
-    const label = [...tab.childNodes].find(
-      (c2) => c2.nodeName === `#text`
-    ).textContent;
-    delete cmInstances[label];
-  });
-}
-async function syncContent(filename) {
-  const entry = cmInstances[filename];
-  if (entry.noSync) return;
-  const currentContent = entry.content;
-  const newContent = entry.view.state.doc.toString();
-  const changes = createPatch(filename, currentContent, newContent);
-  const response = await fetchSafe(`/sync/${filename}`, {
-    headers: {
-      "Content-Type": `text/plain`
-    },
-    method: `post`,
-    body: changes
-  });
-  const responseHash = parseFloat(await response.text());
-  if (responseHash === getFileSum(newContent)) {
-    entry.content = newContent;
-    updatePreview();
-  } else {
-    console.error(`PRE:`, currentContent);
-    console.error(`POST:`, newContent);
-    console.error(`HASH:`, getFileSum(newContent), responseHash);
-    console.log(`forced sync: fetching file content from server`);
-    entry.content = await fetchFileContents(entry.filename);
-    entry.view.dispatch({
-      changes: {
-        from: 0,
-        to: entry.view.state.doc.length,
-        insert: entry.content
-      }
-    });
+  async init() {
+    await setupFileTree(this);
+    addEventHandling(this.cmInstances);
+    super.init();
   }
-  entry.debounce = false;
-}
-function updatePreview(find2, replace) {
-  const iframe = preview.querySelector(`iframe`);
-  const newFrame = document.createElement(`iframe`);
-  newFrame.onload = () => {
-    setTimeout(() => {
-      newFrame.style.opacity = 1;
-      setTimeout(() => iframe.remove(), 750);
-    }, 250);
-  };
-  newFrame.style.opacity = 0;
-  newFrame.style.transition = "opacity 0.25s";
-  preview.append(newFrame);
-  const src = iframe.src ? iframe.src : iframe.dataset.src;
-  if (find2 && replace) {
-    newFrame.src = src.replace(find2, replace);
-  } else {
-    newFrame.src = src;
-  }
-}
-function getMimeType(fileName) {
-  const ext = fileName.substring(fileName.lastIndexOf(`.`) + 1);
-  const type = {
-    jpg: "image/jpeg",
-    jpeg: "image/jpeg",
-    png: "image/png",
-    mp3: "audio/mpeg",
-    mp4: "video/mp4"
-  }[ext];
-  return type || "text/plain";
-}
+};
+
+// src/client/script.js
+new CodeMirror6Test();

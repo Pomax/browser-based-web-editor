@@ -8,7 +8,7 @@
     "node": "16.x"
   },
   "scripts": {
-    "build": "esbuild --log-level=info --bundle --format=esm src/script.js > public/editor.bundle.js",
+    "build": "esbuild --log-level=info --bundle --format=esm src/client/script.js > public/editor.bundle.js",
     "prettier": "npx prettier -w",
     "start": "node src/server/index.js",
     "postinstall": "npm dedupe"

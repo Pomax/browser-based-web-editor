@@ -1,15 +1,20 @@
-function equals(a1, a2) {
-  if (a1.length !== a2.length) return false;
-  console.log(`comparing`, a1, a2);
-  return a1.every((v, i) => a2[i] === v);
+import { listEquals as equals } from "./utils.js";
+
+/**
+ * ...
+ */
+export function getMimeType(fileName) {
+  return getViewType(fileName).type;
 }
 
-export function getViewType(filename, data) {
+/**
+ * ...
+ */
+export function getViewType(filename) {
   const ext = filename.substring(filename.lastIndexOf(`.`) + 1);
-  console.log(`ext:`, ext);
 
-  // "editable text" extensions
-  const editables = {
+  // known "editable text" extensions
+  const text = {
     css: `text/css`,
     csv: `text/csv`,
     htm: `text/html`,
@@ -27,17 +32,11 @@ export function getViewType(filename, data) {
     xml: `application/xml`,
   };
 
-  let type = editables[ext];
+  let type = text[ext];
+  if (type) return { type, text: true };
 
-  if (type) {
-    return {
-      editable: true,
-      type,
-    };
-  }
-
-  // "previewable content" extensions
-  const previewable = {
+  // known "viewable media" extensions
+  const media = {
     gif: `image/gif`,
     jpg: `image/jpg`,
     jpeg: `image/jpg`,
@@ -47,18 +46,16 @@ export function getViewType(filename, data) {
     wav: `audio/wav`,
   };
 
-  type = previewable[ext];
+  type = media[ext];
+  if (type) return { type, media: true };
 
-  if (type) {
-    return {
-      previewable: true,
-      type,
-    };
-  }
-
-  return false;
+  // Treat anything we don't know as text
+  return { type: `text/plain`, unknown: true };
 }
 
+/**
+ * Verify a file is what its extension claims to be by looking at magic numbers.
+ */
 export function verifyViewType(type, data) {
   const bytes = new Uint8Array(data);
   if (type.startsWith(`text`) || type.startsWith(`application`)) return true;
@@ -72,12 +69,12 @@ export function verifyViewType(type, data) {
 }
 
 function verifyGIF(bytes) {
-  console.log(`GIF`, bytes.slice(0, 4));
+  // console.log(`GIF`, bytes.slice(0, 4));
   return equals(bytes.slice(0, 4), [0x47, 0x49, 0x46, 0x38]);
 }
 
 function verifyJPG(bytes) {
-  console.log(`jpg`, bytes.slice(0, 4));
+  // console.log(`jpg`, bytes.slice(0, 4));
   return (
     equals(bytes.slice(0, 4), [0xff, 0xd8, 0xff, 0xdb]) ||
     equals(bytes.slice(0, 4), [0xff, 0xd8, 0xff, 0xe0]) ||
@@ -87,29 +84,29 @@ function verifyJPG(bytes) {
 }
 
 function verifyPNG(bytes) {
-  console.log(`png`, bytes.slice(0, 4));
+  // console.log(`png`, bytes.slice(0, 4));
   return equals(bytes.slice(0, 4), [0x89, 0x50, 0x4e, 0x47]);
 }
 
 function verifyMP3(bytes) {
   // We assume it's ID3 tagged
-  console.log(`mp3`, bytes.slice(0, 3));
+  // console.log(`mp3`, bytes.slice(0, 3));
   return equals(bytes.slice(0, 3), [0x49, 0x44, 0x33]);
 }
 
 function verifyMP4(bytes) {
-  console.log(`mp4`, bytes.slice(0, 4));
+  // console.log(`mp4`, bytes.slice(0, 4));
   return equals(bytes.slice(0, 4), [0x66, 0x74, 0x79, 0x70]);
 }
 
 function verifyWave(bytes) {
-  console.log(`wave`, data.slice(8, 12));
+  // console.log(`wave`, data.slice(8, 12));
   return (
     verifyRIFF(bytes) && equals(bytes.slice(8, 12), [0x57, 0x41, 0x56, 0x4])
   );
 }
 
 function verifyRIFF(bytes) {
-  console.log(`riff`, bytes.slice(0, 4));
+  // console.log(`riff`, bytes.slice(0, 4));
   return equals(data.substring(0, 4), [0x52, 0x49, 0x46, 0x6]);
 }
