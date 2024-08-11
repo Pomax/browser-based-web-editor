@@ -1,103 +1,178 @@
-file-tree {
-  display: block;
-  padding: 0.5em !important;
+.drag-and-drop-hidden {
+  display: none !important;
+  opacity: 0;
+}
 
-  button {
-    min-width: 1.5em;
-    padding: 2px 1px;
+file-tree {
+  --fallback-icon: "🌲";
+  --open-dir-icon: "📒";
+  --closed-dir-icon: "📕";
+  --file-icon: "📄";
+
+  --dir-touch-padding: 0;
+  --open-dir-icon-cursor: pointer;
+  --closed-dir-icon-cursor: pointer;
+  --dir-heading-cursor: pointer;
+  --file-icon-cursor: pointer;
+  --file-heading-cursor: pointer;
+
+  --icon-size: 1.25em;
+  --line-height: 1.5em;
+  --indent: 1em;
+  --entry-padding: 0.25em;
+  --highlight-background: lightcyan;
+  --highlight-border-color: blue;
+  --drop-target-color: rgb(205, 255, 242);
+
+  /* All entries in the file tree have a handy icon */
+
+  .icon {
+    position: relative;
+    display: inline-block;
+    width: var(--icon-size);
+    height: var(--icon-size);
+    cursor: pointer;
+    &:before {
+      position: absolute;
+      bottom: -0.25em;
+      left: 0;
+      content: var(--fallback-icon);
+    }
   }
+
+  /* The root dir has an icon, but it's "inactive" */
+
+  [path="."] > .icon {
+    cursor: default !important;
+  }
+
+  /*
+    And the file tree  technically has an icon and even a
+    heading, but they're both "dummy" nodes.
+  */
+
+  & > .icon {
+    display: none !important;
+  }
+
+  & > entry-heading {
+    display: none !important;
+  }
+
+  /*
+    The root buttons should always be visible, but entry
+    buttons should only be revealed when the associated
+    entry has been selected by the user.
+  */
+
+  & button {
+    display: none;
+    height: var(--line-height);
+  }
+
+  & .selected > button,
+  & [path="."] > button {
+    display: inline-block;
+  }
+
+  /* Headings are clickable */
+
+  entry-heading {
+    cursor: pointer;
+    display: inline-block;
+  }
+
+  [path="."] > entry-heading {
+    cursor: default;
+  }
+
+  .selected > entry-heading {
+    background: var(--highlight-background);
+    border: 1px solid var(--highlight-border-color);
+    margin-top: -1px;
+    margin-bottom: -1px;
+    padding-left: var(--entry-padding);
+    padding-right: var(--entry-padding);
+  }
+
+  /* Drag and drop has its own visual cues */
+
+  .dragging {
+    opacity: 0.2;
+  }
+  .drop-target {
+    background: var(--drop-target-color);
+  }
+
+  /* Directories */
 
   dir-entry {
     display: block;
+    min-height: var(--line-height);
+    margin-left: var(--indent);
 
-    dir-heading {
-      margin-left: 0.25em;
-      cursor: pointer;
+    /* Note: the root dir does not get indented */
+
+    &[path="."] {
+      margin-left: 0;
     }
 
-    &.dragging {
-      opacity: 0.2;
-    }
-
-    &.drop-target {
-      background: #e3fff4;
-    }
-
-    &[path] {
-      --padding: 1em;
-      padding-left: var(--padding);
-
-      /*
-        the root dir is a bit special: it shoudl have buttons for
-        creating or uploading files, but should not offer buttons
-        to rename or delete it:
-      */
-      &[path="."] {
-        height: 100%;
-        cursor: auto;
-
-        & > dir-heading {
-          cursor: auto;
-        }
-
-        &:before {
-          cursor: auto;
-        }
-
-        & > button {
-          display: none;
-          &[title="add new file"],
-          &[title="upload files from your device"] {
-            display: inline-block;
-          }
-        }
+    & > .icon {
+      cursor: var(--open-dir-icon-cursor);
+      &:before {
+        content: var(--open-dir-icon);
       }
+    }
 
-      button[title="upload files from your device"] {
+    & > entry-heading {
+      cursor: var(--dir-heading-cursor);
+      /*
+        It's super easy to mistouch dirs, so we give them a little more space
+      */
+      padding-top: var(--dir-touch-padding);
+      padding-bottom: var(--dir-touch-padding);
+    }
+
+    &.closed {
+      & > file-entry,
+      & > dir-entry {
         display: none;
       }
 
-      &:before {
-        content: "📒";
-        cursor: pointer;
-        margin-left: calc(0px - var(--padding));
-      }
-      &.closed {
+      & > .icon {
+        cursor: var(--closed-dir-icon-cursor);
         &:before {
-          content: "📕";
+          content: var(--closed-dir-icon);
         }
-        dir-entry, file-entry {
-          display: none;
+      }
+    }
+
+    /* Files */
+
+    file-entry {
+      display: block;
+      margin-left: var(--indent);
+      height: var(--line-height);
+
+      & > .icon {
+        cursor: var(--file-icon-cursor);
+        &:before {
+          content: var(--file-icon);
         }
+      }
+
+      & > entry-heading {
+        cursor: var(--file-heading-cursor);
       }
     }
   }
+}
 
-  file-entry {
-    display: block;
-    white-space: nowrap;
-
-    file-heading {
-      cursor: pointer;
-    }
-
-    &:before {
-      content: "📄";
-      cursor: pointer;
-      margin-right: 0.25em;
-    }
-
-    &.dragging {
-      opacity: 0.2;
-    }
-
-    &.selected {
-      background: #e3f6ff;
-      border: 1px solid blue;
-      padding-left: 0.25em;
-      box-sizing: border-box;
-      margin: -1px;
-      margin-left: calc(-1px - 0.25em);
-    }
+/*
+  for touch devices, we want to make sure that our fat fingers can still click drag  entries
+*/
+@media (pointer: coarse) {
+  file-tree {
+    --dir-touch-padding: 0.4em;
   }
 }

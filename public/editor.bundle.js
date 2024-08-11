@@ -1,12 +1,55 @@
 // public/file-tree.esm.min.js
-var d = (n2) => document.createElement(n2);
-var y = (n2) => n2.split("/").at(-1).includes(".");
-var h = globalThis.customElements;
-var E = globalThis.HTMLElement ?? class {
+var d = (s) => document.createElement(s);
+function p(s) {
+  return s.split("/").filter((r) => !!r).at(-1).includes(".") ? true : !!C(s).file;
+}
+function C(s) {
+  let t2 = {};
+  return (s.substring(s.indexOf("?"))?.split("&") || []).forEach((r) => {
+    if (r.includes("=")) {
+      let [i, n] = r.split("=");
+      t2[i] = n;
+    } else t2[r] = true;
+  }), t2;
+}
+var f = window.customElements;
+function g(s) {
+  return new Promise((t2, e) => {
+    let r = new FileReader();
+    r.onloadend = ({ target: i }) => t2(i.result), r.onerror = e, r.readAsArrayBuffer(s);
+  });
+}
+var L = globalThis.HTMLElement ?? class {
 };
-var l = class extends E {
-  get removeEmpty() {
-    return this.root.getAttribute("remove-empty");
+var u = class extends L {
+  state = {};
+  eventControllers = [];
+  constructor() {
+    if (super(), this.icon = this.find("& > .icon"), !this.icon) {
+      let t2 = this.icon = d("span");
+      t2.classList.add("icon"), this.appendChild(t2);
+    }
+    if (this.heading = this.find("& > entry-heading"), !this.heading) {
+      let t2 = this.heading = d("entry-heading");
+      this.appendChild(t2);
+    }
+  }
+  addExternalListener(t2, e, r, i = {}) {
+    let n = new AbortController();
+    i.signal = n.signal, t2.addEventListener(e, r, i), this.addAbortController(n);
+  }
+  addListener(t2, e, r = {}) {
+    this.addExternalListener(this, t2, e, r);
+  }
+  addAbortController(t2) {
+    this.eventControllers.push(t2);
+  }
+  disconnectedCallback() {
+    let { eventControllers: t2 } = this;
+    for (; t2.length; ) t2.shift().abort();
+  }
+  get removeEmptyDir() {
+    return this.root.getAttribute("remove-empty-dir");
   }
   get name() {
     return this.getAttribute("name");
@@ -18,17 +61,32 @@ var l = class extends E {
     return this.getAttribute("path");
   }
   set path(t2) {
-    this.setAttribute("path", t2);
+    if (!t2) return;
+    let e = t2.endsWith("/") ? -2 : -1;
+    if (this.name = t2.split("/").at(e).replace(/#.*/, ""), !this.name && t2) throw Error(`why? path is ${t2}`);
+    let r = this.find("& > entry-heading");
+    r.textContent = this.name, this.setAttribute("path", t2);
+  }
+  updatePath(t2, e) {
+    let r = new RegExp(`^${t2}`);
+    this.path = this.path.replace(r, e);
+  }
+  get dirPath() {
+    let { path: t2, name: e } = this;
+    if (this.isFile) return t2.replace(e, "");
+    if (this.isDir) return t2.substring(0, t2.lastIndexOf(e));
+    throw Error("entry is file nor dir.");
   }
   get root() {
-    return this.tagName === "FILE-TREE" ? this : this.closest("file-tree");
+    return this.closest("file-tree");
   }
   get parentDir() {
-    return this.closest("dir-entry");
+    let t2 = this;
+    return t2.tagName === "DIR-ENTRY" && (t2 = t2.parentNode), t2.closest("dir-entry");
   }
-  emit(t2, i = {}, e = () => {
+  emit(t2, e = {}, r = () => {
   }) {
-    i.grant = e, this.root.dispatchEvent(new CustomEvent(t2, { detail: i }));
+    e.grant = r, this.root.dispatchEvent(new CustomEvent(t2, { detail: e }));
   }
   find(t2) {
     return this.querySelector(t2);
@@ -42,48 +100,230 @@ var l = class extends E {
   findAllInTree(t2) {
     return Array.from(this.root.querySelectorAll(t2));
   }
+  select() {
+    this.root.unselect(), this.classList.add("selected");
+  }
+  setState(t2) {
+    Object.assign(this.state, t2);
+  }
 };
-var c = class extends l {
-  init(t2, i) {
-    this.name = t2, this.path = i;
-    let e = this.heading = d("file-heading");
-    e.textContent = t2, this.appendChild(e);
-    let r = d("button");
-    r.title = "rename file", r.textContent = "\u270F\uFE0F", this.appendChild(r), r.addEventListener("click", (a) => {
-      a.preventDefault(), a.stopPropagation();
-      let o = prompt("New file name?", this.heading.textContent)?.trim();
-      if (o) {
-        if (o.includes("/")) return alert("If you want to relocate a file, just move it.");
-        let g = this.path, C2 = g.replace(this.heading.textContent, o), x = this.path;
-        this.emit("file:rename", { oldName: g, newName: C2 }, () => {
-          this.path = x.replace(this.heading.textContent, o), this.name = o, this.heading.textContent = o;
-        });
-      }
+var T = class extends L {
+};
+f.define("entry-heading", T);
+var y = { "en-GB": { CREATE_FILE: "Create new file", CREATE_FILE_PROMPT: "Please specify a filename.", CREATE_FILE_NO_DIRS: "Just add new files directly to the directory where they should live.", RENAME_FILE: "Rename file", RENAME_FILE_PROMPT: "New file name?", RENAME_FILE_MOVE_INSTEAD: "If you want to relocate a file, just move it.", DELETE_FILE: "Delete file", DELETE_FILE_PROMPT: (s) => `Are you sure you want to delete ${s}?`, CREATE_DIRECTORY: "Add new directory", CREATE_DIRECTORY_PROMPT: "Please specify a directory name.", CREATE_DIRECTORY_NO_NESTING: "You'll have to create nested directories one at a time.", RENAME_DIRECTORY: "Rename directory", RENAME_DIRECTORY_PROMPT: "Choose a new directory name", RENAME_DIRECTORY_MOVE_INSTEAD: "If you want to relocate a directory, just move it.", DELETE_DIRECTORY: "Delete directory", DELETE_DIRECTORY_PROMPT: (s) => `Are you *sure* you want to delete ${s} and everything in it?`, UPLOAD_FILES: "Upload files from your device", PATH_EXISTS: (s) => `${s} already exists.`, PATH_DOES_NOT_EXIST: (s) => `${s} does not exist.`, PATH_INSIDE_ITSELF: (s) => `Cannot nest ${s} inside its own subdirectory.`, INVALID_UPLOAD_TYPE: (s) => `Unfortunately, a ${s} is not a file or folder.` } };
+var I = "en-GB";
+var O = globalThis.navigator?.language;
+var o = y[O] || y[I];
+function _({ root: s, path: t2 }) {
+  let e = d("input");
+  e.type = "file", e.multiple = true, confirm('To upload one or more files, press "OK". To upload an entire folder, press "Cancel".') || (e.webkitdirectory = true), e.addEventListener("change", () => {
+    let { files: i } = e;
+    i && D(s, i, t2);
+  }), e.click();
+}
+async function D(s, t2, e = "") {
+  async function r(i, n = "") {
+    if (i instanceof File && !i.isDirectory) {
+      let a = await g(i), c = n + (i.webkitRelativePath || i.name), l = (e === "." ? "" : e) + c;
+      s.createEntry(l, a);
+    } else if (i.isFile) i.file(async (a) => {
+      let c = await g(a), l = n + a.name, h = (e === "." ? "" : e) + l;
+      s.createEntry(h, c);
     });
-    let s = d("button");
-    s.title = "delete file", s.textContent = "\u{1F5D1}\uFE0F", this.appendChild(s), s.addEventListener("click", (a) => {
-      if (a.preventDefault(), a.stopPropagation(), confirm("are you sure you want to delete this file?")) {
-        let o = this.parentDir;
-        this.emit("file:delete", { path: this.path }, () => {
-          o.removeChild(this), o.checkEmpty();
-        });
-      }
-    }), this.addEventListener("click", () => {
-      this.emit("file:click", { path: this.path }, () => {
-        this.findAllInTree(".selected").forEach((a) => a.classList.remove("selected")), this.classList.add("selected");
+    else if (i.isDirectory) {
+      let a = n + i.name + "/";
+      i.createReader().readEntries(async (c) => {
+        for (let l of c) await r(l, a);
       });
-    }), this.draggable = true, this.addEventListener("dragstart", (a) => {
-      a.stopPropagation(), this.classList.add("dragging"), this.dataset.id = `${Date.now()}-${Math.random()}`, a.dataTransfer.setData("id", this.dataset.id);
+    }
+  }
+  for (let i of t2) try {
+    let n;
+    !n && i instanceof File && (n = i), !n && i.webkitGetAsEntry && (n = i.webkitGetAsEntry() ?? n), !n && i.getAsFile && (n = i.getAsFile()), await r(n);
+  } catch {
+    return alert(o.INVALID_UPLOAD_TYPE(i.kind));
+  }
+}
+function A(s) {
+  let t2 = new AbortController();
+  s.draggable = true;
+  let e = () => {
+    s.findAllInTree(".drop-target").forEach((r) => r.classList.remove("drop-target"));
+  };
+  return s.addEventListener("dragstart", (r) => {
+    r.stopPropagation(), s.classList.add("dragging"), s.dataset.id = `${Date.now()}-${Math.random()}`, r.dataTransfer.setData("id", s.dataset.id);
+  }, { signal: t2.signal }), s.addEventListener("dragenter", (r) => {
+    r.preventDefault(), e(), s.classList.add("drop-target");
+  }, { signal: t2.signal }), s.addEventListener("dragover", (r) => {
+    let i = r.target;
+    S(s, i) && (r.preventDefault(), e(), s.classList.add("drop-target"));
+  }, { signal: t2.signal }), s.addEventListener("dragleave", (r) => {
+    r.preventDefault(), e();
+  }, { signal: t2.signal }), s.addEventListener("drop", async (r) => {
+    r.preventDefault(), r.stopPropagation(), e();
+    let i = r.dataTransfer.getData("id");
+    if (i) return v(s, i);
+    await D(s.root, r.dataTransfer.items, s.path);
+  }, { signal: t2.signal }), s.path === "." ? s.draggable = false : t2;
+}
+function S(s, t2) {
+  return t2 === s ? true : t2.closest("dir-entry") === s;
+}
+function v(s, t2) {
+  let e = s.findInTree(`[data-id="${t2}"]`);
+  if (delete e.dataset.id, e.classList.remove("dragging"), e === s) return;
+  let r = e.path, i = s.path, n = (i !== "." ? i : "") + e.name;
+  e.isDir && (n += "/"), s.root.moveEntry(e, r, n);
+}
+var E = class extends u {
+  isDir = true;
+  constructor(t2, e = t2) {
+    super(t2, e), this.addButtons();
+  }
+  get path() {
+    return super.path;
+  }
+  set path(t2) {
+    super.path = t2, t2 === "." && (this.find("& > .rename-dir")?.remove(), this.find("& > .delete-dir")?.remove());
+  }
+  connectedCallback() {
+    this.addListener("click", (e) => this.selectListener(e)), this.addExternalListener(this.icon, "click", (e) => this.foldListener(e));
+    let t2 = A(this);
+    t2 && this.addAbortController(t2);
+  }
+  selectListener(t2) {
+    if (t2.stopPropagation(), t2.preventDefault(), this.path === ".") return;
+    let e = t2.target.tagName;
+    e !== "DIR-ENTRY" && e !== "ENTRY-HEADING" || (this.root.selectEntry(this), this.classList.contains("closed") && this.foldListener(t2));
+  }
+  foldListener(t2) {
+    if (t2.stopPropagation(), t2.preventDefault(), this.path === ".") return;
+    let e = this.classList.contains("closed");
+    this.root.toggleDirectory(this, { currentState: e ? "closed" : "open" });
+  }
+  addButtons() {
+    this.createFileButton(), this.createDirButton(), this.addUploadButton(), this.addRenameButton(), this.addDeleteButton();
+  }
+  addRenameButton() {
+    if (this.path === "." || this.find("& > .rename-dir")) return;
+    let t2 = d("button");
+    t2.classList.add("rename-dir"), t2.title = o.RENAME_DIRECTORY, t2.textContent = "\u270F\uFE0F", this.appendChild(t2), t2.addEventListener("click", () => this.#r());
+  }
+  #r() {
+    let t2 = prompt(o.RENAME_DIRECTORY_PROMPT, this.name)?.trim();
+    if (t2) {
+      if (t2.includes("/")) return alert(o.RENAME_DIRECTORY_MOVE_INSTEAD);
+      this.root.renameEntry(this, t2);
+    }
+  }
+  addDeleteButton() {
+    if (this.path === "." || this.find("& > .delete-dir")) return;
+    let t2 = d("button");
+    t2.classList.add("delete-dir"), t2.title = o.DELETE_DIRECTORY, t2.textContent = "\u{1F5D1}\uFE0F", this.appendChild(t2), t2.addEventListener("click", () => this.#t());
+  }
+  #t() {
+    let t2 = o.DELETE_DIRECTORY_PROMPT(this.path);
+    confirm(t2) && this.root.removeEntry(this);
+  }
+  createFileButton() {
+    if (this.find("& > .create-file")) return;
+    let t2 = d("button");
+    t2.classList.add("create-file"), t2.title = o.CREATE_FILE, t2.textContent = "\u{1F4C4}", t2.addEventListener("click", () => this.#i()), this.appendChild(t2);
+  }
+  #i() {
+    let t2 = prompt(o.CREATE_FILE_PROMPT)?.trim();
+    if (t2) {
+      if (t2.includes("/")) return alert(o.CREATE_FILE_NO_DIRS);
+      this.path !== "." && (t2 = this.path + t2), this.root.createEntry(t2);
+    }
+  }
+  createDirButton() {
+    if (this.find("& > .create-dir")) return;
+    let t2 = d("button");
+    t2.classList.add("create-dir"), t2.title = o.CREATE_DIRECTORY, t2.textContent = "\u{1F4C1}", t2.addEventListener("click", () => this.#e()), this.appendChild(t2);
+  }
+  #e() {
+    let t2 = prompt(String.CREATE_DIRECTORY_PROMPT)?.trim();
+    if (t2) {
+      if (t2.includes("/")) return alert(o.CREATE_DIRECTORY_NO_NESTING);
+      let e = (this.path !== "." ? this.path : "") + t2 + "/";
+      this.root.createEntry(e);
+    }
+  }
+  addUploadButton() {
+    if (this.find("& > .upload")) return;
+    let t2 = d("button");
+    t2.classList.add("upload"), t2.title = o.UPLOAD_FILES, t2.textContent = "\u{1F4BB}", t2.addEventListener("click", () => _(this)), this.appendChild(t2);
+  }
+  addEntry(t2) {
+    this.appendChild(t2), this.sort();
+  }
+  checkEmpty() {
+    if (!this.removeEmptyDir || this.find("dir-entry, file-entry")) return;
+    this.root.removeEntry(this, true);
+  }
+  sort(t2 = true, e = true) {
+    let r = [...this.children];
+    r.sort((i, n) => {
+      if (i.tagName === "SPAN") return -1;
+      if (n.tagName === "SPAN") return 1;
+      if (i.tagName === "ENTRY-HEADING") return -1;
+      if (n.tagName === "ENTRY-HEADING") return 1;
+      if (i.tagName === "BUTTON" && n.tagName === "BUTTON") return 0;
+      if (i.tagName === "BUTTON") return -1;
+      if (n.tagName === "BUTTON") return 1;
+      if (e) {
+        if (i.tagName === "DIR-ENTRY" && n.tagName === "DIR-ENTRY") return i = i.path, n = n.path, i < n ? -1 : 1;
+        if (i.tagName === "DIR-ENTRY") return -1;
+        if (n.tagName === "DIR-ENTRY") return 1;
+      }
+      return i = i.path, n = n.path, i < n ? -1 : 1;
+    }), r.forEach((i) => this.appendChild(i)), t2 && this.findAll("& > dir-entry").forEach((i) => i.sort(t2));
+  }
+  toggle() {
+    this.classList.toggle("closed");
+  }
+  toJSON() {
+    return JSON.stringify(this.toValue());
+  }
+  toString() {
+    return this.toJSON();
+  }
+  toValue() {
+    return this.root.toValue().filter((t2) => t2.startsWith(this.path));
+  }
+};
+f.define("dir-entry", E);
+var m = class extends u {
+  isFile = true;
+  constructor(t2, e) {
+    super(t2, e), this.addRenameButton(), this.addDeleteButton(), this.addEventHandling();
+  }
+  addRenameButton() {
+    if (this.find("& > .rename-file")) return;
+    let t2 = d("button");
+    t2.classList.add("rename-file"), t2.title = o.RENAME_FILE, t2.textContent = "\u270F\uFE0F", this.appendChild(t2), t2.addEventListener("click", (e) => {
+      e.preventDefault(), e.stopPropagation();
+      let r = prompt(o.RENAME_FILE_PROMPT, this.heading.textContent)?.trim();
+      if (r) {
+        if (r.includes("/")) return alert(o.RENAME_FILE_MOVE_INSTEAD);
+        this.root.renameEntry(this, r);
+      }
     });
   }
-  relocateContent(t2, i) {
-    this.heading.textContent = this.heading.textContent.replace(t2, i), this.path = this.path.replace(t2, i);
+  addDeleteButton() {
+    if (this.find("& > .delete-file")) return;
+    let t2 = d("button");
+    t2.classList.add("delete-file"), t2.title = o.DELETE_FILE, t2.textContent = "\u{1F5D1}\uFE0F", this.appendChild(t2), t2.addEventListener("click", (e) => {
+      e.preventDefault(), e.stopPropagation(), confirm(o.DELETE_FILE_PROMPT(this.path)) && this.root.removeEntry(this);
+    });
   }
-  removeEntry(t2) {
-    this.path === t2 && this.remove();
-  }
-  selectEntry(t2) {
-    this.classList.toggle("selected", t2 === this.path);
+  addEventHandling() {
+    this.addEventListener("click", (t2) => {
+      t2.preventDefault(), t2.stopPropagation(), this.root.selectEntry(this);
+    }), this.draggable = true, this.addEventListener("dragstart", (t2) => {
+      t2.stopPropagation(), this.classList.add("dragging"), this.dataset.id = `${Date.now()}-${Math.random()}`, t2.dataTransfer.setData("id", this.dataset.id);
+    });
   }
   toJSON() {
     return JSON.stringify(this.toValue());
@@ -95,266 +335,131 @@ var c = class extends l {
     return [this.toString()];
   }
 };
-var u = class extends l {
-};
-h.define("file-entry", c);
-h.define("file-heading", u);
-var f = class n extends l {
-  init(t2, i = t2) {
-    this.setNameAndPath(t2, i), this.addButtons(t2, i);
+f.define("file-entry", m);
+var R = class extends u {
+  static observedAttributes = ["src"];
+  ready = false;
+  isTree = true;
+  entries = {};
+  constructor() {
+    super(), this.heading.textContent = "File tree";
   }
-  connectedCallback() {
-    this.clickListener = (t2) => {
-      if (t2.stopPropagation(), t2.preventDefault(), this.path === ".") return;
-      let i = t2.target.tagName;
-      if (i !== "DIR-ENTRY" && i !== "DIR-HEADING") return;
-      let e = this.classList.contains("closed");
-      this.emit("dir:click", { path: this.path, currentState: e ? "closed" : "open" }, () => this.classList.toggle("closed"));
-    }, this.addEventListener("click", this.clickListener), this.removeListener = w(this), this.path === "." && (this.draggable = false);
-  }
-  disconnectedCallback() {
-    this.removeListener(), this.removeEventListener("click", this.clickListener);
-  }
-  setNameAndPath(t2, i) {
-    this.name = t2, this.path = i;
-    let e = this.find("dir-heading");
-    (!e || e.parentNode !== this) && (e = this.heading = d("dir-heading"), this.appendChild(e)), e.textContent = t2.replace("/", "");
-  }
-  addButtons(t2, i) {
-    this.addNewEntryButton(t2, i), this.addUploadButton(t2, i), this.addRenameButton(t2, i), this.addDeleteButton(t2, i);
-  }
-  addNewEntryButton(t2, i) {
-    let e = d("button");
-    e.title = "add new file", e.textContent = "+", e.addEventListener("click", () => N(this, i)), this.appendChild(e);
-  }
-  addUploadButton(t2, i) {
-    let e = d("button");
-    e.title = "upload files from your device", e.textContent = "\u{1F4BB}", e.addEventListener("click", () => T(this)), this.appendChild(e);
-  }
-  addRenameButton(t2, i) {
-    if (this.path !== ".") {
-      let e = d("button");
-      e.title = "rename dir", e.textContent = "\u270F\uFE0F", this.appendChild(e), e.addEventListener("click", () => A(this));
-    }
-  }
-  addDeleteButton(t2, i) {
-    let e = d("button");
-    e.title = "delete dir", e.textContent = "\u{1F5D1}\uFE0F", this.appendChild(e), e.addEventListener("click", () => k(this));
-  }
-  setFiles(t2 = []) {
-    for (let i of t2) this.addEntry(i, i);
-    this.sort();
-  }
-  addEntry(t2, i = t2) {
-    if (!t2.includes("/")) return t2.includes(".") ? this.addFile(t2, i) : this.addDirectory(t2 + "/", i + "/");
-    let e = t2.substring(0, t2.indexOf("/") + 1), r = (this.path === "." ? "" : this.path) + e, s = this.find(`& > dir-entry[name="${e}"]`);
-    return s || (s = new n(), s.init(e, r), this.appendChild(s)), this.sort(), s.addEntry(t2.replace(e, ""), i);
-  }
-  addFile(t2, i) {
-    let e = this.find(`& > file-entry[name="${t2}"]`);
-    return e || (e = new c(), e.init(t2, i), this.appendChild(e), this.sort(false)), e;
-  }
-  addFileFromUpload(t2, i) {
-    let e = this.path, r = (e !== "." ? e : "") + t2;
-    this.emit("file:upload", { fileName: r, content: i }, () => {
-      this.addEntry(t2, r), this.sort();
-    });
-  }
-  addDirectory(t2, i) {
-    let e = this.find(`& > dir-entry[name="${t2}"]`);
-    return e || (e = new n(), e.init(t2, i), this.appendChild(e), this.sort(false)), e;
-  }
-  sort(t2 = true) {
-    let i = [...this.children];
-    i.sort((e, r) => e.tagName === "DIR-HEADING" ? -1 : r.tagName === "DIR-HEADING" ? 1 : e.tagName === "BUTTON" ? -1 : r.tagName === "BUTTON" ? 1 : e.tagName === "DIR-ENTRY" && r.tagName === "DIR-ENTRY" ? (e = e.path, r = r.path, e < r ? -1 : 1) : e.tagName === "DIR-ENTRY" ? -1 : r.tagName === "DIR-ENTRY" ? 1 : (e = e.path, r = r.path, e < r ? -1 : 1)), i.forEach((e) => this.appendChild(e)), t2 && this.findAll("& > dir-entry").forEach((e) => e.sort(t2));
-  }
-  relocateContent(t2, i) {
-    for (let e of this.children) e.relocateContent?.(t2, i);
-  }
-  removeEntry(t2) {
-    if (t2 === this.path) return this.remove();
-    for (let i of this.children) i.removeEntry?.(t2);
-  }
-  selectEntry(t2) {
-    for (let i of this.children) i.selectEntry?.(t2);
-  }
-  checkEmpty() {
-    this.removeEmpty && (this.find("file-entry") || this.emit("dir:delete", { path: this.path }, () => {
-      this.parentNode.removeChild(this);
-    }));
-  }
-  toJSON() {
-    return JSON.stringify(this.toValue());
-  }
-  toString() {
-    return this.toValue().join(",");
-  }
-  toValue() {
-    return [this.findAll("& > dir-entry").map((t2) => t2.toValue()), this.findAll("& > file-entry").map((t2) => t2.toValue())].flat(1 / 0);
-  }
-};
-var p = class extends l {
-};
-h.define("dir-entry", f);
-h.define("dir-heading", p);
-function D(n2) {
-  return new Promise((t2, i) => {
-    let e = new FileReader();
-    e.onloadend = ({ target: r }) => t2(r.result), e.onerror = i, e.readAsArrayBuffer(n2);
-  });
-}
-function L(n2, t2) {
-  return t2 === n2 ? true : t2.parentDir === n2;
-}
-function w(n2) {
-  let t2 = new AbortController();
-  n2.draggable = true;
-  let i = () => {
-    n2.findAllInTree(".drop-target").forEach((e) => e.classList.remove("drop-target"));
-  };
-  return n2.addEventListener("dragstart", (e) => {
-    e.stopPropagation(), n2.classList.add("dragging"), n2.dataset.id = `${Date.now()}-${Math.random()}`, e.dataTransfer.setData("id", n2.dataset.id);
-  }, { signal: t2.signal }), n2.addEventListener("dragenter", (e) => {
-    e.preventDefault(), i(), n2.classList.add("drop-target");
-  }, { signal: t2.signal }), n2.addEventListener("dragover", (e) => {
-    let r = e.target;
-    L(n2, r) && (e.preventDefault(), i(), n2.classList.add("drop-target"));
-  }, { signal: t2.signal }), n2.addEventListener("dragleave", (e) => {
-    e.preventDefault(), i();
-  }, { signal: t2.signal }), n2.addEventListener("drop", async (e) => {
-    e.preventDefault(), e.stopPropagation(), i();
-    let r = e.dataTransfer.getData("id");
-    if (r) return F(n2, r);
-    await v(n2, e.dataTransfer.items);
-  }, { signal: t2.signal }), () => t2.abort();
-}
-function N(n2, t2) {
-  let i = prompt("Please specify a filename.")?.trim();
-  if (i) {
-    if (i.includes("/")) return alert("Just add new files directly to the directory where they should live.");
-    let e = i;
-    if (t2 !== "." && (i = t2 + i), n2.findInTree(`[path="${i}"]`)) return;
-    i.includes(".") ? n2.emit("file:create", { fileName: i }, () => n2.addEntry(e, i)) : confirm(`Did you mean to create a new directory ${i}?`) && n2.emit("dir:create", { dirName: i }, () => {
-      n2.addDirectory(e + "/", i + "/");
-    });
-  }
-}
-function T(n2) {
-  let t2 = d("input");
-  t2.type = "file", t2.multiple = true, confirm('To upload one or more files, press "OK". To upload an entire folder, press "Cancel".') || (t2.webkitdirectory = true), t2.addEventListener("change", () => {
-    let { files: e } = t2;
-    e && v(n2, e);
-  }), t2.click();
-}
-async function v(n2, t2) {
-  async function i(e, r = "") {
-    if (e instanceof File) {
-      let s = await D(e), a = r + (e.webkitRelativePath || e.name);
-      n2.addFileFromUpload(a, s);
-    } else if (e.isFile) e.file(async (s) => {
-      let a = await D(s), o = r + s.name;
-      n2.addFileFromUpload(o, a);
-    });
-    else if (e.isDirectory) {
-      let s = r + e.name + "/";
-      e.createReader().readEntries(async (a) => {
-        for (let o of a) await i(o, s);
-      });
-    }
-  }
-  for await (let e of t2) try {
-    await i(e instanceof File ? e : e.webkitGetAsEntry());
-  } catch {
-    return alert(`Unfortunately, a ${e.kind} is not a file or folder.`);
-  }
-}
-function A(n2) {
-  let t2 = prompt("Choose a new directory name", n2.heading.textContent)?.trim();
-  if (t2) {
-    if (t2.includes("/")) return alert("If you want to relocate a dir, just move it.");
-    let i = n2.heading.textContent, e = n2.path, r = e.replace(i, t2);
-    n2.findInTree(`dir-entry[path="${r}"]`) && confirm("That directory already exists. Move all the content?") && n2.emit("dir:rename", { oldPath: e, newPath: r }, () => {
-      let a = n2.path;
-      return n2.heading.textContent = t2, n2.name = t2, n2.path = r, n2.relocateContent(a, r), { oldPath: a, newPath: r };
-    });
-  }
-}
-function k(n2) {
-  confirm("Are you *sure* you want to delete this directory and everything in it?") && n2.emit("dir:delete", { path: n2.path }, () => {
-    n2.remove();
-  });
-}
-function F(n2, t2) {
-  let i = n2.findInTree(`[data-id="${t2}"]`);
-  if (delete i.dataset.id, i.classList.remove("dragging"), i === n2) return;
-  let e = i.path, r = n2.path;
-  if (i instanceof c) {
-    let s = (r !== "." ? r : "") + e.substring(e.lastIndexOf("/") + 1);
-    if (e !== s) {
-      let a = n2.root.relocateEntry(e, s);
-      a && n2.emit("file:move", { oldPath: e, newPath: s }, a);
-    }
-  }
-  if (i instanceof f) {
-    let s = (r !== "." ? r : "") + i.heading.textContent + "/";
-    if (e !== s) {
-      let a = n2.root.relocateEntry(e, s);
-      a && n2.emit("dir:move", { oldPath: e, newPath: s }, a);
-    }
-  }
-}
-var m = class extends l {
   get root() {
     return this;
   }
   get parentDir() {
     return this.rootDir;
   }
-  setFiles(t2 = []) {
-    let i = this.querySelector('dir-tree[path="."]');
-    i || (i = this.rootDir = new f(), i.init("."), this.appendChild(i)), i.setFiles(t2);
+  clear() {
+    this.ready = false, this.emit("tree:clear"), Object.keys(this.entries).forEach((e) => delete this.entries[e]), this.rootDir && this.removeChild(this.rootDir);
+    let t2 = this.rootDir = new E();
+    t2.path = ".", this.appendChild(t2);
   }
-  addEntry(t2) {
-    return this.find(`[path="${t2}"]`) ? alert(`${t2} already exists. Overwrite?`) : this.rootDir.addEntry(t2);
+  connectedCallback() {
+    this.addExternalListener(document, "dragend", () => this.findAll(".dragging").forEach((t2) => t2.classList.remove("dragging")));
   }
-  relocateEntry(t2, i) {
-    return this.find(`[path="${i}"]`) ? alert(`${i} already exists.`) : y(t2) ? this.relocateFile(t2, i) : this.relocateDir(t2, i);
+  attributeChangedCallback(t2, e, r) {
+    t2 === "src" && r && this.#r(r);
   }
-  relocateFile(t2, i) {
-    return () => {
-      let e = this.rootDir.addEntry(i), r = this.find(`[path="${t2}"]`);
-      e.setAttribute("class", r.getAttribute("class")), this.removeEntry(t2);
+  async #r(t2) {
+    let r = await (await fetch(t2)).json();
+    r && this.setContent(r);
+  }
+  setContent(t2 = []) {
+    return this.clear(), t2.forEach((e) => {
+      let r = p(e) ? "file" : "dir";
+      this.#t(e, void 0, `tree:add:${r}`, true);
+    }), this.ready = true, this.emit("tree:ready");
+  }
+  createEntry(t2, e = void 0) {
+    let r = (p(t2) ? "file" : "dir") + ":create";
+    this.#t(t2, e, r);
+  }
+  #t(t2, e = void 0, r, i = false) {
+    let { entries: n } = this;
+    if (!p(t2) && !t2.endsWith("/") && (t2 += "/"), n[t2]) return this.emit(`${r}:error`, { error: o.PATH_EXISTS(t2) });
+    let a = () => {
+      let c = p(t2) ? m : E, l = new c();
+      l.path = t2, n[t2] = l, this.#i(l).addEntry(l);
     };
+    if (i) return a();
+    this.emit(r, { path: t2, content: e }, a);
   }
-  relocateDir(t2, i) {
-    let e = this.find(`[path="${t2}"]`, this.rootDir);
-    return () => {
-      e.toValue().forEach((s) => {
-        let a = s.replace(t2, i);
-        this.removeEntry(s), this.rootDir.addEntry(a);
-      }), this.removeEntry(t2), this.rootDir.sort();
-    };
+  #i({ dirPath: t2 }) {
+    let { entries: e } = this;
+    if (!t2) return this.rootDir;
+    let r = this.find(`[path="${t2}"`);
+    return r || (r = this.rootDir, t2.split("/").forEach((i) => {
+      if (!i) return;
+      let n = (r.path === "." ? "" : r.path) + i + "/", a = this.find(`[path="${n}"`);
+      a || (a = new E(), a.path = n, r.addEntry(a), e[n] = a), r = a;
+    }), r);
   }
-  removeEntry(t2) {
-    this.rootDir.removeEntry(t2);
+  renameEntry(t2, e) {
+    let r = t2.path, i = r.lastIndexOf(t2.name), n = r.substring(0, i) + e;
+    t2.isDir && (n += "/");
+    let a = (t2.isFile ? "file" : "dir") + ":rename";
+    this.#e(t2, r, n, a);
   }
-  selectEntry(t2) {
-    this.rootDir.selectEntry(t2);
+  moveEntry(t2, e, r) {
+    let i = (t2.isFile ? "file" : "dir") + ":move";
+    this.#e(t2, e, r, i);
+  }
+  #e(t2, e, r, i) {
+    let { entries: n } = this;
+    if (e !== r) {
+      if (r.startsWith(e)) return this.emit(`${i}:error`, { oldPath: e, newPath: r, error: o.PATH_INSIDE_ITSELF(e) });
+      if (n[r]) return this.emit(`${i}:error`, { oldPath: e, newPath: r, error: o.PATH_EXISTS(r) });
+      this.emit(i, { oldPath: e, newPath: r }, () => {
+        Object.keys(n).forEach((l) => {
+          if (l.startsWith(e)) {
+            let h = n[l];
+            h.updatePath(e, r), n[h.path] = h, delete n[l];
+          }
+        });
+        let { dirPath: a } = n[r] = t2;
+        (a ? n[a] : this.rootDir).addEntry(t2);
+      });
+    }
+  }
+  removeEntry(t2, e = false) {
+    let { entries: r } = this, { path: i, isFile: n, parentDir: a } = t2, c = (n ? "file" : "dir") + ":delete", l = { path: i };
+    e && (l.emptyDir = true), this.emit(c, l, () => {
+      n || e ? (t2.remove(), delete r[i]) : Object.entries(r).forEach(([h, N]) => {
+        h.startsWith(i) && (N.remove(), delete r[h]);
+      }), a.checkEmpty();
+    });
+  }
+  select(t2) {
+    let e = this.entries[t2];
+    if (!e) throw new Error(o.PATH_DOES_NOT_EXIST(t2));
+    e.select();
+  }
+  unselect() {
+    this.find(".selected")?.classList.remove("selected");
+  }
+  selectEntry(t2, e = {}) {
+    let r = (t2.isFile ? "file" : "dir") + ":click";
+    e.path = t2.path, this.emit(r, e, () => t2.select());
+  }
+  toggleDirectory(t2, e = {}) {
+    let r = "dir:toggle";
+    e.path = t2.path, this.emit(r, e, () => t2.toggle());
   }
   sort() {
     this.rootDir.sort();
   }
   toJSON() {
-    return this.rootDir.toJSON();
+    return JSON.stringify(Object.keys(this.entries).sort());
   }
   toString() {
-    return this.rootDir.toString();
+    return this.toJSON();
   }
   toValue() {
-    return this.toString();
+    return this;
   }
 };
-h.define("file-tree", m);
+f.define("file-tree", R);
 
 // src/client/utils.js
 var noop = () => {
@@ -490,10 +595,10 @@ var Text = class _Text {
   /**
   Get the description for the given (1-based) line number.
   */
-  line(n2) {
-    if (n2 < 1 || n2 > this.lines)
-      throw new RangeError(`Invalid line number ${n2} in ${this.lines}-line document`);
-    return this.lineInner(n2, true, 1, 0);
+  line(n) {
+    if (n < 1 || n > this.lines)
+      throw new RangeError(`Invalid line number ${n} in ${this.lines}-line document`);
+    return this.lineInner(n, true, 1, 0);
   }
   /**
   Replace a range of the text with the given content.
@@ -790,7 +895,7 @@ var TextNode = class _TextNode extends Text {
       length += chA.length + 1;
     }
   }
-  static from(children, length = children.reduce((l2, ch) => l2 + ch.length + 1, -1)) {
+  static from(children, length = children.reduce((l, ch) => l + ch.length + 1, -1)) {
     let lines = 0;
     for (let ch of children)
       lines += ch.lines;
@@ -2693,7 +2798,7 @@ var nonASCIISingleCaseWordChar = /[\u00df\u0587\u0590-\u05f4\u0600-\u06ff\u3040-
 var wordChar;
 try {
   wordChar = /* @__PURE__ */ new RegExp("[\\p{Alphabetic}\\p{Number}_]", "u");
-} catch (_) {
+} catch (_2) {
 }
 function hasWordChar(str) {
   if (wordChar)
@@ -2966,8 +3071,8 @@ var EditorState = class _EditorState {
       phrase2 = phrase2.replace(/\$(\$|\d*)/g, (m2, i) => {
         if (i == "$")
           return "$";
-        let n2 = +(i || 1);
-        return !n2 || n2 > insert2.length ? m2 : insert2[n2 - 1];
+        let n = +(i || 1);
+        return !n || n > insert2.length ? m2 : insert2[n - 1];
       });
     return phrase2;
   }
@@ -3045,7 +3150,7 @@ EditorState.readOnly = readOnly;
 EditorState.phrases = /* @__PURE__ */ Facet.define({
   compare(a, b) {
     let kA = Object.keys(a), kB = Object.keys(b);
-    return kA.length == kB.length && kA.every((k2) => a[k2] == b[k2]);
+    return kA.length == kB.length && kA.every((k) => a[k] == b[k]);
   }
 });
 EditorState.languageData = languageData;
@@ -3836,33 +3941,33 @@ function findMinIndex(value, array) {
   return found;
 }
 function countColumn(string2, tabSize, to = string2.length) {
-  let n2 = 0;
+  let n = 0;
   for (let i = 0; i < to; ) {
     if (string2.charCodeAt(i) == 9) {
-      n2 += tabSize - n2 % tabSize;
+      n += tabSize - n % tabSize;
       i++;
     } else {
-      n2++;
+      n++;
       i = findClusterBreak(string2, i);
     }
   }
-  return n2;
+  return n;
 }
 function findColumn(string2, col, tabSize, strict) {
-  for (let i = 0, n2 = 0; ; ) {
-    if (n2 >= col)
+  for (let i = 0, n = 0; ; ) {
+    if (n >= col)
       return i;
     if (i == string2.length)
       break;
-    n2 += string2.charCodeAt(i) == 9 ? tabSize - n2 % tabSize : 1;
+    n += string2.charCodeAt(i) == 9 ? tabSize - n % tabSize : 1;
     i = findClusterBreak(string2, i);
   }
   return strict === true ? -1 : string2.length;
 }
 
 // node_modules/style-mod/src/style-mod.js
-var C = "\u037C";
-var COUNT = typeof Symbol == "undefined" ? "__" + C : Symbol.for(C);
+var C2 = "\u037C";
+var COUNT = typeof Symbol == "undefined" ? "__" + C2 : Symbol.for(C2);
 var SET = typeof Symbol == "undefined" ? "__styleSet" + Math.floor(Math.random() * 1e8) : Symbol("styleSet");
 var top = typeof globalThis != "undefined" ? globalThis : typeof window != "undefined" ? window : {};
 var StyleModule = class {
@@ -3892,7 +3997,7 @@ var StyleModule = class {
           if (!isAt) throw new RangeError("The value of a property (" + prop + ") should be a primitive value.");
           render(splitSelector(prop), value, local, keyframes);
         } else if (value != null) {
-          local.push(prop.replace(/_.*/, "").replace(/[A-Z]/g, (l2) => "-" + l2.toLowerCase()) + ": " + value + ";");
+          local.push(prop.replace(/_.*/, "").replace(/[A-Z]/g, (l) => "-" + l.toLowerCase()) + ": " + value + ";");
         }
       }
       if (local.length || keyframes) {
@@ -3911,7 +4016,7 @@ var StyleModule = class {
   static newName() {
     let id2 = top[COUNT] || 1;
     top[COUNT] = id2 + 1;
-    return C + id2.toString(36);
+    return C2 + id2.toString(36);
   }
   // :: (union<Document, ShadowRoot>, union<[StyleModule], StyleModule>, ?{nonce: ?string})
   //
@@ -3964,8 +4069,8 @@ var StyleSet = class {
       }
       if (index == -1) {
         this.modules.splice(j++, 0, mod);
-        if (sheet) for (let k2 = 0; k2 < mod.rules.length; k2++)
-          sheet.insertRule(mod.rules[k2], pos++);
+        if (sheet) for (let k = 0; k < mod.rules.length; k++)
+          sheet.insertRule(mod.rules[k], pos++);
       } else {
         while (j < index) pos += this.modules[j++].rules.length;
         pos += mod.rules.length;
@@ -4121,7 +4226,7 @@ function hasSelection(dom, selection) {
     return false;
   try {
     return contains(dom, selection.anchorNode);
-  } catch (_) {
+  } catch (_2) {
     return false;
   }
 }
@@ -5906,9 +6011,9 @@ var ArabicTypes = /* @__PURE__ */ dec("44444488266272889999999999922222222222222
 var Brackets = /* @__PURE__ */ Object.create(null);
 var BracketStack = [];
 for (let p2 of ["()", "[]", "{}"]) {
-  let l2 = /* @__PURE__ */ p2.charCodeAt(0), r = /* @__PURE__ */ p2.charCodeAt(1);
-  Brackets[l2] = r;
-  Brackets[r] = -l2;
+  let l = /* @__PURE__ */ p2.charCodeAt(0), r = /* @__PURE__ */ p2.charCodeAt(1);
+  Brackets[l] = r;
+  Brackets[r] = -l;
 }
 function charType(ch) {
   return ch <= 247 ? LowTypes[ch] : 1424 <= ch && ch <= 1524 ? 2 : 1536 <= ch && ch <= 1785 ? ArabicTypes[ch - 1536] : 1774 <= ch && ch <= 2220 ? 4 : 8192 <= ch && ch <= 8204 ? 256 : 64336 <= ch && ch <= 65023 ? 4 : 1;
@@ -6358,7 +6463,7 @@ var PluginInstance = class {
           if (this.value.destroy)
             try {
               this.value.destroy();
-            } catch (_) {
+            } catch (_2) {
             }
           this.deactivate();
         }
@@ -6692,7 +6797,7 @@ var DocView = class extends ContentView {
   fixCompositionDOM(composition) {
     let fix = (dom, cView2) => {
       cView2.flags |= 8 | (cView2.children.some(
-        (c2) => c2.flags & 7
+        (c) => c.flags & 7
         /* ViewFlag.Dirty */
       ) ? 1 : 0);
       this.markedForComposition.add(cView2);
@@ -6754,7 +6859,7 @@ var DocView = class extends ContentView {
           rawSel.collapse(anchor.node, anchor.offset);
           try {
             rawSel.extend(head.node, head.offset);
-          } catch (_) {
+          } catch (_2) {
           }
         } else {
           let range = document.createRange();
@@ -7389,9 +7494,9 @@ function isSuspiciousChromeCaretResult(node, offset, x) {
 function blockAt(view, pos) {
   let line = view.lineBlockAt(pos);
   if (Array.isArray(line.type))
-    for (let l2 of line.type) {
-      if (l2.to > pos || l2.to == pos && (l2.to == line.to || l2.type == BlockType.Text))
-        return l2;
+    for (let l of line.type) {
+      if (l.to > pos || l.to == pos && (l.to == line.to || l.type == BlockType.Text))
+        return l;
     }
   return line;
 }
@@ -8268,12 +8373,12 @@ var HeightOracle = class {
   mustRefreshForHeights(lineHeights) {
     let newHeight = false;
     for (let i = 0; i < lineHeights.length; i++) {
-      let h2 = lineHeights[i];
-      if (h2 < 0) {
+      let h = lineHeights[i];
+      if (h < 0) {
         i++;
-      } else if (!this.heightSamples[Math.floor(h2 * 10)]) {
+      } else if (!this.heightSamples[Math.floor(h * 10)]) {
         newHeight = true;
-        this.heightSamples[Math.floor(h2 * 10)] = true;
+        this.heightSamples[Math.floor(h * 10)] = true;
       }
     }
     return newHeight;
@@ -8289,11 +8394,11 @@ var HeightOracle = class {
     if (changed) {
       this.heightSamples = {};
       for (let i = 0; i < knownHeights.length; i++) {
-        let h2 = knownHeights[i];
-        if (h2 < 0)
+        let h = knownHeights[i];
+        if (h < 0)
           i++;
         else
-          this.heightSamples[Math.floor(h2 * 10)] = true;
+          this.heightSamples[Math.floor(h * 10)] = true;
       }
     }
     return changed;
@@ -9430,11 +9535,11 @@ function find(array, f2) {
   return void 0;
 }
 var IdScaler = {
-  toDOM(n2) {
-    return n2;
+  toDOM(n) {
+    return n;
   },
-  fromDOM(n2) {
-    return n2;
+  fromDOM(n) {
+    return n;
   },
   scale: 1
 };
@@ -9454,24 +9559,24 @@ var BigScaler = class {
       base2 = obj.bottom;
     }
   }
-  toDOM(n2) {
+  toDOM(n) {
     for (let i = 0, base2 = 0, domBase = 0; ; i++) {
       let vp = i < this.viewports.length ? this.viewports[i] : null;
-      if (!vp || n2 < vp.top)
-        return domBase + (n2 - base2) * this.scale;
-      if (n2 <= vp.bottom)
-        return vp.domTop + (n2 - vp.top);
+      if (!vp || n < vp.top)
+        return domBase + (n - base2) * this.scale;
+      if (n <= vp.bottom)
+        return vp.domTop + (n - vp.top);
       base2 = vp.bottom;
       domBase = vp.domBottom;
     }
   }
-  fromDOM(n2) {
+  fromDOM(n) {
     for (let i = 0, base2 = 0, domBase = 0; ; i++) {
       let vp = i < this.viewports.length ? this.viewports[i] : null;
-      if (!vp || n2 < vp.domTop)
-        return base2 + (n2 - domBase) / this.scale;
-      if (n2 <= vp.domBottom)
-        return vp.top + (n2 - vp.domTop);
+      if (!vp || n < vp.domTop)
+        return base2 + (n - domBase) / this.scale;
+      if (n <= vp.domBottom)
+        return vp.top + (n - vp.domTop);
       base2 = vp.bottom;
       domBase = vp.domBottom;
     }
@@ -9946,7 +10051,7 @@ function applyDOMChange(view, domChange) {
       view.inputState.composing++;
     let defaultTr;
     let defaultInsert = () => defaultTr || (defaultTr = applyDefaultInsert(view, change, newSel));
-    if (!view.state.facet(inputHandler).some((h2) => h2(view, change.from, change.to, text, defaultInsert)))
+    if (!view.state.facet(inputHandler).some((h) => h(view, change.from, change.to, text, defaultInsert)))
       view.dispatch(defaultInsert());
     return true;
   } else if (newSel && !newSel.main.eq(sel)) {
@@ -10171,7 +10276,7 @@ var DOMObserver = class {
     }, 500);
   }
   updateGaps(gaps) {
-    if (this.gapIntersection && (gaps.length != this.gaps.length || this.gaps.some((g, i) => g != gaps[i]))) {
+    if (this.gapIntersection && (gaps.length != this.gaps.length || this.gaps.some((g2, i) => g2 != gaps[i]))) {
       this.gapIntersection.disconnect();
       for (let gap of gaps)
         this.gapIntersection.observe(gap);
@@ -11414,7 +11519,7 @@ var CachedOrder = class _CachedOrder {
     this.order = order;
   }
   static update(cache2, changes) {
-    if (changes.empty && !cache2.some((c2) => c2.fresh))
+    if (changes.empty && !cache2.some((c) => c.fresh))
       return cache2;
     let result = [], lastDir = cache2.length ? cache2[cache2.length - 1].dir : Direction.LTR;
     for (let i = Math.max(0, cache2.length - 10); i < cache2.length; i++) {
@@ -11511,7 +11616,7 @@ function buildKeymap(bindings, platform = currentPlatform) {
   let add2 = (scope, key, command2, preventDefault, stopPropagation) => {
     var _a2, _b;
     let scopeObj = bound[scope] || (bound[scope] = /* @__PURE__ */ Object.create(null));
-    let parts = key.split(/ (?!$)/).map((k2) => normalizeKeyName(k2, platform));
+    let parts = key.split(/ (?!$)/).map((k) => normalizeKeyName(k, platform));
     for (let i = 1; i < parts.length; i++) {
       let prefix = parts.slice(0, i).join(" ");
       checkPrefix(prefix, true);
@@ -13057,9 +13162,9 @@ var closeHoverTooltipEffect = /* @__PURE__ */ StateEffect.define();
 var panelConfig = /* @__PURE__ */ Facet.define({
   combine(configs) {
     let topContainer, bottomContainer;
-    for (let c2 of configs) {
-      topContainer = topContainer || c2.topContainer;
-      bottomContainer = bottomContainer || c2.bottomContainer;
+    for (let c of configs) {
+      topContainer = topContainer || c.topContainer;
+      bottomContainer = bottomContainer || c.bottomContainer;
     }
     return { topContainer, bottomContainer };
   }
@@ -13348,13 +13453,13 @@ var gutterView = /* @__PURE__ */ ViewPlugin.fromClass(class {
           gutters2.push(this.gutters[known]);
         }
       }
-      for (let g of this.gutters) {
-        g.dom.remove();
-        if (gutters2.indexOf(g) < 0)
-          g.destroy();
+      for (let g2 of this.gutters) {
+        g2.dom.remove();
+        if (gutters2.indexOf(g2) < 0)
+          g2.destroy();
       }
-      for (let g of gutters2)
-        this.dom.appendChild(g.dom);
+      for (let g2 of gutters2)
+        this.dom.appendChild(g2.dom);
       this.gutters = gutters2;
     }
     return change;
@@ -13499,9 +13604,9 @@ var GutterElement = class {
     for (let iNew = 0, iOld = 0; ; ) {
       let skipTo = iOld, marker = iNew < markers.length ? markers[iNew++] : null, matched = false;
       if (marker) {
-        let c2 = marker.elementClass;
-        if (c2)
-          cls += " " + c2;
+        let c = marker.elementClass;
+        if (c)
+          cls += " " + c;
         for (let i = iOld; i < this.markers.length; i++)
           if (this.markers[i].compare(marker)) {
             skipTo = i;
@@ -13951,19 +14056,19 @@ var Tree = class _Tree {
   iterate(spec) {
     let { enter, leave, from = 0, to = this.length } = spec;
     let mode = spec.mode || 0, anon = (mode & IterMode.IncludeAnonymous) > 0;
-    for (let c2 = this.cursor(mode | IterMode.IncludeAnonymous); ; ) {
+    for (let c = this.cursor(mode | IterMode.IncludeAnonymous); ; ) {
       let entered = false;
-      if (c2.from <= to && c2.to >= from && (!anon && c2.type.isAnonymous || enter(c2) !== false)) {
-        if (c2.firstChild())
+      if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
+        if (c.firstChild())
           continue;
         entered = true;
       }
       for (; ; ) {
-        if (entered && leave && (anon || !c2.type.isAnonymous))
-          leave(c2);
-        if (c2.nextSibling())
+        if (entered && leave && (anon || !c.type.isAnonymous))
+          leave(c);
+        if (c.nextSibling())
           break;
-        if (!c2.parent())
+        if (!c.parent())
           return;
         entered = true;
       }
@@ -14540,8 +14645,8 @@ var TreeCursor = class {
     } else {
       this._tree = node.context.parent;
       this.buffer = node.context;
-      for (let n2 = node._parent; n2; n2 = n2._parent)
-        this.stack.unshift(n2.index);
+      for (let n = node._parent; n; n = n._parent)
+        this.stack.unshift(n.index);
       this.bufferNode = node;
       this.yieldBuf(node.index);
     }
@@ -14783,11 +14888,11 @@ var TreeCursor = class {
     let cache2 = this.bufferNode, result = null, depth = 0;
     if (cache2 && cache2.context == this.buffer) {
       scan: for (let index = this.index, d2 = this.stack.length; d2 >= 0; ) {
-        for (let c2 = cache2; c2; c2 = c2._parent)
-          if (c2.index == index) {
+        for (let c = cache2; c; c = c._parent)
+          if (c.index == index) {
             if (index == this.index)
-              return c2;
-            result = c2;
+              return c;
+            result = c;
             depth = d2 + 1;
             break scan;
           }
@@ -15871,7 +15976,7 @@ var HighlightBuilder = class {
     if (start >= to || end <= from)
       return;
     if (type.isTop)
-      highlighters = this.highlighters.filter((h2) => !h2.scope || h2.scope(type));
+      highlighters = this.highlighters.filter((h) => !h.scope || h.scope(type));
     let cls = inheritedClass;
     let rule = getStyleTags(cursor) || Rule.empty;
     let tagCls = highlightTags(highlighters, rule.tags);
@@ -15888,7 +15993,7 @@ var HighlightBuilder = class {
     let mounted = cursor.tree && cursor.tree.prop(NodeProp.mounted);
     if (mounted && mounted.overlay) {
       let inner = cursor.node.enter(mounted.overlay[0].from + start, 1);
-      let innerHighlighters = this.highlighters.filter((h2) => !h2.scope || h2.scope(mounted.tree.type));
+      let innerHighlighters = this.highlighters.filter((h) => !h.scope || h.scope(mounted.tree.type));
       let hasChild2 = cursor.firstChild();
       for (let i = 0, pos = start; ; i++) {
         let next = i < mounted.overlay.length ? mounted.overlay[i] : null;
@@ -17292,7 +17397,7 @@ var unfoldEffect = /* @__PURE__ */ StateEffect.define({ map: mapRange });
 function selectedLines(view) {
   let lines = [];
   for (let { head } of view.state.selection.ranges) {
-    if (lines.some((l2) => l2.from <= head && l2.to >= head))
+    if (lines.some((l) => l.from <= head && l.to >= head))
       continue;
     lines.push(view.lineBlockAt(head));
   }
@@ -17988,7 +18093,7 @@ var toggleBlockComment = /* @__PURE__ */ command(
   /* CommentOption.Toggle */
 );
 var toggleBlockCommentByLine = /* @__PURE__ */ command(
-  (o, s) => changeBlockComment(o, s, selectedLineRanges(s)),
+  (o2, s) => changeBlockComment(o2, s, selectedLineRanges(s)),
   0
   /* CommentOption.Toggle */
 );
@@ -18046,16 +18151,16 @@ function selectedLineRanges(state) {
 }
 function changeBlockComment(option, state, ranges = state.selection.ranges) {
   let tokens = ranges.map((r) => getConfig(state, r.from).block);
-  if (!tokens.every((c2) => c2))
+  if (!tokens.every((c) => c))
     return null;
   let comments = ranges.map((r, i) => findBlockComment(state, tokens[i], r.from, r.to));
-  if (option != 2 && !comments.every((c2) => c2)) {
+  if (option != 2 && !comments.every((c) => c)) {
     return { changes: state.changes(ranges.map((range, i) => {
       if (comments[i])
         return [];
       return [{ from: range.from, insert: tokens[i].open + " " }, { from: range.to, insert: " " + tokens[i].close }];
     })) };
-  } else if (option != 1 && comments.some((c2) => c2)) {
+  } else if (option != 1 && comments.some((c) => c)) {
     let changes = [];
     for (let i = 0, comment2; i < comments.length; i++)
       if (comment2 = comments[i]) {
@@ -18095,14 +18200,14 @@ function changeLineComment(option, state, ranges = state.selection.ranges) {
     if (lines.length == startI + 1)
       lines[startI].single = true;
   }
-  if (option != 2 && lines.some((l2) => l2.comment < 0 && (!l2.empty || l2.single))) {
+  if (option != 2 && lines.some((l) => l.comment < 0 && (!l.empty || l.single))) {
     let changes = [];
     for (let { line, token, indent, empty: empty2, single } of lines)
       if (single || !empty2)
         changes.push({ from: line.from + indent, insert: token + " " });
     let changeSet = state.changes(changes);
     return { changes: changeSet, selection: state.selection.map(changeSet, 1) };
-  } else if (option != 1 && lines.some((l2) => l2.comment >= 0)) {
+  } else if (option != 1 && lines.some((l) => l.comment >= 0)) {
     let changes = [];
     for (let { line, comment: comment2, token } of lines)
       if (comment2 >= 0) {
@@ -19539,7 +19644,7 @@ var SearchQuery = class {
   @internal
   */
   unquote(text) {
-    return this.literal ? text : text.replace(/\\([nrt\\])/g, (_, ch) => ch == "n" ? "\n" : ch == "r" ? "\r" : ch == "t" ? "	" : "\\");
+    return this.literal ? text : text.replace(/\\([nrt\\])/g, (_2, ch) => ch == "n" ? "\n" : ch == "r" ? "\r" : ch == "t" ? "	" : "\\");
   }
   /**
   Compare this query to another query.
@@ -19730,9 +19835,9 @@ var searchHighlighter = /* @__PURE__ */ ViewPlugin.fromClass(class {
       return Decoration.none;
     let { view } = this;
     let builder = new RangeSetBuilder();
-    for (let i = 0, ranges = view.visibleRanges, l2 = ranges.length; i < l2; i++) {
+    for (let i = 0, ranges = view.visibleRanges, l = ranges.length; i < l; i++) {
       let { from, to } = ranges[i];
-      while (i < l2 - 1 && to > ranges[i + 1].from - 2 * 250)
+      while (i < l - 1 && to > ranges[i + 1].from - 2 * 250)
         to = ranges[++i].to;
       query.highlight(view.state, from, to, (from2, to2) => {
         let selected = view.state.selection.ranges.some((r) => r.from == from2 && r.to == to2);
@@ -20176,8 +20281,8 @@ function prefixMatch(options) {
   return [new RegExp("^" + source), new RegExp(source)];
 }
 function completeFromList(list) {
-  let options = list.map((o) => typeof o == "string" ? { label: o } : o);
-  let [validFor, match] = options.every((o) => /^\w+$/.test(o.label)) ? [/\w*$/, /\w+$/] : prefixMatch(options);
+  let options = list.map((o2) => typeof o2 == "string" ? { label: o2 } : o2);
+  let [validFor, match] = options.every((o2) => /^\w+$/.test(o2.label)) ? [/\w*$/, /\w+$/] : prefixMatch(options);
   return (context) => {
     let token = context.matchBefore(match);
     return token || context.explicit ? { from: token ? token.from : context.pos, options, validFor } : null;
@@ -20397,8 +20502,8 @@ var completionConfig = /* @__PURE__ */ Facet.define({
       defaultKeymap: (a, b) => a && b,
       closeOnBlur: (a, b) => a && b,
       icons: (a, b) => a && b,
-      tooltipClass: (a, b) => (c2) => joinClass(a(c2), b(c2)),
-      optionClass: (a, b) => (c2) => joinClass(a(c2), b(c2)),
+      tooltipClass: (a, b) => (c) => joinClass(a(c), b(c)),
+      optionClass: (a, b) => (c) => joinClass(a(c), b(c)),
       addToOptions: (a, b) => a.concat(b),
       filterStrict: (a, b) => a || b
     });
@@ -20571,12 +20676,12 @@ var CompletionTooltip = class {
   updateTooltipClass(state) {
     let cls = this.tooltipClass(state);
     if (cls != this.currentClass) {
-      for (let c2 of this.currentClass.split(" "))
-        if (c2)
-          this.dom.classList.remove(c2);
-      for (let c2 of cls.split(" "))
-        if (c2)
-          this.dom.classList.add(c2);
+      for (let c of this.currentClass.split(" "))
+        if (c)
+          this.dom.classList.remove(c);
+      for (let c of cls.split(" "))
+        if (c)
+          this.dom.classList.add(c);
       this.currentClass = cls;
     }
   }
@@ -21470,7 +21575,7 @@ var Snippet = class _Snippet {
         positions.push(new FieldPos(found, lines.length, m2.index, m2.index + name2.length));
         line = line.slice(0, m2.index) + rawName + line.slice(m2.index + m2[0].length);
       }
-      line = line.replace(/\\([{}])/g, (_, brace, index) => {
+      line = line.replace(/\\([{}])/g, (_2, brace, index) => {
         for (let pos of positions)
           if (pos.line == lines.length && pos.from > index) {
             pos.from--;
@@ -22032,7 +22137,7 @@ function assignKeys(actions) {
     actions: for (let { name: name2 } of actions) {
       for (let i = 0; i < name2.length; i++) {
         let ch = name2[i];
-        if (/[a-zA-Z]/.test(ch) && !assigned.some((c2) => c2.toLowerCase() == ch.toLowerCase())) {
+        if (/[a-zA-Z]/.test(ch) && !assigned.some((c) => c.toLowerCase() == ch.toLowerCase())) {
           assigned.push(ch);
           continue actions;
         }
@@ -22411,7 +22516,7 @@ var Stack = class _Stack {
   @internal
   */
   toString() {
-    return `[${this.stack.filter((_, i) => i % 3 == 0).concat(this.state)}]@${this.pos}${this.score ? "!" + this.score : ""}`;
+    return `[${this.stack.filter((_2, i) => i % 3 == 0).concat(this.state)}]@${this.pos}${this.score ? "!" + this.score : ""}`;
   }
   // Start an empty stack
   /**
@@ -23110,16 +23215,16 @@ var InputStream = class {
   Move the stream forward N (defaults to 1) code units. Returns
   the new value of [`next`](#lr.InputStream.next).
   */
-  advance(n2 = 1) {
-    this.chunkOff += n2;
-    while (this.pos + n2 >= this.range.to) {
+  advance(n = 1) {
+    this.chunkOff += n;
+    while (this.pos + n >= this.range.to) {
       if (this.rangeIndex == this.ranges.length - 1)
         return this.setDone();
-      n2 -= this.range.to - this.pos;
+      n -= this.range.to - this.pos;
       this.range = this.ranges[++this.rangeIndex];
       this.pos = this.range.from;
     }
-    this.pos += n2;
+    this.pos += n;
     if (this.pos >= this.token.lookAhead)
       this.token.lookAhead = this.pos + 1;
     return this.readNext();
@@ -23395,7 +23500,7 @@ var TokenCache = class {
     this.tokens = [];
     this.mainToken = null;
     this.actions = [];
-    this.tokens = parser5.tokenizers.map((_) => new CachedToken());
+    this.tokens = parser5.tokenizers.map((_2) => new CachedToken());
   }
   getActions(stack) {
     let actionIndex = 0;
@@ -23888,8 +23993,8 @@ var LRParser = class _LRParser extends Parser {
   }
   createParse(input, fragments, ranges) {
     let parse = new Parse(this, input, fragments, ranges);
-    for (let w2 of this.wrappers)
-      parse = w2(parse, input, fragments, ranges);
+    for (let w of this.wrappers)
+      parse = w(parse, input, fragments, ranges);
     return parse;
   }
   /**
@@ -25102,7 +25207,7 @@ var defineCSSCompletionSource = (isVariable) => (context) => {
     return { from: pos, options: properties(), validFor: identifier2 };
   return null;
 };
-var cssCompletionSource = /* @__PURE__ */ defineCSSCompletionSource((n2) => n2.name == "VariableName");
+var cssCompletionSource = /* @__PURE__ */ defineCSSCompletionSource((n) => n.name == "VariableName");
 var cssLanguage = /* @__PURE__ */ LRLanguage.define({
   name: "css",
   parser: /* @__PURE__ */ parser.configure({
@@ -25444,23 +25549,23 @@ function configureNesting(tags3 = [], attributes = []) {
     if (id2 == StyleText) return maybeNest(node, input, style);
     if (id2 == TextareaText) return maybeNest(node, input, textarea);
     if (id2 == Element && other.length) {
-      let n2 = node.node, open = n2.firstChild, tagName = open && findTagName(open, input), attrs2;
+      let n = node.node, open = n.firstChild, tagName = open && findTagName(open, input), attrs2;
       if (tagName) for (let tag of other) {
         if (tag.tag == tagName && (!tag.attrs || tag.attrs(attrs2 || (attrs2 = getAttrs2(open, input))))) {
-          let close = n2.lastChild;
-          let to = close.type.id == CloseTag ? close.from : n2.to;
+          let close = n.lastChild;
+          let to = close.type.id == CloseTag ? close.from : n.to;
           if (to > open.to)
             return { parser: tag.parser, overlay: [{ from: open.to, to }] };
         }
       }
     }
     if (attrs && id2 == Attribute) {
-      let n2 = node.node, nameNode;
-      if (nameNode = n2.firstChild) {
+      let n = node.node, nameNode;
+      if (nameNode = n.firstChild) {
         let matches = attrs[input.read(nameNode.from, nameNode.to)];
         if (matches) for (let attr of matches) {
-          if (attr.tagName && attr.tagName != findTagName(n2.parent, input)) continue;
-          let value = n2.lastChild;
+          if (attr.tagName && attr.tagName != findTagName(n.parent, input)) continue;
+          let value = n.lastChild;
           if (value.type.id == AttributeValue) {
             let from = value.from + 1;
             let last = value.lastChild, to = value.to - (last && last.isError ? 0 : 1);
@@ -25808,8 +25913,8 @@ function getScope(doc2, node) {
       if (gather && gather(node2, def) || ScopeNodes.has(node2.name))
         return false;
     } else if (node2.to - node2.from > 8192) {
-      for (let c2 of getScope(doc2, node2.node))
-        completions.push(c2);
+      for (let c of getScope(doc2, node2.node))
+        completions.push(c);
       return false;
     }
   });
@@ -25901,11 +26006,11 @@ var jsxSublanguage = {
 var typescriptLanguage = /* @__PURE__ */ javascriptLanguage.configure({ dialect: "ts" }, "typescript");
 var jsxLanguage = /* @__PURE__ */ javascriptLanguage.configure({
   dialect: "jsx",
-  props: [/* @__PURE__ */ sublanguageProp.add((n2) => n2.isTop ? [jsxSublanguage] : void 0)]
+  props: [/* @__PURE__ */ sublanguageProp.add((n) => n.isTop ? [jsxSublanguage] : void 0)]
 });
 var tsxLanguage = /* @__PURE__ */ javascriptLanguage.configure({
   dialect: "jsx ts",
-  props: [/* @__PURE__ */ sublanguageProp.add((n2) => n2.isTop ? [jsxSublanguage] : void 0)]
+  props: [/* @__PURE__ */ sublanguageProp.add((n) => n.isTop ? [jsxSublanguage] : void 0)]
 }, "typescript");
 var kwCompletion = (name2) => ({ label: name2, type: "keyword" });
 var keywords = /* @__PURE__ */ "break case const continue default delete export extends false finally in instanceof let new return static super switch this throw true typeof var yield".split(" ").map(kwCompletion);
@@ -25980,7 +26085,7 @@ var Charsets = ["ascii", "utf-8", "utf-16", "latin1", "latin1"];
 var Methods = ["get", "post", "put", "delete"];
 var Encs = ["application/x-www-form-urlencoded", "multipart/form-data", "text/plain"];
 var Bool = ["true", "false"];
-var S = {};
+var S2 = {};
 var Tags = {
   a: {
     attrs: {
@@ -25992,8 +26097,8 @@ var Tags = {
       hreflang: null
     }
   },
-  abbr: S,
-  address: S,
+  abbr: S2,
+  address: S2,
   area: {
     attrs: {
       alt: null,
@@ -26007,8 +26112,8 @@ var Tags = {
       shape: ["default", "rect", "circle", "poly"]
     }
   },
-  article: S,
-  aside: S,
+  article: S2,
+  aside: S2,
   audio: {
     attrs: {
       src: null,
@@ -26020,13 +26125,13 @@ var Tags = {
       controls: ["controls"]
     }
   },
-  b: S,
+  b: S2,
   base: { attrs: { href: null, target: Targets } },
-  bdi: S,
-  bdo: S,
+  bdi: S2,
+  bdo: S2,
   blockquote: { attrs: { cite: null } },
-  body: S,
-  br: S,
+  body: S2,
+  br: S2,
   button: {
     attrs: {
       form: null,
@@ -26043,10 +26148,10 @@ var Tags = {
     }
   },
   canvas: { attrs: { width: null, height: null } },
-  caption: S,
-  center: S,
-  cite: S,
-  code: S,
+  caption: S2,
+  center: S2,
+  cite: S2,
+  code: S2,
   col: { attrs: { span: null } },
   colgroup: { attrs: { span: null } },
   command: {
@@ -26064,20 +26169,20 @@ var Tags = {
   data: { attrs: { value: null } },
   datagrid: { attrs: { disabled: ["disabled"], multiple: ["multiple"] } },
   datalist: { attrs: { data: null } },
-  dd: S,
+  dd: S2,
   del: { attrs: { cite: null, datetime: null } },
   details: { attrs: { open: ["open"] } },
-  dfn: S,
-  div: S,
-  dl: S,
-  dt: S,
-  em: S,
+  dfn: S2,
+  div: S2,
+  dl: S2,
+  dt: S2,
+  em: S2,
   embed: { attrs: { src: null, type: null, width: null, height: null } },
   eventsource: { attrs: { src: null } },
   fieldset: { attrs: { disabled: ["disabled"], form: null, name: null } },
-  figcaption: S,
-  figure: S,
-  footer: S,
+  figcaption: S2,
+  figure: S2,
+  footer: S2,
   form: {
     attrs: {
       action: null,
@@ -26090,22 +26195,22 @@ var Tags = {
       target: Targets
     }
   },
-  h1: S,
-  h2: S,
-  h3: S,
-  h4: S,
-  h5: S,
-  h6: S,
+  h1: S2,
+  h2: S2,
+  h3: S2,
+  h4: S2,
+  h5: S2,
+  h6: S2,
   head: {
     children: ["title", "base", "link", "style", "meta", "script", "noscript", "command"]
   },
-  header: S,
-  hgroup: S,
-  hr: S,
+  header: S2,
+  hgroup: S2,
+  hr: S2,
   html: {
     attrs: { manifest: null }
   },
-  i: S,
+  i: S2,
   iframe: {
     attrs: {
       src: null,
@@ -26187,7 +26292,7 @@ var Tags = {
     }
   },
   ins: { attrs: { cite: null, datetime: null } },
-  kbd: S,
+  kbd: S2,
   keygen: {
     attrs: {
       challenge: null,
@@ -26199,7 +26304,7 @@ var Tags = {
     }
   },
   label: { attrs: { for: null, form: null } },
-  legend: S,
+  legend: S2,
   li: { attrs: { value: null } },
   link: {
     attrs: {
@@ -26211,7 +26316,7 @@ var Tags = {
     }
   },
   map: { attrs: { name: null } },
-  mark: S,
+  mark: S2,
   menu: { attrs: { label: null, type: ["list", "context", "toolbar"] } },
   meta: {
     attrs: {
@@ -26222,8 +26327,8 @@ var Tags = {
     }
   },
   meter: { attrs: { value: null, min: null, low: null, high: null, max: null, optimum: null } },
-  nav: S,
-  noscript: S,
+  nav: S2,
+  noscript: S2,
   object: {
     attrs: {
       data: null,
@@ -26243,15 +26348,15 @@ var Tags = {
   optgroup: { attrs: { disabled: ["disabled"], label: null } },
   option: { attrs: { disabled: ["disabled"], label: null, selected: ["selected"], value: null } },
   output: { attrs: { for: null, form: null, name: null } },
-  p: S,
+  p: S2,
   param: { attrs: { name: null, value: null } },
-  pre: S,
+  pre: S2,
   progress: { attrs: { value: null, max: null } },
   q: { attrs: { cite: null } },
-  rp: S,
-  rt: S,
-  ruby: S,
-  samp: S,
+  rp: S2,
+  rt: S2,
+  ruby: S2,
+  samp: S2,
   script: {
     attrs: {
       type: ["text/javascript"],
@@ -26261,7 +26366,7 @@ var Tags = {
       charset: Charsets
     }
   },
-  section: S,
+  section: S2,
   select: {
     attrs: {
       form: null,
@@ -26273,10 +26378,10 @@ var Tags = {
     }
   },
   slot: { attrs: { name: null } },
-  small: S,
+  small: S2,
   source: { attrs: { src: null, type: null, media: null } },
-  span: S,
-  strong: S,
+  span: S2,
+  strong: S2,
   style: {
     attrs: {
       type: ["text/css"],
@@ -26284,13 +26389,13 @@ var Tags = {
       scoped: null
     }
   },
-  sub: S,
-  summary: S,
-  sup: S,
-  table: S,
-  tbody: S,
+  sub: S2,
+  summary: S2,
+  sup: S2,
+  table: S2,
+  tbody: S2,
   td: { attrs: { colspan: null, rowspan: null, headers: null } },
-  template: S,
+  template: S2,
   textarea: {
     attrs: {
       dirname: null,
@@ -26307,12 +26412,12 @@ var Tags = {
       wrap: ["soft", "hard"]
     }
   },
-  tfoot: S,
+  tfoot: S2,
   th: { attrs: { colspan: null, rowspan: null, headers: null, scope: ["row", "col", "rowgroup", "colgroup"] } },
-  thead: S,
+  thead: S2,
   time: { attrs: { datetime: null } },
-  title: S,
-  tr: S,
+  title: S2,
+  tr: S2,
   track: {
     attrs: {
       src: null,
@@ -26323,7 +26428,7 @@ var Tags = {
     }
   },
   ul: { children: ["li", "script", "template", "ul", "ol"] },
-  var: S,
+  var: S2,
   video: {
     attrs: {
       src: null,
@@ -26338,7 +26443,7 @@ var Tags = {
       controls: ["controls"]
     }
   },
-  wbr: S
+  wbr: S2
 };
 var GlobalAttrs = {
   accesskey: null,
@@ -26401,7 +26506,7 @@ var GlobalAttrs = {
   "aria-valuenow": null,
   "aria-valuetext": null
 };
-var eventAttributes = /* @__PURE__ */ "beforeunload copy cut dragstart dragover dragleave dragenter dragend drag paste focus blur change click load mousedown mouseenter mouseleave mouseup keydown keyup resize scroll unload".split(" ").map((n2) => "on" + n2);
+var eventAttributes = /* @__PURE__ */ "beforeunload copy cut dragstart dragover dragleave dragenter dragend drag paste focus blur change click load mousedown mouseenter mouseleave mouseup keydown keyup resize scroll unload".split(" ").map((n) => "on" + n);
 for (let a of eventAttributes)
   GlobalAttrs[a] = null;
 var Schema = class {
@@ -27286,7 +27391,7 @@ var SetextHeadingParser = class {
   }
 };
 var DefaultLeafBlocks = {
-  LinkReference(_, leaf) {
+  LinkReference(_2, leaf) {
     return leaf.content.charCodeAt(0) == 91 ? new LinkReferenceParser(leaf) : null;
   },
   SetextHeading() {
@@ -27294,9 +27399,9 @@ var DefaultLeafBlocks = {
   }
 };
 var DefaultEndLeaf = [
-  (_, line) => isAtxHeading(line) >= 0,
-  (_, line) => isFencedCode(line) >= 0,
-  (_, line) => isBlockquote(line) >= 0,
+  (_2, line) => isAtxHeading(line) >= 0,
+  (_2, line) => isFencedCode(line) >= 0,
+  (_2, line) => isBlockquote(line) >= 0,
   (p2, line) => isBulletList(line, p2, true) >= 0,
   (p2, line) => isOrderedList(line, p2, true) >= 0,
   (p2, line) => isHorizontalRule(line, p2, true) >= 0,
@@ -27602,8 +27707,8 @@ var MarkdownParser = class _MarkdownParser extends Parser {
   }
   createParse(input, fragments, ranges) {
     let parse = new BlockContext(this, input, fragments, ranges);
-    for (let w2 of this.wrappers)
-      parse = w2(parse, input, fragments, ranges);
+    for (let w of this.wrappers)
+      parse = w(parse, input, fragments, ranges);
     return parse;
   }
   /// Reconfigure the parser.
@@ -27838,7 +27943,7 @@ var Escapable = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
 var Punctuation = /[!"#$%&'()*+,\-.\/:;<=>?@\[\\\]^_`{|}~\xA1\u2010-\u2027]/;
 try {
   Punctuation = new RegExp("[\\p{Pc}|\\p{Pd}|\\p{Pe}|\\p{Pf}|\\p{Pi}|\\p{Po}|\\p{Ps}]", "u");
-} catch (_) {
+} catch (_2) {
 }
 var DefaultInline = {
   Escape(cx, next, start) {
@@ -28147,10 +28252,10 @@ var InlineContext = class {
       }
       if (open.type.mark)
         content2.push(this.elt(open.type.mark, start, open.to));
-      for (let k2 = j + 1; k2 < i; k2++) {
-        if (this.parts[k2] instanceof Element2)
-          content2.push(this.parts[k2]);
-        this.parts[k2] = null;
+      for (let k = j + 1; k < i; k++) {
+        if (this.parts[k] instanceof Element2)
+          content2.push(this.parts[k]);
+        this.parts[k] = null;
       }
       if (close.type.mark)
         content2.push(this.elt(close.type.mark, close.from, end));
@@ -28250,19 +28355,19 @@ var FragmentCursor3 = class {
         end--;
       this.fragmentEnd = end ? end - 1 : 0;
     }
-    let c2 = this.cursor;
-    if (!c2) {
-      c2 = this.cursor = this.fragment.tree.cursor();
-      c2.firstChild();
+    let c = this.cursor;
+    if (!c) {
+      c = this.cursor = this.fragment.tree.cursor();
+      c.firstChild();
     }
     let rPos = pos + this.fragment.offset;
-    while (c2.to <= rPos)
-      if (!c2.parent())
+    while (c.to <= rPos)
+      if (!c.parent())
         return false;
     for (; ; ) {
-      if (c2.from >= rPos)
+      if (c.from >= rPos)
         return this.fragment.from <= lineStart;
-      if (!c2.childAfter(rPos))
+      if (!c.childAfter(rPos))
         return false;
     }
   }
@@ -28342,16 +28447,16 @@ var markdownHighlighting = styleTags({
   LinkTitle: tags.string,
   Paragraph: tags.content
 });
-var parser4 = new MarkdownParser(new NodeSet(nodeTypes).extend(markdownHighlighting), Object.keys(DefaultBlockParsers).map((n2) => DefaultBlockParsers[n2]), Object.keys(DefaultBlockParsers).map((n2) => DefaultLeafBlocks[n2]), Object.keys(DefaultBlockParsers), DefaultEndLeaf, DefaultSkipMarkup, Object.keys(DefaultInline).map((n2) => DefaultInline[n2]), Object.keys(DefaultInline), []);
+var parser4 = new MarkdownParser(new NodeSet(nodeTypes).extend(markdownHighlighting), Object.keys(DefaultBlockParsers).map((n) => DefaultBlockParsers[n]), Object.keys(DefaultBlockParsers).map((n) => DefaultLeafBlocks[n]), Object.keys(DefaultBlockParsers), DefaultEndLeaf, DefaultSkipMarkup, Object.keys(DefaultInline).map((n) => DefaultInline[n]), Object.keys(DefaultInline), []);
 function leftOverSpace(node, from, to) {
   let ranges = [];
-  for (let n2 = node.firstChild, pos = from; ; n2 = n2.nextSibling) {
-    let nextPos = n2 ? n2.from : to;
+  for (let n = node.firstChild, pos = from; ; n = n.nextSibling) {
+    let nextPos = n ? n.from : to;
     if (nextPos > pos)
       ranges.push({ from: pos, to: nextPos });
-    if (!n2)
+    if (!n)
       break;
-    pos = n2.to;
+    pos = n.to;
   }
   return ranges;
 }
@@ -28480,7 +28585,7 @@ var Table = {
   ],
   parseBlock: [{
     name: "Table",
-    leaf(_, leaf) {
+    leaf(_2, leaf) {
       return hasPipe(leaf.content, 0) ? new TableParser() : null;
     },
     endLeaf(cx, line, leaf) {
@@ -29370,14 +29475,14 @@ function _iterableToArray(iter) {
   if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter))
     return Array.from(iter);
 }
-function _unsupportedIterableToArray(o, minLen) {
-  if (!o) return;
-  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
-  var n2 = Object.prototype.toString.call(o).slice(8, -1);
-  if (n2 === "Object" && o.constructor) n2 = o.constructor.name;
-  if (n2 === "Map" || n2 === "Set") return Array.from(o);
-  if (n2 === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n2))
-    return _arrayLikeToArray(o, minLen);
+function _unsupportedIterableToArray(o2, minLen) {
+  if (!o2) return;
+  if (typeof o2 === "string") return _arrayLikeToArray(o2, minLen);
+  var n = Object.prototype.toString.call(o2).slice(8, -1);
+  if (n === "Object" && o2.constructor) n = o2.constructor.name;
+  if (n === "Map" || n === "Set") return Array.from(o2);
+  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n))
+    return _arrayLikeToArray(o2, minLen);
 }
 function _arrayLikeToArray(arr, len) {
   if (len == null || len > arr.length) len = arr.length;
@@ -29394,7 +29499,7 @@ var jsonDiff = new Diff();
 jsonDiff.useLongestToken = true;
 jsonDiff.tokenize = lineDiff.tokenize;
 jsonDiff.castInput = function(value) {
-  var _this$options = this.options, undefinedReplacement = _this$options.undefinedReplacement, _this$options$stringi = _this$options.stringifyReplacer, stringifyReplacer = _this$options$stringi === void 0 ? function(k2, v2) {
+  var _this$options = this.options, undefinedReplacement = _this$options.undefinedReplacement, _this$options$stringi = _this$options.stringifyReplacer, stringifyReplacer = _this$options$stringi === void 0 ? function(k, v2) {
     return typeof v2 === "undefined" ? undefinedReplacement : v2;
   } : _this$options$stringi;
   return typeof value === "string" ? value : JSON.stringify(
@@ -29702,7 +29807,7 @@ function addEditorEventHandling(cmInstances2, filename, panel, tab, close, view)
     document.querySelectorAll(`.active`).forEach((e) => e.classList.remove(`active`));
     tab.classList.add(`active`);
     tab.scrollIntoView();
-    filetree.selectEntry(tab.title);
+    filetree.select(tab.title);
     view.focus();
   });
   close.addEventListener(`click`, () => {
@@ -29710,12 +29815,16 @@ function addEditorEventHandling(cmInstances2, filename, panel, tab, close, view)
       const tabs3 = Object.keys(cmInstances2);
       const tabPos = tabs3.indexOf(tab.title);
       let newTab = tabPos === 0 ? tabs3[1] : tabs3[tabPos - 1];
-      if (newTab) cmInstances2[newTab].tab?.click();
+      if (newTab) {
+        cmInstances2[newTab].tab?.click();
+      } else {
+        filetree.unselect();
+      }
     }
     tab.remove();
     panel.remove();
     const label = [...tab.childNodes].find(
-      (c2) => c2.nodeName === `#text`
+      (c) => c.nodeName === `#text`
     ).textContent;
     delete cmInstances2[label];
   });
@@ -29864,9 +29973,9 @@ function inflate(data3, buf) {
       }
       var tl = 1;
       for (var i = 0; i < HCLEN; i++) {
-        var l2 = bitsE(data3, pos + i * 3, 3);
-        U.itree[(U.ordr[i] << 1) + 1] = l2;
-        if (l2 > tl) tl = l2;
+        var l = bitsE(data3, pos + i * 3, 3);
+        U.itree[(U.ordr[i] << 1) + 1] = l;
+        if (l > tl) tl = l;
       }
       pos += 3 * HCLEN;
       makeCodes(U.itree, tl);
@@ -29934,19 +30043,19 @@ function _decodeTiny(lmap, LL, len, data3, pos, tree) {
       tree[i] = lit;
       i++;
     } else {
-      var ll = 0, n2 = 0;
+      var ll = 0, n = 0;
       if (lit == 16) {
-        n2 = 3 + bitsE(data3, pos, 2);
+        n = 3 + bitsE(data3, pos, 2);
         pos += 2;
         ll = tree[i - 1];
       } else if (lit == 17) {
-        n2 = 3 + bitsE(data3, pos, 3);
+        n = 3 + bitsE(data3, pos, 3);
         pos += 3;
       } else if (lit == 18) {
-        n2 = 11 + bitsE(data3, pos, 7);
+        n = 11 + bitsE(data3, pos, 7);
         pos += 7;
       }
-      var ni = i + n2;
+      var ni = i + n;
       while (i < ni) {
         tree[i] = ll;
         i++;
@@ -29973,7 +30082,7 @@ function _copyOut(src, off, len, tree) {
 }
 function makeCodes(tree, MAX_BITS) {
   var max_code = tree.length;
-  var code, bits, n2, i, len;
+  var code, bits, n, i, len;
   var bl_count = U.bl_count;
   for (var i = 0; i <= MAX_BITS; i++) bl_count[i] = 0;
   for (i = 1; i < max_code; i += 2) bl_count[tree[i]]++;
@@ -29984,10 +30093,10 @@ function makeCodes(tree, MAX_BITS) {
     code = code + bl_count[bits - 1] << 1;
     next_code[bits] = code;
   }
-  for (n2 = 0; n2 < max_code; n2 += 2) {
-    len = tree[n2 + 1];
+  for (n = 0; n < max_code; n += 2) {
+    len = tree[n + 1];
     if (len != 0) {
-      tree[n2] = next_code[len];
+      tree[n] = next_code[len];
       next_code[len]++;
     }
   }
@@ -30065,8 +30174,8 @@ var U = function() {
     x = (x & 4278255360) >>> 8 | (x & 16711935) << 8;
     U.rev15[i] = (x >>> 16 | x << 16) >>> 17;
   }
-  function pushV(tgt, n2, sv) {
-    while (n2-- != 0) tgt.push(0, sv);
+  function pushV(tgt, n, sv) {
+    while (n-- != 0) tgt.push(0, sv);
   }
   for (var i = 0; i < 32; i++) {
     U.ldef[i] = U.of0[i] << 3 | U.exb[i];
@@ -30091,22 +30200,22 @@ var U = function() {
 var crc = {
   table: function() {
     var tab = new Uint32Array(256);
-    for (var n2 = 0; n2 < 256; n2++) {
-      var c2 = n2;
-      for (var k2 = 0; k2 < 8; k2++) {
-        if (c2 & 1) c2 = 3988292384 ^ c2 >>> 1;
-        else c2 = c2 >>> 1;
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) {
+        if (c & 1) c = 3988292384 ^ c >>> 1;
+        else c = c >>> 1;
       }
-      tab[n2] = c2;
+      tab[n] = c;
     }
     return tab;
   }(),
-  update: function(c2, buf, off, len) {
-    for (var i = 0; i < len; i++) c2 = crc.table[(c2 ^ buf[off + i]) & 255] ^ c2 >>> 8;
-    return c2;
+  update: function(c, buf, off, len) {
+    for (var i = 0; i < len; i++) c = crc.table[(c ^ buf[off + i]) & 255] ^ c >>> 8;
+    return c;
   },
-  crc: function(b, o, l2) {
-    return crc.update(4294967295, b, o, l2) ^ 4294967295;
+  crc: function(b, o2, l) {
+    return crc.update(4294967295, b, o2, l) ^ 4294967295;
   }
 };
 function inflateRaw(file, buf) {
@@ -30630,7 +30739,7 @@ var fileTree = document.getElementById(`filetree`);
 async function setupFileTree(test) {
   const dirData = await fetchSafe(`/dir`).then((r) => r.json());
   if (dirData instanceof Error) return;
-  fileTree.setFiles(dirData);
+  fileTree.setContent(dirData);
   addFileTreeHandling(test);
 }
 function addFileTreeHandling(test) {
@@ -30674,9 +30783,9 @@ function addFileTreeHandling(test) {
         const { tab, panel } = entry;
         entry.filename = key;
         tab.title = key;
-        tab.childNodes.forEach((n2) => {
-          if (n2.nodeName === `#text`) {
-            n2.textContent = key;
+        tab.childNodes.forEach((n) => {
+          if (n.nodeName === `#text`) {
+            n.textContent = key;
           }
         });
         panel.title = panel.id = key;
@@ -30745,9 +30854,9 @@ function addFileTreeHandling(test) {
         const { tab, panel } = entry;
         entry.filename = key;
         tab.title = key;
-        tab.childNodes.forEach((n2) => {
-          if (n2.nodeName === `#text`) {
-            n2.textContent = key;
+        tab.childNodes.forEach((n) => {
+          if (n.nodeName === `#text`) {
+            n.textContent = key;
           }
         });
         panel.title = panel.id = key;
@@ -30807,9 +30916,9 @@ function addFileTreeHandling(test) {
           const { tab, panel } = entry;
           entry.filename = key;
           tab.title = key;
-          tab.childNodes.forEach((n2) => {
-            if (n2.nodeName === `#text`) {
-              n2.textContent = key;
+          tab.childNodes.forEach((n) => {
+            if (n.nodeName === `#text`) {
+              n.textContent = key;
             }
           });
           panel.title = panel.id = key;
@@ -30839,9 +30948,9 @@ function addFileTreeHandling(test) {
           const { tab, panel } = entry;
           entry.filename = key;
           tab.title = key;
-          tab.childNodes.forEach((n2) => {
-            if (n2.nodeName === `#text`) {
-              n2.textContent = key;
+          tab.childNodes.forEach((n) => {
+            if (n.nodeName === `#text`) {
+              n.textContent = key;
             }
           });
           panel.title = panel.id = key;

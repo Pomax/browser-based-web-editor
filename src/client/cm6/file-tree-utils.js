@@ -13,7 +13,7 @@ const fileTree = document.getElementById(`filetree`);
 export async function setupFileTree(test) {
   const dirData = await fetchSafe(`/dir`).then((r) => r.json());
   if (dirData instanceof Error) return;
-  fileTree.setFiles(dirData);
+  fileTree.setContent(dirData);
   addFileTreeHandling(test);
 }
 

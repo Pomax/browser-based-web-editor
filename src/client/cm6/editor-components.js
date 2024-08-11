@@ -67,7 +67,7 @@ export function addEditorEventHandling(
       .forEach((e) => e.classList.remove(`active`));
     tab.classList.add(`active`);
     tab.scrollIntoView();
-    filetree.selectEntry(tab.title);
+    filetree.select(tab.title);
     view.focus();
   });
 
@@ -77,7 +77,11 @@ export function addEditorEventHandling(
       const tabPos = tabs.indexOf(tab.title);
       let newTab = tabPos === 0 ? tabs[1] : tabs[tabPos - 1];
       // newTab might exist as entry but not have an editor associated with it.
-      if (newTab) cmInstances[newTab].tab?.click();
+      if (newTab) {
+        cmInstances[newTab].tab?.click();
+      } else {
+        filetree.unselect();
+      }
     }
     tab.remove();
     panel.remove();
