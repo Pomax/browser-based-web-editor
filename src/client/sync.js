@@ -1,5 +1,6 @@
 import { fetchFileContents, fetchSafe, getFileSum } from "./utils.js";
 import { createPatch } from "../../public/vendor/diff.js";
+import { updatePreview } from "../client/preview.js";
 
 /**
  * Sync the content of a file with the server by calculating

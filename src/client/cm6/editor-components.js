@@ -122,7 +122,7 @@ export async function getOrCreateFileEditTab(
 
   let view;
   if (viewType.text || viewType.unknown) {
-    const initialState = getInitialState(filename, data);
+    const initialState = getInitialState(cmInstances, filename, data);
     view = setupView(panel, initialState);
   } else if (viewType.media) {
     const { type } = viewType;
@@ -153,9 +153,11 @@ export async function getOrCreateFileEditTab(
     panel,
     view,
     content: viewType.editable ? view.state.doc.toString() : data,
-    sync: viewType.editable
-      ? () => syncContent(cmInstances, contentDir, tab.title)
-      : noop,
+    sync: () => {
+      if (viewType.editable) {
+        syncContent(cmInstances, contentDir, tab.title);
+      }
+    },
     noSync: !viewType.editable,
   };
 

@@ -462,8 +462,6 @@ var R = class extends u {
 f.define("file-tree", R);
 
 // src/client/utils.js
-var noop = () => {
-};
 function create(tag) {
   return document.createElement(tag);
 }
@@ -517,7 +515,12 @@ function getViewType(filename) {
     xml: `application/xml`
   };
   let type = text[ext];
-  if (type) return { type, text: true };
+  if (type)
+    return {
+      type,
+      text: true,
+      editable: true
+    };
   const media = {
     gif: `image/gif`,
     jpg: `image/jpg`,
@@ -528,7 +531,12 @@ function getViewType(filename) {
     wav: `audio/wav`
   };
   type = media[ext];
-  if (type) return { type, media: true };
+  if (type)
+    return {
+      type,
+      media: true,
+      editable: false
+    };
   return { type: `text/plain`, unknown: true };
 }
 function verifyViewType(type, data3) {
@@ -566,7 +574,7 @@ function verifyRIFF(bytes) {
 
 // src/client/preview.js
 var preview = document.getElementById(`preview`);
-function updatePreview2() {
+function updatePreview() {
   const iframe = preview.querySelector(`iframe`);
   const newFrame = document.createElement(`iframe`);
   newFrame.onload = () => {
@@ -29124,7 +29132,7 @@ function htmlTagCompletions() {
 }
 
 // src/client/cm6/code-mirror-6.js
-function getInitialState(filename, data3) {
+function getInitialState(cmInstances, filename, data3) {
   const doc2 = data3.toString();
   const extensions = [basicSetup];
   const ext = filename.substring(filename.lastIndexOf(`.`) + 1);
@@ -29745,8 +29753,8 @@ function createPatch(fileName, oldStr, newStr, oldHeader, newHeader, options) {
 }
 
 // src/client/sync.js
-async function syncContent(cmInstances2, contentDir, filename) {
-  const entry = cmInstances2[filename];
+async function syncContent(cmInstances, contentDir, filename) {
+  const entry = cmInstances[filename];
   if (entry.noSync) return;
   const currentContent = entry.content;
   const newContent = entry.view.state.doc.toString();
@@ -29799,9 +29807,9 @@ function setupEditorTab(filename) {
   tab.appendChild(close);
   return { tab, close };
 }
-function addEditorEventHandling(cmInstances2, filename, panel, tab, close, view) {
+function addEditorEventHandling(cmInstances, filename, panel, tab, close, view) {
   tab.addEventListener(`click`, () => {
-    if (!cmInstances2[tab.title]) return;
+    if (!cmInstances[tab.title]) return;
     document.querySelectorAll(`.editor`).forEach((e) => e.setAttribute(`hidden`, `hidden`));
     panel.removeAttribute(`hidden`);
     document.querySelectorAll(`.active`).forEach((e) => e.classList.remove(`active`));
@@ -29812,11 +29820,11 @@ function addEditorEventHandling(cmInstances2, filename, panel, tab, close, view)
   });
   close.addEventListener(`click`, () => {
     if (tab.classList.contains(`active`)) {
-      const tabs3 = Object.keys(cmInstances2);
+      const tabs3 = Object.keys(cmInstances);
       const tabPos = tabs3.indexOf(tab.title);
       let newTab = tabPos === 0 ? tabs3[1] : tabs3[tabPos - 1];
       if (newTab) {
-        cmInstances2[newTab].tab?.click();
+        cmInstances[newTab].tab?.click();
       } else {
         filetree.unselect();
       }
@@ -29826,11 +29834,11 @@ function addEditorEventHandling(cmInstances2, filename, panel, tab, close, view)
     const label = [...tab.childNodes].find(
       (c) => c.nodeName === `#text`
     ).textContent;
-    delete cmInstances2[label];
+    delete cmInstances[label];
   });
 }
-async function getOrCreateFileEditTab(cmInstances2, contentDir, filename) {
-  const entry = cmInstances2[filename];
+async function getOrCreateFileEditTab(cmInstances, contentDir, filename) {
+  const entry = cmInstances[filename];
   if (entry?.view) {
     return entry.tab?.click();
   }
@@ -29844,7 +29852,7 @@ async function getOrCreateFileEditTab(cmInstances2, contentDir, filename) {
   if (!verified) return alert(`File contents does not match extension.`);
   let view;
   if (viewType.text || viewType.unknown) {
-    const initialState = getInitialState(filename, data3);
+    const initialState = getInitialState(cmInstances, filename, data3);
     view = setupView(panel, initialState);
   } else if (viewType.media) {
     const { type } = viewType;
@@ -29859,7 +29867,7 @@ async function getOrCreateFileEditTab(cmInstances2, contentDir, filename) {
     panel.appendChild(view);
   }
   view.tabElement = tab;
-  addEditorEventHandling(cmInstances2, filename, panel, tab, close, view);
+  addEditorEventHandling(cmInstances, filename, panel, tab, close, view);
   const properties2 = {
     filename,
     tab,
@@ -29867,13 +29875,17 @@ async function getOrCreateFileEditTab(cmInstances2, contentDir, filename) {
     panel,
     view,
     content: viewType.editable ? view.state.doc.toString() : data3,
-    sync: viewType.editable ? () => syncContent(cmInstances2, contentDir, tab.title) : noop,
+    sync: () => {
+      if (viewType.editable) {
+        syncContent(cmInstances, contentDir, tab.title);
+      }
+    },
     noSync: !viewType.editable
   };
   if (entry) {
     Object.assign(entry, properties2);
   } else {
-    cmInstances2[filename] = properties2;
+    cmInstances[filename] = properties2;
   }
   tab.click();
 }
@@ -30743,10 +30755,10 @@ async function setupFileTree(test) {
   addFileTreeHandling(test);
 }
 function addFileTreeHandling(test) {
-  const { cmInstances: cmInstances2, contentDir } = test;
+  const { cmInstances, contentDir } = test;
   fileTree.addEventListener(`file:click`, async (evt) => {
     const { path } = evt.detail;
-    getOrCreateFileEditTab(cmInstances2, contentDir, path);
+    getOrCreateFileEditTab(cmInstances, contentDir, path);
   });
   fileTree.addEventListener(`dir:click`, async (evt) => {
     evt.detail.grant();
@@ -30758,7 +30770,7 @@ function addFileTreeHandling(test) {
     if (response.status === 200) {
       const entry = grant();
       getOrCreateFileEditTab(
-        cmInstances2,
+        cmInstances,
         contentDir,
         entry.getAttribute(`path`)
       );
@@ -30775,11 +30787,11 @@ function addFileTreeHandling(test) {
     if (response.status === 200) {
       grant();
       let key = oldName.replace(contentDir, ``);
-      const entry = cmInstances2[key];
+      const entry = cmInstances[key];
       if (entry) {
-        delete cmInstances2[key];
+        delete cmInstances[key];
         key = newName.replace(contentDir, ``);
-        cmInstances2[key] = entry;
+        cmInstances[key] = entry;
         const { tab, panel } = entry;
         entry.filename = key;
         tab.title = key;
@@ -30795,7 +30807,7 @@ function addFileTreeHandling(test) {
         `Could not rename ${oldName} to ${newName} (status:${response.status})`
       );
     }
-    updatePreview2();
+    updatePreview();
   });
   async function uploadFile(fileName, content2, grant) {
     const fileSize = content2.byteLength;
@@ -30835,7 +30847,7 @@ function addFileTreeHandling(test) {
     } else {
       uploadFile(fileName, content2, grant);
     }
-    updatePreview2();
+    updatePreview();
   });
   fileTree.addEventListener(`file:move`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
@@ -30846,11 +30858,11 @@ function addFileTreeHandling(test) {
     if (response.status === 200) {
       grant();
       let key = oldPath.replace(contentDir, ``);
-      const entry = cmInstances2[key];
+      const entry = cmInstances[key];
       if (entry) {
-        delete cmInstances2[key];
+        delete cmInstances[key];
         key = newPath.replace(contentDir, ``);
-        cmInstances2[key] = entry;
+        cmInstances[key] = entry;
         const { tab, panel } = entry;
         entry.filename = key;
         tab.title = key;
@@ -30866,7 +30878,7 @@ function addFileTreeHandling(test) {
         `Could not move ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
-    updatePreview2();
+    updatePreview();
   });
   fileTree.addEventListener(`file:delete`, async (evt) => {
     const { path: fileName, grant } = evt.detail;
@@ -30878,7 +30890,7 @@ function addFileTreeHandling(test) {
         if (response instanceof Error) return;
         if (response.status === 200) {
           grant();
-          cmInstances2[fileName]?.close?.click();
+          cmInstances[fileName]?.close?.click();
         } else {
           console.error(
             `Could not delete ${fileName} (status:${response.status})`
@@ -30888,7 +30900,7 @@ function addFileTreeHandling(test) {
         console.error(e);
       }
     }
-    updatePreview2();
+    updatePreview();
   });
   fileTree.addEventListener(`dir:create`, async (evt) => {
     const { dirName, grant } = evt.detail;
@@ -30908,11 +30920,11 @@ function addFileTreeHandling(test) {
     if (response instanceof Error) return;
     if (response.status === 200) {
       const { oldPath: oldPath2, newPath: newPath2 } = grant();
-      Object.entries(cmInstances2).forEach(([key, entry]) => {
+      Object.entries(cmInstances).forEach(([key, entry]) => {
         if (key.startsWith(oldPath2)) {
-          delete cmInstances2[key];
+          delete cmInstances[key];
           key = key.replace(oldPath2, newPath2);
-          cmInstances2[key] = entry;
+          cmInstances[key] = entry;
           const { tab, panel } = entry;
           entry.filename = key;
           tab.title = key;
@@ -30922,7 +30934,7 @@ function addFileTreeHandling(test) {
             }
           });
           panel.title = panel.id = key;
-          updatePreview2();
+          updatePreview();
         }
       });
     } else {
@@ -30930,7 +30942,7 @@ function addFileTreeHandling(test) {
         `Could not rename ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
-    updatePreview2();
+    updatePreview();
   });
   fileTree.addEventListener(`dir:move`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
@@ -30940,11 +30952,11 @@ function addFileTreeHandling(test) {
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
-      Object.entries(cmInstances2).forEach(([key, entry]) => {
+      Object.entries(cmInstances).forEach(([key, entry]) => {
         if (key.startsWith(oldPath)) {
-          delete cmInstances2[key];
+          delete cmInstances[key];
           key = key.replace(oldPath, newPath);
-          cmInstances2[key] = entry;
+          cmInstances[key] = entry;
           const { tab, panel } = entry;
           entry.filename = key;
           tab.title = key;
@@ -30954,7 +30966,7 @@ function addFileTreeHandling(test) {
             }
           });
           panel.title = panel.id = key;
-          updatePreview2();
+          updatePreview();
         }
       });
     } else {
@@ -30962,7 +30974,7 @@ function addFileTreeHandling(test) {
         `Could not move ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
-    updatePreview2();
+    updatePreview();
   });
   fileTree.addEventListener(`dir:delete`, async (evt) => {
     const { path, grant } = evt.detail;
@@ -30975,7 +30987,7 @@ function addFileTreeHandling(test) {
     } else {
       console.error(`Could not delete ${path} (status:${response.status})`);
     }
-    updatePreview2();
+    updatePreview();
   });
 }
 
@@ -30985,7 +30997,7 @@ var all = document.getElementById(`all`);
 var format = document.getElementById(`format`);
 var left = document.getElementById(`left`);
 var right = document.getElementById(`right`);
-function addEventHandling(cmInstances2) {
+function addEventHandling(cmInstances) {
   changeUser.addEventListener(`click`, async () => {
     const name2 = prompt(`Username?`).trim();
     if (name2) {
@@ -31000,7 +31012,7 @@ function addEventHandling(cmInstances2) {
   addTabScrollHandling();
   format.addEventListener(`click`, async () => {
     const tab = document.querySelector(`.active`);
-    const entry = Object.values(cmInstances2).find((e) => e.tab === tab);
+    const entry = Object.values(cmInstances).find((e) => e.tab === tab);
     const filename = entry.filename;
     format.hidden = true;
     const result = await fetchSafe(`/format/${filename}`, { method: `post` });
@@ -31050,7 +31062,7 @@ var BrowserEditorTest = class {
     this.init();
   }
   async init() {
-    updatePreview2();
+    updatePreview();
   }
 };
 

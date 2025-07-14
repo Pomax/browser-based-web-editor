@@ -33,7 +33,12 @@ export function getViewType(filename) {
   };
 
   let type = text[ext];
-  if (type) return { type, text: true };
+  if (type)
+    return {
+      type,
+      text: true,
+      editable: true,
+    };
 
   // known "viewable media" extensions
   const media = {
@@ -47,9 +52,14 @@ export function getViewType(filename) {
   };
 
   type = media[ext];
-  if (type) return { type, media: true };
+  if (type)
+    return {
+      type,
+      media: true,
+      editable: false,
+    };
 
-  // Treat anything we don't know as text
+  // Treat anything we don't know as text, but not editable
   return { type: `text/plain`, unknown: true };
 }
 
