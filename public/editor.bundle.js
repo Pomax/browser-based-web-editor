@@ -30997,7 +30997,7 @@ var all = document.getElementById(`all`);
 var format = document.getElementById(`format`);
 var left = document.getElementById(`left`);
 var right = document.getElementById(`right`);
-function addEventHandling(cmInstances) {
+function addEventHandling(cmInstances, contentDir) {
   changeUser.addEventListener(`click`, async () => {
     const name2 = prompt(`Username?`).trim();
     if (name2) {
@@ -31017,7 +31017,7 @@ function addEventHandling(cmInstances) {
     format.hidden = true;
     const result = await fetchSafe(`/format/${filename}`, { method: `post` });
     if (result instanceof Error) return;
-    entry.content = await fetchFileContents(CONTENT_DIR, filename);
+    entry.content = await fetchFileContents(contentDir, filename);
     format.hidden = false;
     entry.view.dispatch({
       changes: {
@@ -31074,7 +31074,7 @@ var CodeMirror6Test = class extends BrowserEditorTest {
   }
   async init() {
     await setupFileTree(this);
-    addEventHandling(this.cmInstances);
+    addEventHandling(this.cmInstances, this.contentDir);
     super.init();
   }
 };

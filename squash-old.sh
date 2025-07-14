@@ -1,4 +1,5 @@
-cd content
+DIR="content/$1"
+cd ${DIR}
 
 GIT_EDITOR="nano"
 GIT_SEQUENCE_EDITOR="nano"

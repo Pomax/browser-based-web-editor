@@ -9,7 +9,7 @@ const right = document.getElementById(`right`);
 /**
  * Hook up the "Add new file" and "Format this file" buttons
  */
-export function addEventHandling(cmInstances) {
+export function addEventHandling(cmInstances, contentDir) {
   changeUser.addEventListener(`click`, async () => {
     const name = prompt(`Username?`).trim();
     if (name) {
@@ -32,7 +32,7 @@ export function addEventHandling(cmInstances) {
     format.hidden = true;
     const result = await fetchSafe(`/format/${filename}`, { method: `post` });
     if (result instanceof Error) return;
-    entry.content = await fetchFileContents(CONTENT_DIR, filename);
+    entry.content = await fetchFileContents(contentDir, filename);
     format.hidden = false;
     entry.view.dispatch({
       changes: {
