@@ -17,8 +17,23 @@ html {
       #filetree {
         border: 1px solid #444;
         font-family: Arial;
-        padding: 0.25em;
+        padding-right: 0.25em;
+        padding-bottom: 0.25em;
         overflow-x: auto;
+        white-space: nowrap;
+
+        &:not([show-top-level]) {
+          --highlight-background-bw: #44ffd8;
+          dir-entry[path="."] {
+            & > .buttons {
+              width: calc(100% + 0.75em);
+              padding-bottom: 0.25em;
+              button {
+                opacity: 1;
+              }
+            }
+          }
+        }
 
         &.drop {
           background: #cceeff44;

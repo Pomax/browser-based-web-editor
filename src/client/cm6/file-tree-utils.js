@@ -23,11 +23,31 @@ export async function setupFileTree(test) {
 function addFileTreeHandling(test) {
   const { cmInstances, contentDir } = test;
 
+  function updateEditorBindings(entry, key, oldKey) {
+    if (oldKey) {
+      delete cmInstances[oldKey];
+    }
+    cmInstances[key] = entry;
+    const { tab, panel } = entry;
+    entry.filename = key;
+    tab.title = key;
+    tab.childNodes.forEach((n) => {
+      if (n.nodeName === `#text`) {
+        n.textContent = key;
+      }
+    });
+    panel.title = panel.id = key;
+  }
+
   // TODO: lots of duplication happening here
 
   fileTree.addEventListener(`file:click`, async (evt) => {
-    const { path } = evt.detail;
-    getOrCreateFileEditTab(cmInstances, contentDir, path);
+    const fileEntry = evt.detail.grant();
+    getOrCreateFileEditTab(
+      cmInstances,
+      contentDir,
+      fileEntry.getAttribute(`path`)
+    );
     // we handle selection in the file tree as part of editor reveals,
     // so we do not call the event's own grant() function.
   });
@@ -36,50 +56,68 @@ function addFileTreeHandling(test) {
     evt.detail.grant();
   });
 
+  fileTree.addEventListener(`dir:toggle`, async (evt) => {
+    evt.detail.grant();
+  });
+
   fileTree.addEventListener(`file:create`, async (evt) => {
-    const { fileName, grant } = evt.detail;
-    const response = await fetchSafe(`/new/${fileName}`, { method: `post` });
-    if (response instanceof Error) return;
-    if (response.status === 200) {
-      const entry = grant();
-      getOrCreateFileEditTab(
-        cmInstances,
-        contentDir,
-        entry.getAttribute(`path`)
-      );
-    } else {
-      console.error(`Could not create ${fileName} (status:${response.status})`);
+    const { path, grant, content } = evt.detail;
+
+    // file upload/drop
+    if (content) {
+      if (path.endsWith(`.zip`) && confirm(`Unpack zip file?`)) {
+        const basePath = path.substring(0, path.lastIndexOf(`/`) + 1);
+        const { entries } = await unzip(new Uint8Array(content).buffer);
+        for await (let [path, entry] of Object.entries(entries)) {
+          const arrayBuffer = await entry.arrayBuffer();
+          const content = new TextDecoder().decode(arrayBuffer);
+          if (content.trim()) {
+            path = basePath + path;
+            uploadFile(path, content, () => fileTree.addEntry(path));
+          }
+        }
+      } else {
+        uploadFile(path, content, grant);
+      }
+      updatePreview();
+    }
+
+    // regular file creation
+    else {
+      const response = await fetchSafe(`/new/${path}`, { method: `post` });
+      if (response instanceof Error) return;
+      if (response.status === 200) {
+        const fileEntry = grant();
+        getOrCreateFileEditTab(
+          cmInstances,
+          contentDir,
+          fileEntry.getAttribute(`path`)
+        );
+      } else {
+        console.error(
+          `Could not create ${fileName} (status:${response.status})`
+        );
+      }
     }
   });
 
   fileTree.addEventListener(`file:rename`, async (evt) => {
-    const { oldName, newName, grant } = evt.detail;
-    const response = await fetchSafe(`/rename/${oldName}:${newName}`, {
+    const { oldPath, newPath, grant } = evt.detail;
+    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
       method: `post`,
     });
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
-      let key = oldName.replace(contentDir, ``);
+      let key = oldPath.replace(contentDir, ``);
       const entry = cmInstances[key];
       if (entry) {
-        // FIXME: DEDUPE, THIS CODE OCCURS FOUR TIMES NOW
-        delete cmInstances[key];
-        key = newName.replace(contentDir, ``);
-        cmInstances[key] = entry;
-        const { tab, panel } = entry;
-        entry.filename = key;
-        tab.title = key;
-        tab.childNodes.forEach((n) => {
-          if (n.nodeName === `#text`) {
-            n.textContent = key;
-          }
-        });
-        panel.title = panel.id = key;
+        const newKey = newPath.replace(contentDir, ``);
+        updateEditorBindings(entry, newKey, key);
       }
     } else {
       console.error(
-        `Could not rename ${oldName} to ${newName} (status:${response.status})`
+        `Could not rename ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
     updatePreview();
@@ -110,25 +148,6 @@ function addFileTreeHandling(test) {
     }
   }
 
-  fileTree.addEventListener(`file:upload`, async (evt) => {
-    const { fileName, content, grant } = evt.detail;
-    if (fileName.endsWith(`.zip`) && confirm(`Unpack zip file?`)) {
-      const basePath = fileName.substring(0, fileName.lastIndexOf(`/`) + 1);
-      const { entries } = await unzip(new Uint8Array(content).buffer);
-      for await (let [fileName, entry] of Object.entries(entries)) {
-        const arrayBuffer = await entry.arrayBuffer();
-        const content = new TextDecoder().decode(arrayBuffer);
-        if (content.trim()) {
-          fileName = basePath + fileName;
-          uploadFile(fileName, content, () => fileTree.addEntry(fileName));
-        }
-      }
-    } else {
-      uploadFile(fileName, content, grant);
-    }
-    updatePreview();
-  });
-
   fileTree.addEventListener(`file:move`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
@@ -140,19 +159,8 @@ function addFileTreeHandling(test) {
       let key = oldPath.replace(contentDir, ``);
       const entry = cmInstances[key];
       if (entry) {
-        // FIXME: DEDUPE, THIS CODE OCCURS FOUR TIMES NOW
-        delete cmInstances[key];
-        key = newPath.replace(contentDir, ``);
-        cmInstances[key] = entry;
-        const { tab, panel } = entry;
-        entry.filename = key;
-        tab.title = key;
-        tab.childNodes.forEach((n) => {
-          if (n.nodeName === `#text`) {
-            n.textContent = key;
-          }
-        });
-        panel.title = panel.id = key;
+        const newKey = newPath.replace(contentDir, ``);
+        updateEditorBindings(entry, newKey, key);
       }
     } else {
       console.error(
@@ -163,20 +171,18 @@ function addFileTreeHandling(test) {
   });
 
   fileTree.addEventListener(`file:delete`, async (evt) => {
-    const { path: fileName, grant } = evt.detail;
-    if (fileName) {
+    const { path, grant } = evt.detail;
+    if (path) {
       try {
-        const response = await fetchSafe(`/delete/${fileName}`, {
+        const response = await fetchSafe(`/delete/${path}`, {
           method: `delete`,
         });
         if (response instanceof Error) return;
         if (response.status === 200) {
           grant();
-          cmInstances[fileName]?.close?.click();
+          cmInstances[path]?.close?.click();
         } else {
-          console.error(
-            `Could not delete ${fileName} (status:${response.status})`
-          );
+          console.error(`Could not delete ${path} (status:${response.status})`);
         }
       } catch (e) {
         console.error(e);
@@ -207,19 +213,8 @@ function addFileTreeHandling(test) {
       // update all cmInstances
       Object.entries(cmInstances).forEach(([key, entry]) => {
         if (key.startsWith(oldPath)) {
-          // FIXME: DEDUPE, THIS CODE OCCURS FOUR TIMES NOW
-          delete cmInstances[key];
-          key = key.replace(oldPath, newPath);
-          cmInstances[key] = entry;
-          const { tab, panel } = entry;
-          entry.filename = key;
-          tab.title = key;
-          tab.childNodes.forEach((n) => {
-            if (n.nodeName === `#text`) {
-              n.textContent = key;
-            }
-          });
-          panel.title = panel.id = key;
+          const newKey = key.replace(oldPath, newPath);
+          updateEditorBindings(entry, newKey, key);
           updatePreview();
         }
       });
@@ -242,19 +237,8 @@ function addFileTreeHandling(test) {
       // update all cmInstances
       Object.entries(cmInstances).forEach(([key, entry]) => {
         if (key.startsWith(oldPath)) {
-          // FIXME: DEDUPE, THIS CODE OCCURS FOUR TIMES NOW
-          delete cmInstances[key];
-          key = key.replace(oldPath, newPath);
-          cmInstances[key] = entry;
-          const { tab, panel } = entry;
-          entry.filename = key;
-          tab.title = key;
-          tab.childNodes.forEach((n) => {
-            if (n.nodeName === `#text`) {
-              n.textContent = key;
-            }
-          });
-          panel.title = panel.id = key;
+          const newKey = key.replace(oldPath, newPath);
+          updateEditorBindings(entry, newKey, key);
           updatePreview();
         }
       });

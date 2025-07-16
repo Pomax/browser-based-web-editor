@@ -1,9 +1,9 @@
 // public/file-tree.esm.min.js
 var d = (s) => document.createElement(s);
 function p(s) {
-  return s.split("/").filter((r) => !!r).at(-1).includes(".") ? true : !!C(s).file;
+  return s.split("/").filter((r) => !!r).at(-1).includes(".") ? true : !!I(s).file;
 }
-function C(s) {
+function I(s) {
   let t2 = {};
   return (s.substring(s.indexOf("?"))?.split("&") || []).forEach((r) => {
     if (r.includes("=")) {
@@ -12,16 +12,16 @@ function C(s) {
     } else t2[r] = true;
   }), t2;
 }
-var f = window.customElements;
+var u = window.customElements;
 function g(s) {
   return new Promise((t2, e) => {
     let r = new FileReader();
     r.onloadend = ({ target: i }) => t2(i.result), r.onerror = e, r.readAsArrayBuffer(s);
   });
 }
-var L = globalThis.HTMLElement ?? class {
+var _ = globalThis.HTMLElement ?? class {
 };
-var u = class extends L {
+var f = class extends _ {
   state = {};
   eventControllers = [];
   constructor() {
@@ -32,6 +32,10 @@ var u = class extends L {
     if (this.heading = this.find("& > entry-heading"), !this.heading) {
       let t2 = this.heading = d("entry-heading");
       this.appendChild(t2);
+    }
+    if (this.buttons = this.find("& > span.buttons"), !this.buttons) {
+      let t2 = this.buttons = d("span");
+      t2.classList.add("buttons"), this.appendChild(t2);
     }
   }
   addExternalListener(t2, e, r, i = {}) {
@@ -100,6 +104,9 @@ var u = class extends L {
   findAllInTree(t2) {
     return Array.from(this.root.querySelectorAll(t2));
   }
+  hasButton(t2) {
+    return this.find(`& > .buttons .${t2}`);
+  }
   select() {
     this.root.unselect(), this.classList.add("selected");
   }
@@ -107,21 +114,21 @@ var u = class extends L {
     Object.assign(this.state, t2);
   }
 };
-var T = class extends L {
+var D = class extends _ {
 };
-f.define("entry-heading", T);
+u.define("entry-heading", D);
 var y = { "en-GB": { CREATE_FILE: "Create new file", CREATE_FILE_PROMPT: "Please specify a filename.", CREATE_FILE_NO_DIRS: "Just add new files directly to the directory where they should live.", RENAME_FILE: "Rename file", RENAME_FILE_PROMPT: "New file name?", RENAME_FILE_MOVE_INSTEAD: "If you want to relocate a file, just move it.", DELETE_FILE: "Delete file", DELETE_FILE_PROMPT: (s) => `Are you sure you want to delete ${s}?`, CREATE_DIRECTORY: "Add new directory", CREATE_DIRECTORY_PROMPT: "Please specify a directory name.", CREATE_DIRECTORY_NO_NESTING: "You'll have to create nested directories one at a time.", RENAME_DIRECTORY: "Rename directory", RENAME_DIRECTORY_PROMPT: "Choose a new directory name", RENAME_DIRECTORY_MOVE_INSTEAD: "If you want to relocate a directory, just move it.", DELETE_DIRECTORY: "Delete directory", DELETE_DIRECTORY_PROMPT: (s) => `Are you *sure* you want to delete ${s} and everything in it?`, UPLOAD_FILES: "Upload files from your device", PATH_EXISTS: (s) => `${s} already exists.`, PATH_DOES_NOT_EXIST: (s) => `${s} does not exist.`, PATH_INSIDE_ITSELF: (s) => `Cannot nest ${s} inside its own subdirectory.`, INVALID_UPLOAD_TYPE: (s) => `Unfortunately, a ${s} is not a file or folder.` } };
-var I = "en-GB";
-var O = globalThis.navigator?.language;
-var o = y[O] || y[I];
-function _({ root: s, path: t2 }) {
+var O = "en-GB";
+var S = globalThis.navigator?.language;
+var o = y[S] || y[O];
+function C({ root: s, path: t2 }) {
   let e = d("input");
   e.type = "file", e.multiple = true, confirm('To upload one or more files, press "OK". To upload an entire folder, press "Cancel".') || (e.webkitdirectory = true), e.addEventListener("change", () => {
     let { files: i } = e;
-    i && D(s, i, t2);
+    i && T(s, i, t2);
   }), e.click();
 }
-async function D(s, t2, e = "") {
+async function T(s, t2, e = "") {
   async function r(i, n = "") {
     if (i instanceof File && !i.isDirectory) {
       let a = await g(i), c = n + (i.webkitRelativePath || i.name), l = (e === "." ? "" : e) + c;
@@ -144,7 +151,7 @@ async function D(s, t2, e = "") {
     return alert(o.INVALID_UPLOAD_TYPE(i.kind));
   }
 }
-function A(s) {
+function N(s) {
   let t2 = new AbortController();
   s.draggable = true;
   let e = () => {
@@ -156,17 +163,17 @@ function A(s) {
     r.preventDefault(), e(), s.classList.add("drop-target");
   }, { signal: t2.signal }), s.addEventListener("dragover", (r) => {
     let i = r.target;
-    S(s, i) && (r.preventDefault(), e(), s.classList.add("drop-target"));
+    b(s, i) && (r.preventDefault(), e(), s.classList.add("drop-target"));
   }, { signal: t2.signal }), s.addEventListener("dragleave", (r) => {
     r.preventDefault(), e();
   }, { signal: t2.signal }), s.addEventListener("drop", async (r) => {
     r.preventDefault(), r.stopPropagation(), e();
     let i = r.dataTransfer.getData("id");
     if (i) return v(s, i);
-    await D(s.root, r.dataTransfer.items, s.path);
+    await T(s.root, r.dataTransfer.items, s.path);
   }, { signal: t2.signal }), s.path === "." ? s.draggable = false : t2;
 }
-function S(s, t2) {
+function b(s, t2) {
   return t2 === s ? true : t2.closest("dir-entry") === s;
 }
 function v(s, t2) {
@@ -175,10 +182,10 @@ function v(s, t2) {
   let r = e.path, i = s.path, n = (i !== "." ? i : "") + e.name;
   e.isDir && (n += "/"), s.root.moveEntry(e, r, n);
 }
-var E = class extends u {
+var E = class extends f {
   isDir = true;
-  constructor(t2, e = t2) {
-    super(t2, e), this.addButtons();
+  constructor(t2 = false) {
+    super(), this.addButtons(t2);
   }
   get path() {
     return super.path;
@@ -188,7 +195,7 @@ var E = class extends u {
   }
   connectedCallback() {
     this.addListener("click", (e) => this.selectListener(e)), this.addExternalListener(this.icon, "click", (e) => this.foldListener(e));
-    let t2 = A(this);
+    let t2 = N(this);
     t2 && this.addAbortController(t2);
   }
   selectListener(t2) {
@@ -201,36 +208,15 @@ var E = class extends u {
     let e = this.classList.contains("closed");
     this.root.toggleDirectory(this, { currentState: e ? "closed" : "open" });
   }
-  addButtons() {
-    this.createFileButton(), this.createDirButton(), this.addUploadButton(), this.addRenameButton(), this.addDeleteButton();
-  }
-  addRenameButton() {
-    if (this.path === "." || this.find("& > .rename-dir")) return;
-    let t2 = d("button");
-    t2.classList.add("rename-dir"), t2.title = o.RENAME_DIRECTORY, t2.textContent = "\u270F\uFE0F", this.appendChild(t2), t2.addEventListener("click", () => this.#r());
-  }
-  #r() {
-    let t2 = prompt(o.RENAME_DIRECTORY_PROMPT, this.name)?.trim();
-    if (t2) {
-      if (t2.includes("/")) return alert(o.RENAME_DIRECTORY_MOVE_INSTEAD);
-      this.root.renameEntry(this, t2);
-    }
-  }
-  addDeleteButton() {
-    if (this.path === "." || this.find("& > .delete-dir")) return;
-    let t2 = d("button");
-    t2.classList.add("delete-dir"), t2.title = o.DELETE_DIRECTORY, t2.textContent = "\u{1F5D1}\uFE0F", this.appendChild(t2), t2.addEventListener("click", () => this.#t());
-  }
-  #t() {
-    let t2 = o.DELETE_DIRECTORY_PROMPT(this.path);
-    confirm(t2) && this.root.removeEntry(this);
+  addButtons(t2) {
+    this.createFileButton(), this.createDirButton(), this.addUploadButton(), t2 || (this.addRenameButton(), this.addDeleteButton());
   }
   createFileButton() {
-    if (this.find("& > .create-file")) return;
+    if (this.hasButton("create-file")) return;
     let t2 = d("button");
-    t2.classList.add("create-file"), t2.title = o.CREATE_FILE, t2.textContent = "\u{1F4C4}", t2.addEventListener("click", () => this.#i()), this.appendChild(t2);
+    t2.classList.add("create-file"), t2.title = o.CREATE_FILE, t2.textContent = "\u{1F4C4}", t2.addEventListener("click", () => this.#r()), this.buttons.appendChild(t2);
   }
-  #i() {
+  #r() {
     let t2 = prompt(o.CREATE_FILE_PROMPT)?.trim();
     if (t2) {
       if (t2.includes("/")) return alert(o.CREATE_FILE_NO_DIRS);
@@ -238,11 +224,11 @@ var E = class extends u {
     }
   }
   createDirButton() {
-    if (this.find("& > .create-dir")) return;
+    if (this.hasButton("create-dir")) return;
     let t2 = d("button");
-    t2.classList.add("create-dir"), t2.title = o.CREATE_DIRECTORY, t2.textContent = "\u{1F4C1}", t2.addEventListener("click", () => this.#e()), this.appendChild(t2);
+    t2.classList.add("create-dir"), t2.title = o.CREATE_DIRECTORY, t2.textContent = "\u{1F4C1}", t2.addEventListener("click", () => this.#t()), this.buttons.appendChild(t2);
   }
-  #e() {
+  #t() {
     let t2 = prompt(String.CREATE_DIRECTORY_PROMPT)?.trim();
     if (t2) {
       if (t2.includes("/")) return alert(o.CREATE_DIRECTORY_NO_NESTING);
@@ -251,9 +237,30 @@ var E = class extends u {
     }
   }
   addUploadButton() {
-    if (this.find("& > .upload")) return;
+    if (this.hasButton("upload")) return;
     let t2 = d("button");
-    t2.classList.add("upload"), t2.title = o.UPLOAD_FILES, t2.textContent = "\u{1F4BB}", t2.addEventListener("click", () => _(this)), this.appendChild(t2);
+    t2.classList.add("upload"), t2.title = o.UPLOAD_FILES, t2.textContent = "\u{1F4BB}", t2.addEventListener("click", () => C(this)), this.buttons.appendChild(t2);
+  }
+  addRenameButton() {
+    if (this.path === "." || this.hasButton("rename-dir")) return;
+    let t2 = d("button");
+    t2.classList.add("rename-dir"), t2.title = o.RENAME_DIRECTORY, t2.textContent = "\u270F\uFE0F", this.buttons.appendChild(t2), t2.addEventListener("click", () => this.#i());
+  }
+  #i() {
+    let t2 = prompt(o.RENAME_DIRECTORY_PROMPT, this.name)?.trim();
+    if (t2) {
+      if (t2.includes("/")) return alert(o.RENAME_DIRECTORY_MOVE_INSTEAD);
+      this.root.renameEntry(this, t2);
+    }
+  }
+  addDeleteButton() {
+    if (this.path === "." || this.hasButton("delete-dir")) return;
+    let t2 = d("button");
+    t2.classList.add("delete-dir"), t2.title = o.DELETE_DIRECTORY, t2.textContent = "\u{1F5D1}\uFE0F", this.buttons.appendChild(t2), t2.addEventListener("click", () => this.#e());
+  }
+  #e() {
+    let t2 = o.DELETE_DIRECTORY_PROMPT(this.path);
+    confirm(t2) && this.root.removeEntry(this);
   }
   addEntry(t2) {
     this.appendChild(t2), this.sort();
@@ -265,13 +272,13 @@ var E = class extends u {
   sort(t2 = true, e = true) {
     let r = [...this.children];
     r.sort((i, n) => {
-      if (i.tagName === "SPAN") return -1;
-      if (n.tagName === "SPAN") return 1;
+      if (i.tagName === "SPAN" && i.classList.contains("icon")) return -1;
+      if (n.tagName === "SPAN" && n.classList.contains("icon")) return 1;
       if (i.tagName === "ENTRY-HEADING") return -1;
       if (n.tagName === "ENTRY-HEADING") return 1;
-      if (i.tagName === "BUTTON" && n.tagName === "BUTTON") return 0;
-      if (i.tagName === "BUTTON") return -1;
-      if (n.tagName === "BUTTON") return 1;
+      if (i.tagName === "SPAN" && n.tagName === "SPAN") return 0;
+      if (i.tagName === "SPAN") return -1;
+      if (n.tagName === "SPAN") return 1;
       if (e) {
         if (i.tagName === "DIR-ENTRY" && n.tagName === "DIR-ENTRY") return i = i.path, n = n.path, i < n ? -1 : 1;
         if (i.tagName === "DIR-ENTRY") return -1;
@@ -293,16 +300,16 @@ var E = class extends u {
     return this.root.toValue().filter((t2) => t2.startsWith(this.path));
   }
 };
-f.define("dir-entry", E);
-var m = class extends u {
+u.define("dir-entry", E);
+var m = class extends f {
   isFile = true;
   constructor(t2, e) {
     super(t2, e), this.addRenameButton(), this.addDeleteButton(), this.addEventHandling();
   }
   addRenameButton() {
-    if (this.find("& > .rename-file")) return;
+    if (this.hasButton("rename-file")) return;
     let t2 = d("button");
-    t2.classList.add("rename-file"), t2.title = o.RENAME_FILE, t2.textContent = "\u270F\uFE0F", this.appendChild(t2), t2.addEventListener("click", (e) => {
+    t2.classList.add("rename-file"), t2.title = o.RENAME_FILE, t2.textContent = "\u270F\uFE0F", this.buttons.appendChild(t2), t2.addEventListener("click", (e) => {
       e.preventDefault(), e.stopPropagation();
       let r = prompt(o.RENAME_FILE_PROMPT, this.heading.textContent)?.trim();
       if (r) {
@@ -312,9 +319,9 @@ var m = class extends u {
     });
   }
   addDeleteButton() {
-    if (this.find("& > .delete-file")) return;
+    if (this.hasButton("delete-file")) return;
     let t2 = d("button");
-    t2.classList.add("delete-file"), t2.title = o.DELETE_FILE, t2.textContent = "\u{1F5D1}\uFE0F", this.appendChild(t2), t2.addEventListener("click", (e) => {
+    t2.classList.add("delete-file"), t2.title = o.DELETE_FILE, t2.textContent = "\u{1F5D1}\uFE0F", this.buttons.appendChild(t2), t2.addEventListener("click", (e) => {
       e.preventDefault(), e.stopPropagation(), confirm(o.DELETE_FILE_PROMPT(this.path)) && this.root.removeEntry(this);
     });
   }
@@ -335,8 +342,8 @@ var m = class extends u {
     return [this.toString()];
   }
 };
-f.define("file-entry", m);
-var R = class extends u {
+u.define("file-entry", m);
+var R = class extends f {
   static observedAttributes = ["src"];
   ready = false;
   isTree = true;
@@ -352,7 +359,7 @@ var R = class extends u {
   }
   clear() {
     this.ready = false, this.emit("tree:clear"), Object.keys(this.entries).forEach((e) => delete this.entries[e]), this.rootDir && this.removeChild(this.rootDir);
-    let t2 = this.rootDir = new E();
+    let t2 = this.rootDir = new E(true);
     t2.path = ".", this.appendChild(t2);
   }
   connectedCallback() {
@@ -380,7 +387,7 @@ var R = class extends u {
     if (!p(t2) && !t2.endsWith("/") && (t2 += "/"), n[t2]) return this.emit(`${r}:error`, { error: o.PATH_EXISTS(t2) });
     let a = () => {
       let c = p(t2) ? m : E, l = new c();
-      l.path = t2, n[t2] = l, this.#i(l).addEntry(l);
+      return l.path = t2, n[t2] = l, this.#i(l).addEntry(l), l;
     };
     if (i) return a();
     this.emit(r, { path: t2, content: e }, a);
@@ -418,16 +425,17 @@ var R = class extends u {
           }
         });
         let { dirPath: a } = n[r] = t2;
-        (a ? n[a] : this.rootDir).addEntry(t2);
+        return (a ? n[a] : this.rootDir).addEntry(t2), t2;
       });
     }
   }
   removeEntry(t2, e = false) {
     let { entries: r } = this, { path: i, isFile: n, parentDir: a } = t2, c = (n ? "file" : "dir") + ":delete", l = { path: i };
     e && (l.emptyDir = true), this.emit(c, l, () => {
-      n || e ? (t2.remove(), delete r[i]) : Object.entries(r).forEach(([h, N]) => {
-        h.startsWith(i) && (N.remove(), delete r[h]);
-      }), a.checkEmpty();
+      let h = [t2];
+      return n || e ? (t2.remove(), delete r[i]) : Object.entries(r).forEach(([L, A]) => {
+        L.startsWith(i) && (h.push(A), A.remove(), delete r[L]);
+      }), a.checkEmpty(), h;
     });
   }
   select(t2) {
@@ -440,7 +448,7 @@ var R = class extends u {
   }
   selectEntry(t2, e = {}) {
     let r = (t2.isFile ? "file" : "dir") + ":click";
-    e.path = t2.path, this.emit(r, e, () => t2.select());
+    e.path = t2.path, this.emit(r, e, () => (t2.select(), t2));
   }
   toggleDirectory(t2, e = {}) {
     let r = "dir:toggle";
@@ -459,7 +467,7 @@ var R = class extends u {
     return this;
   }
 };
-f.define("file-tree", R);
+u.define("file-tree", R);
 
 // src/client/utils.js
 function create(tag) {
@@ -492,8 +500,8 @@ function listEquals(a1, a2) {
 }
 
 // src/client/content-types.js
-function getMimeType(fileName) {
-  return getViewType(fileName).type;
+function getMimeType(fileName2) {
+  return getViewType(fileName2).type;
 }
 function getViewType(filename) {
   const ext = filename.substring(filename.lastIndexOf(`.`) + 1);
@@ -662,12 +670,12 @@ var Text = class _Text {
     if (other.length != this.length || other.lines != this.lines)
       return false;
     let start = this.scanIdentical(other, 1), end = this.length - this.scanIdentical(other, -1);
-    let a = new RawTextCursor(this), b = new RawTextCursor(other);
+    let a = new RawTextCursor(this), b2 = new RawTextCursor(other);
     for (let skip = start, pos = start; ; ) {
       a.next(skip);
-      b.next(skip);
+      b2.next(skip);
       skip = 0;
-      if (a.lineBreak != b.lineBreak || a.done != b.done || a.value != b.value)
+      if (a.lineBreak != b2.lineBreak || a.done != b2.done || a.value != b2.value)
         return false;
       pos += a.value.length;
       if (a.done || pos >= end)
@@ -1670,16 +1678,16 @@ function iterChanges(desc, f2, individual) {
 }
 function mapSet(setA, setB, before, mkSet = false) {
   let sections = [], insert2 = mkSet ? [] : null;
-  let a = new SectionIter(setA), b = new SectionIter(setB);
+  let a = new SectionIter(setA), b2 = new SectionIter(setB);
   for (let inserted = -1; ; ) {
-    if (a.ins == -1 && b.ins == -1) {
-      let len = Math.min(a.len, b.len);
+    if (a.ins == -1 && b2.ins == -1) {
+      let len = Math.min(a.len, b2.len);
       addSection(sections, len, -1);
       a.forward(len);
-      b.forward(len);
-    } else if (b.ins >= 0 && (a.ins < 0 || inserted == a.i || a.off == 0 && (b.len < a.len || b.len == a.len && !before))) {
-      let len = b.len;
-      addSection(sections, b.ins, -1);
+      b2.forward(len);
+    } else if (b2.ins >= 0 && (a.ins < 0 || inserted == a.i || a.off == 0 && (b2.len < a.len || b2.len == a.len && !before))) {
+      let len = b2.len;
+      addSection(sections, b2.ins, -1);
       while (len) {
         let piece = Math.min(a.len, len);
         if (a.ins >= 0 && inserted < a.i && a.len <= piece) {
@@ -1691,18 +1699,18 @@ function mapSet(setA, setB, before, mkSet = false) {
         a.forward(piece);
         len -= piece;
       }
-      b.next();
+      b2.next();
     } else if (a.ins >= 0) {
       let len = 0, left2 = a.len;
       while (left2) {
-        if (b.ins == -1) {
-          let piece = Math.min(left2, b.len);
+        if (b2.ins == -1) {
+          let piece = Math.min(left2, b2.len);
           len += piece;
           left2 -= piece;
-          b.forward(piece);
-        } else if (b.ins == 0 && b.len < left2) {
-          left2 -= b.len;
-          b.next();
+          b2.forward(piece);
+        } else if (b2.ins == 0 && b2.len < left2) {
+          left2 -= b2.len;
+          b2.next();
         } else {
           break;
         }
@@ -1712,7 +1720,7 @@ function mapSet(setA, setB, before, mkSet = false) {
         addInsert(insert2, sections, a.text);
       inserted = a.i;
       a.forward(a.len - left2);
-    } else if (a.done && b.done) {
+    } else if (a.done && b2.done) {
       return insert2 ? ChangeSet.createSet(sections, insert2) : ChangeDesc.create(sections);
     } else {
       throw new Error("Mismatched change set lengths");
@@ -1722,39 +1730,39 @@ function mapSet(setA, setB, before, mkSet = false) {
 function composeSets(setA, setB, mkSet = false) {
   let sections = [];
   let insert2 = mkSet ? [] : null;
-  let a = new SectionIter(setA), b = new SectionIter(setB);
+  let a = new SectionIter(setA), b2 = new SectionIter(setB);
   for (let open = false; ; ) {
-    if (a.done && b.done) {
+    if (a.done && b2.done) {
       return insert2 ? ChangeSet.createSet(sections, insert2) : ChangeDesc.create(sections);
     } else if (a.ins == 0) {
       addSection(sections, a.len, 0, open);
       a.next();
-    } else if (b.len == 0 && !b.done) {
-      addSection(sections, 0, b.ins, open);
+    } else if (b2.len == 0 && !b2.done) {
+      addSection(sections, 0, b2.ins, open);
       if (insert2)
-        addInsert(insert2, sections, b.text);
-      b.next();
-    } else if (a.done || b.done) {
+        addInsert(insert2, sections, b2.text);
+      b2.next();
+    } else if (a.done || b2.done) {
       throw new Error("Mismatched change set lengths");
     } else {
-      let len = Math.min(a.len2, b.len), sectionLen = sections.length;
+      let len = Math.min(a.len2, b2.len), sectionLen = sections.length;
       if (a.ins == -1) {
-        let insB = b.ins == -1 ? -1 : b.off ? 0 : b.ins;
+        let insB = b2.ins == -1 ? -1 : b2.off ? 0 : b2.ins;
         addSection(sections, len, insB, open);
         if (insert2 && insB)
-          addInsert(insert2, sections, b.text);
-      } else if (b.ins == -1) {
+          addInsert(insert2, sections, b2.text);
+      } else if (b2.ins == -1) {
         addSection(sections, a.off ? 0 : a.len, len, open);
         if (insert2)
           addInsert(insert2, sections, a.textBit(len));
       } else {
-        addSection(sections, a.off ? 0 : a.len, b.off ? 0 : b.ins, open);
-        if (insert2 && !b.off)
-          addInsert(insert2, sections, b.text);
+        addSection(sections, a.off ? 0 : a.len, b2.off ? 0 : b2.ins, open);
+        if (insert2 && !b2.off)
+          addInsert(insert2, sections, b2.text);
       }
-      open = (a.ins > len || b.ins >= 0 && b.len > len) && (open || sections.length > sectionLen);
+      open = (a.ins > len || b2.ins >= 0 && b2.len > len) && (open || sections.length > sectionLen);
       a.forward2(len);
-      b.forward(len);
+      b2.forward(len);
     }
   }
 }
@@ -2025,7 +2033,7 @@ var EditorSelection = class _EditorSelection {
   */
   static normalized(ranges, mainIndex = 0) {
     let main = ranges[mainIndex];
-    ranges.sort((a, b) => a.from - b.from);
+    ranges.sort((a, b2) => a.from - b2.from);
     mainIndex = ranges.indexOf(main);
     for (let i = 1; i < ranges.length; i++) {
       let range = ranges[i], prev = ranges[i - 1];
@@ -2066,7 +2074,7 @@ var Facet = class _Facet {
   Define a new facet.
   */
   static define(config3 = {}) {
-    return new _Facet(config3.combine || ((a) => a), config3.compareInput || ((a, b) => a === b), config3.compare || (!config3.combine ? sameArray : (a, b) => a === b), !!config3.static, config3.enables);
+    return new _Facet(config3.combine || ((a) => a), config3.compareInput || ((a, b2) => a === b2), config3.compare || (!config3.combine ? sameArray : (a, b2) => a === b2), !!config3.static, config3.enables);
   }
   /**
   Returns an extension that adds the given value to this facet.
@@ -2103,8 +2111,8 @@ var Facet = class _Facet {
     return this.compute([field], (state) => get(state.field(field)));
   }
 };
-function sameArray(a, b) {
-  return a == b || a.length == b.length && a.every((e, i) => e === b[i]);
+function sameArray(a, b2) {
+  return a == b2 || a.length == b2.length && a.every((e, i) => e === b2[i]);
 }
 var FacetProvider = class {
   constructor(dependencies, facet, type, value) {
@@ -2162,11 +2170,11 @@ var FacetProvider = class {
     };
   }
 };
-function compareArray(a, b, compare2) {
-  if (a.length != b.length)
+function compareArray(a, b2, compare2) {
+  if (a.length != b2.length)
     return false;
   for (let i = 0; i < a.length; i++)
-    if (!compare2(a[i], b[i]))
+    if (!compare2(a[i], b2[i]))
       return false;
   return true;
 }
@@ -2241,7 +2249,7 @@ var StateField = class _StateField {
   Define a state field.
   */
   static define(config3) {
-    let field = new _StateField(nextID++, config3.create, config3.update, config3.compare || ((a, b) => a === b), config3);
+    let field = new _StateField(nextID++, config3.create, config3.update, config3.compare || ((a, b2) => a === b2), config3);
     if (config3.provide)
       field.provides = config3.provide(field);
     return field;
@@ -2471,7 +2479,7 @@ function flatten(extension, compartments, newCompartments) {
     }
   }
   inner(extension, Prec_.default);
-  return result.reduce((a, b) => a.concat(b));
+  return result.reduce((a, b2) => a.concat(b2));
 }
 function ensureAddr(state, addr) {
   if (addr & 1)
@@ -2684,16 +2692,16 @@ Transaction.time = /* @__PURE__ */ Annotation.define();
 Transaction.userEvent = /* @__PURE__ */ Annotation.define();
 Transaction.addToHistory = /* @__PURE__ */ Annotation.define();
 Transaction.remote = /* @__PURE__ */ Annotation.define();
-function joinRanges(a, b) {
+function joinRanges(a, b2) {
   let result = [];
   for (let iA = 0, iB = 0; ; ) {
     let from, to;
-    if (iA < a.length && (iB == b.length || b[iB] >= a[iA])) {
+    if (iA < a.length && (iB == b2.length || b2[iB] >= a[iA])) {
       from = a[iA++];
       to = a[iA++];
-    } else if (iB < b.length) {
-      from = b[iB++];
-      to = b[iB++];
+    } else if (iB < b2.length) {
+      from = b2[iB++];
+      to = b2[iB++];
     } else
       return result;
     if (!result.length || result[result.length - 1] < from)
@@ -2702,24 +2710,24 @@ function joinRanges(a, b) {
       result[result.length - 1] = to;
   }
 }
-function mergeTransaction(a, b, sequential) {
+function mergeTransaction(a, b2, sequential) {
   var _a2;
   let mapForA, mapForB, changes;
   if (sequential) {
-    mapForA = b.changes;
-    mapForB = ChangeSet.empty(b.changes.length);
-    changes = a.changes.compose(b.changes);
+    mapForA = b2.changes;
+    mapForB = ChangeSet.empty(b2.changes.length);
+    changes = a.changes.compose(b2.changes);
   } else {
-    mapForA = b.changes.map(a.changes);
-    mapForB = a.changes.mapDesc(b.changes, true);
+    mapForA = b2.changes.map(a.changes);
+    mapForB = a.changes.mapDesc(b2.changes, true);
     changes = a.changes.compose(mapForA);
   }
   return {
     changes,
-    selection: b.selection ? b.selection.map(mapForB) : (_a2 = a.selection) === null || _a2 === void 0 ? void 0 : _a2.map(mapForA),
-    effects: StateEffect.mapEffects(a.effects, mapForA).concat(StateEffect.mapEffects(b.effects, mapForB)),
-    annotations: a.annotations.length ? a.annotations.concat(b.annotations) : b.annotations,
-    scrollIntoView: a.scrollIntoView || b.scrollIntoView
+    selection: b2.selection ? b2.selection.map(mapForB) : (_a2 = a.selection) === null || _a2 === void 0 ? void 0 : _a2.map(mapForA),
+    effects: StateEffect.mapEffects(a.effects, mapForA).concat(StateEffect.mapEffects(b2.effects, mapForB)),
+    annotations: a.annotations.length ? a.annotations.concat(b2.annotations) : b2.annotations,
+    scrollIntoView: a.scrollIntoView || b2.scrollIntoView
   };
 }
 function resolveTransactionInner(state, spec, docSize) {
@@ -3156,9 +3164,9 @@ EditorState.tabSize = /* @__PURE__ */ Facet.define({
 EditorState.lineSeparator = lineSeparator;
 EditorState.readOnly = readOnly;
 EditorState.phrases = /* @__PURE__ */ Facet.define({
-  compare(a, b) {
-    let kA = Object.keys(a), kB = Object.keys(b);
-    return kA.length == kB.length && kA.every((k) => a[k] == b[k]);
+  compare(a, b2) {
+    let kA = Object.keys(a), kB = Object.keys(b2);
+    return kA.length == kB.length && kA.every((k) => a[k] == b2[k]);
   }
 });
 EditorState.languageData = languageData;
@@ -3218,8 +3226,8 @@ var Range = class _Range {
     return new _Range(from, to, value);
   }
 };
-function cmpRange(a, b) {
-  return a.from - b.from || a.value.startSide - b.value.startSide;
+function cmpRange(a, b2) {
+  return a.from - b2.from || a.value.startSide - b2.value.startSide;
 }
 var Chunk = class _Chunk {
   constructor(from, to, value, maxPoint) {
@@ -3428,10 +3436,10 @@ var RangeSet = class _RangeSet {
   */
   static compare(oldSets, newSets, textDiff, comparator, minPointSize = -1) {
     let a = oldSets.filter((set) => set.maxPoint > 0 || !set.isEmpty && set.maxPoint >= minPointSize);
-    let b = newSets.filter((set) => set.maxPoint > 0 || !set.isEmpty && set.maxPoint >= minPointSize);
-    let sharedChunks = findSharedChunks(a, b, textDiff);
+    let b2 = newSets.filter((set) => set.maxPoint > 0 || !set.isEmpty && set.maxPoint >= minPointSize);
+    let sharedChunks = findSharedChunks(a, b2, textDiff);
     let sideA = new SpanCursor(a, sharedChunks, minPointSize);
-    let sideB = new SpanCursor(b, sharedChunks, minPointSize);
+    let sideB = new SpanCursor(b2, sharedChunks, minPointSize);
     textDiff.iterGaps((fromA, fromB, length) => compare(sideA, fromA, sideB, fromB, length, comparator));
     if (textDiff.empty && textDiff.length == 0)
       compare(sideA, 0, sideB, 0, 0, comparator);
@@ -3444,13 +3452,13 @@ var RangeSet = class _RangeSet {
     if (to == null)
       to = 1e9 - 1;
     let a = oldSets.filter((set) => !set.isEmpty && newSets.indexOf(set) < 0);
-    let b = newSets.filter((set) => !set.isEmpty && oldSets.indexOf(set) < 0);
-    if (a.length != b.length)
+    let b2 = newSets.filter((set) => !set.isEmpty && oldSets.indexOf(set) < 0);
+    if (a.length != b2.length)
       return false;
     if (!a.length)
       return true;
-    let sharedChunks = findSharedChunks(a, b);
-    let sideA = new SpanCursor(a, sharedChunks, 0).goto(from), sideB = new SpanCursor(b, sharedChunks, 0).goto(from);
+    let sharedChunks = findSharedChunks(a, b2);
+    let sideA = new SpanCursor(a, sharedChunks, 0).goto(from), sideB = new SpanCursor(b2, sharedChunks, 0).goto(from);
     for (; ; ) {
       if (sideA.to != sideB.to || !sameValues(sideA.active, sideB.active) || sideA.point && (!sideB.point || !sideA.point.eq(sideB.point)))
         return false;
@@ -3624,14 +3632,14 @@ var RangeSetBuilder = class _RangeSetBuilder {
     return result;
   }
 };
-function findSharedChunks(a, b, textDiff) {
+function findSharedChunks(a, b2, textDiff) {
   let inA = /* @__PURE__ */ new Map();
   for (let set of a)
     for (let i = 0; i < set.chunk.length; i++)
       if (set.chunk[i].maxPoint <= 0)
         inA.set(set.chunk[i], set.chunkPos[i]);
   let shared = /* @__PURE__ */ new Set();
-  for (let set of b)
+  for (let set of b2)
     for (let i = 0; i < set.chunk.length; i++) {
       let known = inA.get(set.chunk[i]);
       if (known != null && (textDiff ? textDiff.mapPos(known) : known) == set.chunkPos[i] && !(textDiff === null || textDiff === void 0 ? void 0 : textDiff.touchesRange(known, known + set.chunk[i].length)))
@@ -3897,20 +3905,20 @@ var SpanCursor = class {
     return open;
   }
 };
-function compare(a, startA, b, startB, length, comparator) {
+function compare(a, startA, b2, startB, length, comparator) {
   a.goto(startA);
-  b.goto(startB);
+  b2.goto(startB);
   let endB = startB + length;
   let pos = startB, dPos = startB - startA;
   for (; ; ) {
-    let diff2 = a.to + dPos - b.to || a.endSide - b.endSide;
-    let end = diff2 < 0 ? a.to + dPos : b.to, clipEnd = Math.min(end, endB);
-    if (a.point || b.point) {
-      if (!(a.point && b.point && (a.point == b.point || a.point.eq(b.point)) && sameValues(a.activeForPoint(a.to), b.activeForPoint(b.to))))
-        comparator.comparePoint(pos, clipEnd, a.point, b.point);
+    let diff2 = a.to + dPos - b2.to || a.endSide - b2.endSide;
+    let end = diff2 < 0 ? a.to + dPos : b2.to, clipEnd = Math.min(end, endB);
+    if (a.point || b2.point) {
+      if (!(a.point && b2.point && (a.point == b2.point || a.point.eq(b2.point)) && sameValues(a.activeForPoint(a.to), b2.activeForPoint(b2.to))))
+        comparator.comparePoint(pos, clipEnd, a.point, b2.point);
     } else {
-      if (clipEnd > pos && !sameValues(a.active, b.active))
-        comparator.compareRange(pos, clipEnd, a.active, b.active);
+      if (clipEnd > pos && !sameValues(a.active, b2.active))
+        comparator.compareRange(pos, clipEnd, a.active, b2.active);
     }
     if (end > endB)
       break;
@@ -3918,14 +3926,14 @@ function compare(a, startA, b, startB, length, comparator) {
     if (diff2 <= 0)
       a.next();
     if (diff2 >= 0)
-      b.next();
+      b2.next();
   }
 }
-function sameValues(a, b) {
-  if (a.length != b.length)
+function sameValues(a, b2) {
+  if (a.length != b2.length)
     return false;
   for (let i = 0; i < a.length; i++)
-    if (a[i] != b[i] && !a[i].eq(b[i]))
+    if (a[i] != b2[i] && !a[i].eq(b2[i]))
       return false;
   return true;
 }
@@ -3997,7 +4005,7 @@ var StyleModule = class {
         let value = spec2[prop];
         if (/&/.test(prop)) {
           render(
-            prop.split(/,\s*/).map((part) => selectors.map((sel) => part.replace(/&/, sel))).reduce((a, b) => a.concat(b)),
+            prop.split(/,\s*/).map((part) => selectors.map((sel) => part.replace(/&/, sel))).reduce((a, b2) => a.concat(b2)),
             value,
             target
           );
@@ -5295,18 +5303,18 @@ function combineAttrs(source, target) {
   return target;
 }
 var noAttrs = /* @__PURE__ */ Object.create(null);
-function attrsEq(a, b, ignore) {
-  if (a == b)
+function attrsEq(a, b2, ignore) {
+  if (a == b2)
     return true;
   if (!a)
     a = noAttrs;
-  if (!b)
-    b = noAttrs;
-  let keysA = Object.keys(a), keysB = Object.keys(b);
+  if (!b2)
+    b2 = noAttrs;
+  let keysA = Object.keys(a), keysB = Object.keys(b2);
   if (keysA.length - (ignore && keysA.indexOf(ignore) > -1 ? 1 : 0) != keysB.length - (ignore && keysB.indexOf(ignore) > -1 ? 1 : 0))
     return false;
   for (let key of keysA) {
-    if (key != ignore && (keysB.indexOf(key) == -1 || a[key] !== b[key]))
+    if (key != ignore && (keysB.indexOf(key) == -1 || a[key] !== b2[key]))
       return false;
   }
   return true;
@@ -5815,8 +5823,8 @@ function getInclusive(spec, block = false) {
     end = spec.inclusive;
   return { start: start !== null && start !== void 0 ? start : block, end: end !== null && end !== void 0 ? end : block };
 }
-function widgetsEq(a, b) {
-  return a == b || !!(a && b && a.compare(b));
+function widgetsEq(a, b2) {
+  return a == b2 || !!(a && b2 && a.compare(b2));
 }
 function addRange(from, to, ranges, margin = 0) {
   let last = ranges.length - 1;
@@ -6073,11 +6081,11 @@ var BidiSpan = class {
     return maybe;
   }
 };
-function isolatesEq(a, b) {
-  if (a.length != b.length)
+function isolatesEq(a, b2) {
+  if (a.length != b2.length)
     return false;
   for (let i = 0; i < a.length; i++) {
-    let iA = a[i], iB = b[i];
+    let iA = a[i], iB = b2[i];
     if (iA.from != iB.from || iA.to != iB.to || iA.direction != iB.direction || !isolatesEq(iA.inner, iB.inner))
       return false;
   }
@@ -7249,9 +7257,9 @@ var DecorationComparator$1 = class DecorationComparator {
     addRange(from, to, this.changes);
   }
 };
-function findChangedDeco(a, b, diff2) {
+function findChangedDeco(a, b2, diff2) {
   let comp = new DecorationComparator$1();
-  RangeSet.compare(a, b, diff2, comp);
+  RangeSet.compare(a, b2, diff2, comp);
   return comp.changes;
 }
 function inUneditable(node, inside2) {
@@ -7306,8 +7314,8 @@ function getdx(x, rect) {
 function getdy(y2, rect) {
   return rect.top > y2 ? rect.top - y2 : Math.max(0, y2 - rect.bottom);
 }
-function yOverlap(a, b) {
-  return a.top < b.bottom - 1 && a.bottom > b.top + 1;
+function yOverlap(a, b2) {
+  return a.top < b2.bottom - 1 && a.bottom > b2.top + 1;
 }
 function upTop(rect, top2) {
   return top2 < rect.top ? { top: top2, left: rect.left, right: rect.right, bottom: rect.bottom } : rect;
@@ -7785,8 +7793,8 @@ var dragScrollMargin = 6;
 function dragScrollSpeed(dist2) {
   return Math.max(0, dist2) * 0.7 + 8;
 }
-function dist(a, b) {
-  return Math.max(Math.abs(a.clientX - b.clientX), Math.abs(a.clientY - b.clientY));
+function dist(a, b2) {
+  return Math.max(Math.abs(a.clientX - b2.clientX), Math.abs(a.clientY - b2.clientY));
 }
 var MouseSelection = class {
   constructor(view, startEvent, style, mustSelect) {
@@ -9014,9 +9022,9 @@ var NodeBuilder = class _NodeBuilder {
     return builder.finish(from);
   }
 };
-function heightRelevantDecoChanges(a, b, diff2) {
+function heightRelevantDecoChanges(a, b2, diff2) {
   let comp = new DecorationComparator2();
-  RangeSet.compare(a, b, diff2, comp, 0);
+  RangeSet.compare(a, b2, diff2, comp, 0);
   return comp.changes;
 }
 var DecorationComparator2 = class {
@@ -9025,8 +9033,8 @@ var DecorationComparator2 = class {
   }
   compareRange() {
   }
-  comparePoint(from, to, a, b) {
-    if (from < to || a && a.heightRelevant || b && b.heightRelevant)
+  comparePoint(from, to, a, b2) {
+    if (from < to || a && a.heightRelevant || b2 && b2.heightRelevant)
       addRange(from, to, this.changes, 5);
   }
 };
@@ -9075,11 +9083,11 @@ var LineGap = class {
     this.to = to;
     this.size = size;
   }
-  static same(a, b) {
-    if (a.length != b.length)
+  static same(a, b2) {
+    if (a.length != b2.length)
       return false;
     for (let i = 0; i < a.length; i++) {
-      let gA = a[i], gB = b[i];
+      let gA = a[i], gB = b2[i];
       if (gA.from != gB.from || gA.to != gB.to || gA.size != gB.size)
         return false;
     }
@@ -9159,7 +9167,7 @@ var ViewState = class {
         viewports.push(new Viewport(from, to));
       }
     }
-    this.viewports = viewports.sort((a, b) => a.from - b.from);
+    this.viewports = viewports.sort((a, b2) => a.from - b2.from);
     this.scaler = this.heightMap.height <= 7e6 ? IdScaler : new BigScaler(this.heightOracle, this.heightMap, this.viewports);
   }
   updateViewportLines() {
@@ -9468,7 +9476,7 @@ var ViewState = class {
     return changed ? 4 : 0;
   }
   lineBlockAt(pos) {
-    return pos >= this.viewport.from && pos <= this.viewport.to && this.viewportLines.find((b) => b.from <= pos && b.to >= pos) || scaleBlock(this.heightMap.lineAt(pos, QueryType.ByPos, this.heightOracle, 0, 0), this.scaler);
+    return pos >= this.viewport.from && pos <= this.viewport.to && this.viewportLines.find((b2) => b2.from <= pos && b2.to >= pos) || scaleBlock(this.heightMap.lineAt(pos, QueryType.ByPos, this.heightOracle, 0, 0), this.scaler);
   }
   lineBlockAtHeight(height) {
     return scaleBlock(this.heightMap.lineAt(this.scaler.fromDOM(height), QueryType.ByHeight, this.heightOracle, 0, 0), this.scaler);
@@ -9594,7 +9602,7 @@ function scaleBlock(block, scaler) {
   if (scaler.scale == 1)
     return block;
   let bTop = scaler.toDOM(block.top), bBottom = scaler.toDOM(block.bottom);
-  return new BlockInfo(block.from, block.length, bTop, bBottom - bTop, Array.isArray(block._content) ? block._content.map((b) => scaleBlock(b, scaler)) : block._content);
+  return new BlockInfo(block.from, block.length, bTop, bBottom - bTop, Array.isArray(block._content) ? block._content.map((b2) => scaleBlock(b2, scaler)) : block._content);
 }
 var theme = /* @__PURE__ */ Facet.define({ combine: (strs) => strs.join(" ") });
 var darkTheme = /* @__PURE__ */ Facet.define({ combine: (values2) => values2.indexOf(true) > -1 });
@@ -10128,15 +10136,15 @@ function applyDefaultInsert(view, change, newSel) {
   }
   return startState.update(tr, { userEvent, scrollIntoView: true });
 }
-function findDiff(a, b, preferredPos, preferredSide) {
-  let minLen = Math.min(a.length, b.length);
+function findDiff(a, b2, preferredPos, preferredSide) {
+  let minLen = Math.min(a.length, b2.length);
   let from = 0;
-  while (from < minLen && a.charCodeAt(from) == b.charCodeAt(from))
+  while (from < minLen && a.charCodeAt(from) == b2.charCodeAt(from))
     from++;
-  if (from == minLen && a.length == b.length)
+  if (from == minLen && a.length == b2.length)
     return null;
-  let toA = a.length, toB = b.length;
-  while (toA > 0 && toB > 0 && a.charCodeAt(toA - 1) == b.charCodeAt(toB - 1)) {
+  let toA = a.length, toB = b2.length;
+  while (toA > 0 && toB > 0 && a.charCodeAt(toA - 1) == b2.charCodeAt(toB - 1)) {
     toA--;
     toB--;
   }
@@ -10144,7 +10152,7 @@ function findDiff(a, b, preferredPos, preferredSide) {
     let adjust = Math.max(0, from - Math.min(toA, toB));
     preferredPos -= toA + adjust - from;
   }
-  if (toA < from && a.length < b.length) {
+  if (toA < from && a.length < b2.length) {
     let move = preferredPos <= from && preferredPos >= toA ? from - preferredPos : 0;
     from -= move;
     toB = from + (toB - toA);
@@ -11603,7 +11611,7 @@ function getKeymap(state) {
   let bindings = state.facet(keymap);
   let map = Keymaps.get(bindings);
   if (!map)
-    Keymaps.set(bindings, map = buildKeymap(bindings.reduce((a, b) => a.concat(b), [])));
+    Keymaps.set(bindings, map = buildKeymap(bindings.reduce((a, b2) => a.concat(b2), [])));
   return map;
 }
 function runScopeHandlers(view, event, scope) {
@@ -11656,23 +11664,23 @@ function buildKeymap(bindings, platform = currentPlatform) {
     if (stopPropagation)
       binding.stopPropagation = true;
   };
-  for (let b of bindings) {
-    let scopes = b.scope ? b.scope.split(" ") : ["editor"];
-    if (b.any)
+  for (let b2 of bindings) {
+    let scopes = b2.scope ? b2.scope.split(" ") : ["editor"];
+    if (b2.any)
       for (let scope of scopes) {
         let scopeObj = bound[scope] || (bound[scope] = /* @__PURE__ */ Object.create(null));
         if (!scopeObj._any)
           scopeObj._any = { preventDefault: false, stopPropagation: false, run: [] };
         for (let key in scopeObj)
-          scopeObj[key].run.push(b.any);
+          scopeObj[key].run.push(b2.any);
       }
-    let name2 = b[platform] || b.key;
+    let name2 = b2[platform] || b2.key;
     if (!name2)
       continue;
     for (let scope of scopes) {
-      add2(scope, name2, b.run, b.preventDefault, b.stopPropagation);
-      if (b.shift)
-        add2(scope, "Shift-" + name2, b.shift, b.preventDefault, b.stopPropagation);
+      add2(scope, name2, b2.run, b2.preventDefault, b2.stopPropagation);
+      if (b2.shift)
+        add2(scope, "Shift-" + name2, b2.shift, b2.preventDefault, b2.stopPropagation);
     }
   }
   return bound;
@@ -11881,8 +11889,8 @@ function rectanglesForRange(view, className, range) {
     return { top: y2, bottom: y2, horizontal: [] };
   }
 }
-function sameMarker(a, b) {
-  return a.constructor == b.constructor && a.eq(b);
+function sameMarker(a, b2) {
+  return a.constructor == b2.constructor && a.eq(b2);
 }
 var LayerView = class {
   constructor(view, layer2) {
@@ -11973,8 +11981,8 @@ var selectionConfig = /* @__PURE__ */ Facet.define({
       cursorBlinkRate: 1200,
       drawRangeCursor: true
     }, {
-      cursorBlinkRate: (a, b) => Math.min(a, b),
-      drawRangeCursor: (a, b) => a || b
+      cursorBlinkRate: (a, b2) => Math.min(a, b2),
+      drawRangeCursor: (a, b2) => a || b2
     });
   }
 });
@@ -12025,7 +12033,7 @@ function setBlinkRate(state, dom) {
 var selectionLayer = /* @__PURE__ */ layer({
   above: false,
   markers(view) {
-    return view.state.selection.ranges.map((r) => r.empty ? [] : RectangleMarker.forRange(view, "cm-selectionBackground", r)).reduce((a, b) => a.concat(b));
+    return view.state.selection.ranges.map((r) => r.empty ? [] : RectangleMarker.forRange(view, "cm-selectionBackground", r)).reduce((a, b2) => a.concat(b2));
   },
   update(update, dom) {
     return update.docChanged || update.selectionSet || update.viewportChanged || configChanged(update);
@@ -12418,18 +12426,18 @@ var activeLineHighlighter = /* @__PURE__ */ ViewPlugin.fromClass(class {
   decorations: (v2) => v2.decorations
 });
 var MaxOff = 2e3;
-function rectangleFor(state, a, b) {
-  let startLine = Math.min(a.line, b.line), endLine = Math.max(a.line, b.line);
+function rectangleFor(state, a, b2) {
+  let startLine = Math.min(a.line, b2.line), endLine = Math.max(a.line, b2.line);
   let ranges = [];
-  if (a.off > MaxOff || b.off > MaxOff || a.col < 0 || b.col < 0) {
-    let startOff = Math.min(a.off, b.off), endOff = Math.max(a.off, b.off);
+  if (a.off > MaxOff || b2.off > MaxOff || a.col < 0 || b2.col < 0) {
+    let startOff = Math.min(a.off, b2.off), endOff = Math.max(a.off, b2.off);
     for (let i = startLine; i <= endLine; i++) {
       let line = state.doc.line(i);
       if (line.length <= endOff)
         ranges.push(EditorSelection.range(line.from + startOff, line.to + endOff));
     }
   } else {
-    let startCol = Math.min(a.col, b.col), endCol = Math.max(a.col, b.col);
+    let startCol = Math.min(a.col, b2.col), endCol = Math.max(a.col, b2.col);
     for (let i = startLine; i <= endLine; i++) {
       let line = state.doc.line(i);
       let start = findColumn(line.text, startCol, state.tabSize, true);
@@ -13417,15 +13425,15 @@ var gutterView = /* @__PURE__ */ ViewPlugin.fromClass(class {
         classSet = [];
       if (Array.isArray(line.type)) {
         let first = true;
-        for (let b of line.type) {
-          if (b.type == BlockType.Text && first) {
-            advanceCursor(lineClasses, classSet, b.from);
+        for (let b2 of line.type) {
+          if (b2.type == BlockType.Text && first) {
+            advanceCursor(lineClasses, classSet, b2.from);
             for (let cx of contexts)
-              cx.line(this.view, b, classSet);
+              cx.line(this.view, b2, classSet);
             first = false;
-          } else if (b.widget) {
+          } else if (b2.widget) {
             for (let cx of contexts)
-              cx.widget(this.view, b);
+              cx.widget(this.view, b2);
           }
         }
       } else if (line.type == BlockType.Text) {
@@ -13651,11 +13659,11 @@ var GutterElement = class {
     this.setMarkers(null, []);
   }
 };
-function sameMarkers(a, b) {
-  if (a.length != b.length)
+function sameMarkers(a, b2) {
+  if (a.length != b2.length)
     return false;
   for (let i = 0; i < a.length; i++)
-    if (!a[i].compare(b[i]))
+    if (!a[i].compare(b2[i]))
       return false;
   return true;
 }
@@ -13663,10 +13671,10 @@ var lineNumberMarkers = /* @__PURE__ */ Facet.define();
 var lineNumberConfig = /* @__PURE__ */ Facet.define({
   combine(values2) {
     return combineConfig(values2, { formatNumber: String, domEventHandlers: {} }, {
-      domEventHandlers(a, b) {
+      domEventHandlers(a, b2) {
         let result = Object.assign({}, a);
-        for (let event in b) {
-          let exists = result[event], add2 = b[event];
+        for (let event in b2) {
+          let exists = result[event], add2 = b2[event];
           result[event] = exists ? (view, line, event2) => exists(view, line, event2) || add2(view, line, event2) : add2;
         }
         return result;
@@ -14207,13 +14215,13 @@ var TreeBuffer = class _TreeBuffer {
   @internal
   */
   slice(startI, endI, from) {
-    let b = this.buffer;
+    let b2 = this.buffer;
     let copy = new Uint16Array(endI - startI), len = 0;
     for (let i = startI, j = 0; i < endI; ) {
-      copy[j++] = b[i++];
-      copy[j++] = b[i++] - from;
-      let to = copy[j++] = b[i++] - from;
-      copy[j++] = b[i++] - startI;
+      copy[j++] = b2[i++];
+      copy[j++] = b2[i++] - from;
+      let to = copy[j++] = b2[i++] - from;
+      copy[j++] = b2[i++] - startI;
       len = Math.max(len, to);
     }
     return new _TreeBuffer(copy, len, this.set);
@@ -15583,20 +15591,20 @@ function materialize(cursor) {
     cursor.parent();
   } while (!cursor.tree);
   let base2 = cursor.tree, i = base2.children.indexOf(buffer);
-  let buf = base2.children[i], b = buf.buffer, newStack = [i];
+  let buf = base2.children[i], b2 = buf.buffer, newStack = [i];
   function split(startI, endI, type, innerOffset, length, stackPos) {
     let targetI = stack[stackPos];
     let children = [], positions = [];
     sliceBuf(buf, startI, targetI, children, positions, innerOffset);
-    let from = b[targetI + 1], to = b[targetI + 2];
+    let from = b2[targetI + 1], to = b2[targetI + 2];
     newStack.push(children.length);
-    let child = stackPos ? split(targetI + 4, b[targetI + 3], buf.set.types[b[targetI]], from, to - from, stackPos - 1) : node.toTree();
+    let child = stackPos ? split(targetI + 4, b2[targetI + 3], buf.set.types[b2[targetI]], from, to - from, stackPos - 1) : node.toTree();
     children.push(child);
     positions.push(from - innerOffset);
-    sliceBuf(buf, b[targetI + 3], endI, children, positions, innerOffset);
+    sliceBuf(buf, b2[targetI + 3], endI, children, positions, innerOffset);
     return new Tree(type, children, positions, length);
   }
-  base2.children[i] = split(0, b.length, NodeType.none, 0, buf.length, stack.length - 1);
+  base2.children[i] = split(0, b2.length, NodeType.none, 0, buf.length, stack.length - 1);
   for (let index of newStack) {
     let tree = cursor.tree.children[index], pos = cursor.tree.positions[index];
     cursor.yield(new TreeNode(tree, pos + cursor.from, index, cursor._tree));
@@ -15712,12 +15720,12 @@ function punchRanges(outer, ranges) {
   }
   return current;
 }
-function findCoverChanges(a, b, from, to) {
+function findCoverChanges(a, b2, from, to) {
   let iA = 0, iB = 0, inA = false, inB = false, pos = -1e9;
   let result = [];
   for (; ; ) {
     let nextA = iA == a.length ? 1e9 : inA ? a[iA].to : a[iA].from;
-    let nextB = iB == b.length ? 1e9 : inB ? b[iB].to : b[iB].from;
+    let nextB = iB == b2.length ? 1e9 : inB ? b2[iB].to : b2[iB].from;
     if (inA != inB) {
       let start = Math.max(pos, from), end = Math.min(nextA, nextB, to);
       if (start < end)
@@ -15814,7 +15822,7 @@ var Tag = class _Tag {
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
-      return Modifier.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
+      return Modifier.get(tag.base || tag, tag.modified.concat(mod).sort((a, b2) => a.id - b2.id));
     };
   }
 };
@@ -15841,8 +15849,8 @@ var Modifier = class _Modifier {
     return tag;
   }
 };
-function sameArray2(a, b) {
-  return a.length == b.length && a.every((x, i) => x == b[i]);
+function sameArray2(a, b2) {
+  return a.length == b2.length && a.every((x, i) => x == b2[i]);
 }
 function powerSet(array) {
   let sets = [[]];
@@ -15851,7 +15859,7 @@ function powerSet(array) {
       sets.push(sets[j].concat(array[i]));
     }
   }
-  return sets.sort((a, b) => b.length - a.length);
+  return sets.sort((a, b2) => b2.length - a.length);
 }
 function styleTags(spec) {
   let byName = /* @__PURE__ */ Object.create(null);
@@ -17432,15 +17440,15 @@ var foldState = /* @__PURE__ */ StateField.define({
     }
     if (tr.selection) {
       let onSelection = false, { head } = tr.selection.main;
-      folded.between(head, head, (a, b) => {
-        if (a < head && b > head)
+      folded.between(head, head, (a, b2) => {
+        if (a < head && b2 > head)
           onSelection = true;
       });
       if (onSelection)
         folded = folded.update({
           filterFrom: head,
           filterTo: head,
-          filter: (a, b) => b <= head || a >= head
+          filter: (a, b2) => b2 <= head || a >= head
         });
     }
     return folded;
@@ -17477,8 +17485,8 @@ function findFold(state, from, to) {
 }
 function foldExists(folded, from, to) {
   let found = false;
-  folded.between(from, from, (a, b) => {
-    if (a == from && b == to)
+  folded.between(from, from, (a, b2) => {
+    if (a == from && b2 == to)
       found = true;
   });
   return found;
@@ -18240,7 +18248,7 @@ var historyConfig = /* @__PURE__ */ Facet.define({
     }, {
       minDepth: Math.max,
       newGroupDelay: Math.min,
-      joinToEvent: (a, b) => (tr, adj) => a(tr, adj) || b(tr, adj)
+      joinToEvent: (a, b2) => (tr, adj) => a(tr, adj) || b2(tr, adj)
     });
   }
 });
@@ -18362,10 +18370,10 @@ function updateBranch(branch, to, maxLen, newEvent) {
   newBranch.push(newEvent);
   return newBranch;
 }
-function isAdjacent(a, b) {
+function isAdjacent(a, b2) {
   let ranges = [], isAdjacent2 = false;
   a.iterChangedRanges((f2, t2) => ranges.push(f2, t2));
-  b.iterChangedRanges((_f, _t, f2, t2) => {
+  b2.iterChangedRanges((_f, _t, f2, t2) => {
     for (let i = 0; i < ranges.length; ) {
       let from = ranges[i++], to = ranges[i++];
       if (t2 >= from && f2 <= to)
@@ -18374,11 +18382,11 @@ function isAdjacent(a, b) {
   });
   return isAdjacent2;
 }
-function eqSelectionShape(a, b) {
-  return a.ranges.length == b.ranges.length && a.ranges.filter((r, i) => r.empty != b.ranges[i].empty).length === 0;
+function eqSelectionShape(a, b2) {
+  return a.ranges.length == b2.ranges.length && a.ranges.filter((r, i) => r.empty != b2.ranges[i].empty).length === 0;
 }
-function conc(a, b) {
-  return !a.length ? b : !b.length ? a : a.concat(b);
+function conc(a, b2) {
+  return !a.length ? b2 : !b2.length ? a : a.concat(b2);
 }
 var none2 = [];
 var MaxSelectionsPerEvent = 200;
@@ -19085,7 +19093,7 @@ var standardKeymap = /* @__PURE__ */ [
   { key: "Mod-Delete", mac: "Alt-Delete", run: deleteGroupForward },
   { mac: "Mod-Backspace", run: deleteLineBoundaryBackward },
   { mac: "Mod-Delete", run: deleteLineBoundaryForward }
-].concat(/* @__PURE__ */ emacsStyleKeymap.map((b) => ({ mac: b.key, run: b.run, shift: b.shift })));
+].concat(/* @__PURE__ */ emacsStyleKeymap.map((b2) => ({ mac: b2.key, run: b2.run, shift: b2.shift })));
 var defaultKeymap = /* @__PURE__ */ [
   { key: "Alt-ArrowLeft", mac: "Ctrl-ArrowLeft", run: cursorSyntaxLeft, shift: selectSyntaxLeft },
   { key: "Alt-ArrowRight", mac: "Ctrl-ArrowRight", run: cursorSyntaxRight, shift: selectSyntaxRight },
@@ -19494,7 +19502,7 @@ var defaultHighlightOptions = {
 var highlightConfig = /* @__PURE__ */ Facet.define({
   combine(options) {
     return combineConfig(options, defaultHighlightOptions, {
-      highlightWordAroundCursor: (a, b) => a || b,
+      highlightWordAroundCursor: (a, b2) => a || b2,
       minSelectionLength: Math.min,
       maxMatches: Math.min
     });
@@ -20503,22 +20511,22 @@ var completionConfig = /* @__PURE__ */ Facet.define({
       addToOptions: [],
       positionInfo: defaultPositionInfo,
       filterStrict: false,
-      compareCompletions: (a, b) => a.label.localeCompare(b.label),
+      compareCompletions: (a, b2) => a.label.localeCompare(b2.label),
       interactionDelay: 75,
       updateSyncTime: 100
     }, {
-      defaultKeymap: (a, b) => a && b,
-      closeOnBlur: (a, b) => a && b,
-      icons: (a, b) => a && b,
-      tooltipClass: (a, b) => (c) => joinClass(a(c), b(c)),
-      optionClass: (a, b) => (c) => joinClass(a(c), b(c)),
-      addToOptions: (a, b) => a.concat(b),
-      filterStrict: (a, b) => a || b
+      defaultKeymap: (a, b2) => a && b2,
+      closeOnBlur: (a, b2) => a && b2,
+      icons: (a, b2) => a && b2,
+      tooltipClass: (a, b2) => (c) => joinClass(a(c), b2(c)),
+      optionClass: (a, b2) => (c) => joinClass(a(c), b2(c)),
+      addToOptions: (a, b2) => a.concat(b2),
+      filterStrict: (a, b2) => a || b2
     });
   }
 });
-function joinClass(a, b) {
-  return a ? b ? a + " " + b : a : b;
+function joinClass(a, b2) {
+  return a ? b2 ? a + " " + b2 : a : b2;
 }
 function defaultPositionInfo(view, list, option, info, space4, tooltip) {
   let rtl = view.textDirection == Direction.RTL, left2 = rtl, narrow = false;
@@ -20598,7 +20606,7 @@ function optionContent(config3) {
     },
     position: 80
   });
-  return content2.sort((a, b) => a.position - b.position).map((a) => a.render);
+  return content2.sort((a, b2) => a.position - b2.position).map((a) => a.render);
 }
 function rangeAroundSelected(total, selected, max) {
   if (total <= max)
@@ -20884,9 +20892,9 @@ function sortOptions(active, state) {
     }
   if (sections) {
     let sectionOrder = /* @__PURE__ */ Object.create(null), pos = 0;
-    let cmp = (a, b) => {
+    let cmp = (a, b2) => {
       var _a2, _b;
-      return ((_a2 = a.rank) !== null && _a2 !== void 0 ? _a2 : 1e9) - ((_b = b.rank) !== null && _b !== void 0 ? _b : 1e9) || (a.name < b.name ? -1 : 1);
+      return ((_a2 = a.rank) !== null && _a2 !== void 0 ? _a2 : 1e9) - ((_b = b2.rank) !== null && _b !== void 0 ? _b : 1e9) || (a.name < b2.name ? -1 : 1);
     };
     for (let s of sections.sort(cmp)) {
       pos -= 1e5;
@@ -20900,7 +20908,7 @@ function sortOptions(active, state) {
   }
   let result = [], prev = null;
   let compare2 = conf.compareCompletions;
-  for (let opt of options.sort((a, b) => b.score - a.score || compare2(a.completion, b.completion))) {
+  for (let opt of options.sort((a, b2) => b2.score - a.score || compare2(a.completion, b2.completion))) {
     let cur2 = opt.completion;
     if (!prev || prev.label != cur2.label || prev.detail != cur2.detail || prev.type != null && cur2.type != null && prev.type != cur2.type || prev.apply != cur2.apply || prev.boost != cur2.boost)
       result.push(opt);
@@ -20940,7 +20948,7 @@ var CompletionDialog = class _CompletionDialog {
         }
     }
     return new _CompletionDialog(options, makeAttrs(id2, selected), {
-      pos: active.reduce((a, b) => b.hasResult() ? Math.min(a, b.from) : a, 1e8),
+      pos: active.reduce((a, b2) => b2.hasResult() ? Math.min(a, b2.from) : a, 1e8),
       create: createTooltip,
       above: conf.aboveCursor
     }, prev ? prev.timestamp : Date.now(), selected, false);
@@ -21005,18 +21013,18 @@ var CompletionState = class _CompletionState {
     return this.open ? this.open.attrs : baseAttrs;
   }
 };
-function sameResults(a, b) {
-  if (a == b)
+function sameResults(a, b2) {
+  if (a == b2)
     return true;
   for (let iA = 0, iB = 0; ; ) {
     while (iA < a.length && !a[iA].hasResult)
       iA++;
-    while (iB < b.length && !b[iB].hasResult)
+    while (iB < b2.length && !b2[iB].hasResult)
       iB++;
-    let endA = iA == a.length, endB = iB == b.length;
+    let endA = iA == a.length, endB = iB == b2.length;
     if (endA || endB)
       return endA == endB;
-    if (a[iA++].result != b[iB++].result)
+    if (a[iA++].result != b2[iB++].result)
       return false;
   }
 }
@@ -22135,7 +22143,7 @@ var lintConfig = /* @__PURE__ */ Facet.define({
       needsRefresh: null,
       hideOn: () => null
     }, {
-      needsRefresh: (a, b) => !a ? b : !b ? a : (u2) => a(u2) || b(u2)
+      needsRefresh: (a, b2) => !a ? b2 : !b2 ? a : (u2) => a(u2) || b2(u2)
     }));
   }
 });
@@ -23707,7 +23715,7 @@ var Parse = class {
     if (this.recovering) {
       let maxRemaining = this.recovering == 1 ? 1 : this.recovering * 3;
       if (newStacks.length > maxRemaining) {
-        newStacks.sort((a, b) => b.score - a.score);
+        newStacks.sort((a, b2) => b2.score - a.score);
         while (newStacks.length > maxRemaining)
           newStacks.pop();
       }
@@ -27839,7 +27847,7 @@ function resolveConfig(spec) {
   let rest = resolveConfig(spec.slice(1));
   if (!rest || !conf)
     return conf || rest;
-  let conc2 = (a, b) => (a || none4).concat(b || none4);
+  let conc2 = (a, b2) => (a || none4).concat(b2 || none4);
   let wrapA = conf.wrap, wrapB = rest.wrap;
   return {
     props: conc2(conf.props, rest.props),
@@ -29740,10 +29748,10 @@ function createTwoFilesPatch(oldFileName, newFileName, oldStr, newStr, oldHeader
     )
   );
 }
-function createPatch(fileName, oldStr, newStr, oldHeader, newHeader, options) {
+function createPatch(fileName2, oldStr, newStr, oldHeader, newHeader, options) {
   return createTwoFilesPatch(
-    fileName,
-    fileName,
+    fileName2,
+    fileName2,
     oldStr,
     newStr,
     oldHeader,
@@ -29911,8 +29919,8 @@ async function readBlobAsUint8Array(blob) {
 function isBlob(v2) {
   return typeof Blob !== "undefined" && v2 instanceof Blob;
 }
-function isSharedArrayBuffer(b) {
-  return typeof SharedArrayBuffer !== "undefined" && b instanceof SharedArrayBuffer;
+function isSharedArrayBuffer(b2) {
+  return typeof SharedArrayBuffer !== "undefined" && b2 instanceof SharedArrayBuffer;
 }
 var isNode = typeof process !== "undefined" && process.versions && typeof process.versions.node !== "undefined" && typeof process.versions.electron === "undefined";
 function isTypedArraySameAsArrayBuffer(typedArray) {
@@ -30226,8 +30234,8 @@ var crc = {
     for (var i = 0; i < len; i++) c = crc.table[(c ^ buf[off + i]) & 255] ^ c >>> 8;
     return c;
   },
-  crc: function(b, o2, l) {
-    return crc.update(4294967295, b, o2, l) ^ 4294967295;
+  crc: function(b2, o2, l) {
+    return crc.update(4294967295, b2, o2, l) ^ 4294967295;
   }
 };
 function inflateRaw(file, buf) {
@@ -30756,71 +30764,103 @@ async function setupFileTree(test) {
 }
 function addFileTreeHandling(test) {
   const { cmInstances, contentDir } = test;
+  function updateEditorBindings(entry, key, oldKey) {
+    if (oldKey) {
+      delete cmInstances[oldKey];
+    }
+    cmInstances[key] = entry;
+    const { tab, panel } = entry;
+    entry.filename = key;
+    tab.title = key;
+    tab.childNodes.forEach((n) => {
+      if (n.nodeName === `#text`) {
+        n.textContent = key;
+      }
+    });
+    panel.title = panel.id = key;
+  }
   fileTree.addEventListener(`file:click`, async (evt) => {
-    const { path } = evt.detail;
-    getOrCreateFileEditTab(cmInstances, contentDir, path);
+    const fileEntry = evt.detail.grant();
+    getOrCreateFileEditTab(
+      cmInstances,
+      contentDir,
+      fileEntry.getAttribute(`path`)
+    );
   });
   fileTree.addEventListener(`dir:click`, async (evt) => {
     evt.detail.grant();
   });
+  fileTree.addEventListener(`dir:toggle`, async (evt) => {
+    evt.detail.grant();
+  });
   fileTree.addEventListener(`file:create`, async (evt) => {
-    const { fileName, grant } = evt.detail;
-    const response = await fetchSafe(`/new/${fileName}`, { method: `post` });
-    if (response instanceof Error) return;
-    if (response.status === 200) {
-      const entry = grant();
-      getOrCreateFileEditTab(
-        cmInstances,
-        contentDir,
-        entry.getAttribute(`path`)
-      );
+    const { path, grant, content: content2 } = evt.detail;
+    if (content2) {
+      if (path.endsWith(`.zip`) && confirm(`Unpack zip file?`)) {
+        const basePath = path.substring(0, path.lastIndexOf(`/`) + 1);
+        const { entries } = await unzip(new Uint8Array(content2).buffer);
+        for await (let [path2, entry] of Object.entries(entries)) {
+          const arrayBuffer = await entry.arrayBuffer();
+          const content3 = new TextDecoder().decode(arrayBuffer);
+          if (content3.trim()) {
+            path2 = basePath + path2;
+            uploadFile(path2, content3, () => fileTree.addEntry(path2));
+          }
+        }
+      } else {
+        uploadFile(path, content2, grant);
+      }
+      updatePreview();
     } else {
-      console.error(`Could not create ${fileName} (status:${response.status})`);
+      const response = await fetchSafe(`/new/${path}`, { method: `post` });
+      if (response instanceof Error) return;
+      if (response.status === 200) {
+        const fileEntry = grant();
+        getOrCreateFileEditTab(
+          cmInstances,
+          contentDir,
+          fileEntry.getAttribute(`path`)
+        );
+      } else {
+        console.error(
+          `Could not create ${fileName} (status:${response.status})`
+        );
+      }
     }
   });
   fileTree.addEventListener(`file:rename`, async (evt) => {
-    const { oldName, newName, grant } = evt.detail;
-    const response = await fetchSafe(`/rename/${oldName}:${newName}`, {
+    const { oldPath, newPath, grant } = evt.detail;
+    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
       method: `post`
     });
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
-      let key = oldName.replace(contentDir, ``);
+      let key = oldPath.replace(contentDir, ``);
       const entry = cmInstances[key];
       if (entry) {
-        delete cmInstances[key];
-        key = newName.replace(contentDir, ``);
-        cmInstances[key] = entry;
-        const { tab, panel } = entry;
-        entry.filename = key;
-        tab.title = key;
-        tab.childNodes.forEach((n) => {
-          if (n.nodeName === `#text`) {
-            n.textContent = key;
-          }
-        });
-        panel.title = panel.id = key;
+        const newKey = newPath.replace(contentDir, ``);
+        updateEditorBindings(entry, newKey, key);
       }
     } else {
       console.error(
-        `Could not rename ${oldName} to ${newName} (status:${response.status})`
+        `Could not rename ${oldPath} to ${newPath} (status:${response.status})`
       );
     }
     updatePreview();
   });
-  async function uploadFile(fileName, content2, grant) {
+  async function uploadFile(fileName2, content2, grant) {
     const fileSize = content2.byteLength;
     if (fileSize > 1e6) {
       return alert(`File uploads are limited to 1MB`);
     }
     const form = new FormData();
-    form.append(`filename`, fileName);
+    form.append(`filename`, fileName2);
     form.append(
       `content`,
-      typeof content2 === "string" ? content2 : new Blob([content2], { type: getMimeType(fileName) })
+      typeof content2 === "string" ? content2 : new Blob([content2], { type: getMimeType(fileName2) })
     );
-    const response = await fetchSafe(`/upload/${fileName}`, {
+    const response = await fetchSafe(`/upload/${fileName2}`, {
       method: `post`,
       body: form
     });
@@ -30828,27 +30868,9 @@ function addFileTreeHandling(test) {
     if (response.status === 200) {
       grant?.();
     } else {
-      console.error(`Could not upload ${fileName} (status:${response.status})`);
+      console.error(`Could not upload ${fileName2} (status:${response.status})`);
     }
   }
-  fileTree.addEventListener(`file:upload`, async (evt) => {
-    const { fileName, content: content2, grant } = evt.detail;
-    if (fileName.endsWith(`.zip`) && confirm(`Unpack zip file?`)) {
-      const basePath = fileName.substring(0, fileName.lastIndexOf(`/`) + 1);
-      const { entries } = await unzip(new Uint8Array(content2).buffer);
-      for await (let [fileName2, entry] of Object.entries(entries)) {
-        const arrayBuffer = await entry.arrayBuffer();
-        const content3 = new TextDecoder().decode(arrayBuffer);
-        if (content3.trim()) {
-          fileName2 = basePath + fileName2;
-          uploadFile(fileName2, content3, () => fileTree.addEntry(fileName2));
-        }
-      }
-    } else {
-      uploadFile(fileName, content2, grant);
-    }
-    updatePreview();
-  });
   fileTree.addEventListener(`file:move`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
@@ -30860,18 +30882,8 @@ function addFileTreeHandling(test) {
       let key = oldPath.replace(contentDir, ``);
       const entry = cmInstances[key];
       if (entry) {
-        delete cmInstances[key];
-        key = newPath.replace(contentDir, ``);
-        cmInstances[key] = entry;
-        const { tab, panel } = entry;
-        entry.filename = key;
-        tab.title = key;
-        tab.childNodes.forEach((n) => {
-          if (n.nodeName === `#text`) {
-            n.textContent = key;
-          }
-        });
-        panel.title = panel.id = key;
+        const newKey = newPath.replace(contentDir, ``);
+        updateEditorBindings(entry, newKey, key);
       }
     } else {
       console.error(
@@ -30881,20 +30893,18 @@ function addFileTreeHandling(test) {
     updatePreview();
   });
   fileTree.addEventListener(`file:delete`, async (evt) => {
-    const { path: fileName, grant } = evt.detail;
-    if (fileName) {
+    const { path, grant } = evt.detail;
+    if (path) {
       try {
-        const response = await fetchSafe(`/delete/${fileName}`, {
+        const response = await fetchSafe(`/delete/${path}`, {
           method: `delete`
         });
         if (response instanceof Error) return;
         if (response.status === 200) {
           grant();
-          cmInstances[fileName]?.close?.click();
+          cmInstances[path]?.close?.click();
         } else {
-          console.error(
-            `Could not delete ${fileName} (status:${response.status})`
-          );
+          console.error(`Could not delete ${path} (status:${response.status})`);
         }
       } catch (e) {
         console.error(e);
@@ -30922,18 +30932,8 @@ function addFileTreeHandling(test) {
       const { oldPath: oldPath2, newPath: newPath2 } = grant();
       Object.entries(cmInstances).forEach(([key, entry]) => {
         if (key.startsWith(oldPath2)) {
-          delete cmInstances[key];
-          key = key.replace(oldPath2, newPath2);
-          cmInstances[key] = entry;
-          const { tab, panel } = entry;
-          entry.filename = key;
-          tab.title = key;
-          tab.childNodes.forEach((n) => {
-            if (n.nodeName === `#text`) {
-              n.textContent = key;
-            }
-          });
-          panel.title = panel.id = key;
+          const newKey = key.replace(oldPath2, newPath2);
+          updateEditorBindings(entry, newKey, key);
           updatePreview();
         }
       });
@@ -30954,18 +30954,8 @@ function addFileTreeHandling(test) {
       grant();
       Object.entries(cmInstances).forEach(([key, entry]) => {
         if (key.startsWith(oldPath)) {
-          delete cmInstances[key];
-          key = key.replace(oldPath, newPath);
-          cmInstances[key] = entry;
-          const { tab, panel } = entry;
-          entry.filename = key;
-          tab.title = key;
-          tab.childNodes.forEach((n) => {
-            if (n.nodeName === `#text`) {
-              n.textContent = key;
-            }
-          });
-          panel.title = panel.id = key;
+          const newKey = key.replace(oldPath, newPath);
+          updateEditorBindings(entry, newKey, key);
           updatePreview();
         }
       });
@@ -31074,7 +31064,8 @@ var CodeMirror6Test = class extends BrowserEditorTest {
   }
   async init() {
     await setupFileTree(this);
-    addEventHandling(this.cmInstances, this.contentDir);
+    const { cmInstances, contentDir } = this;
+    addEventHandling(cmInstances, contentDir);
     super.init();
   }
 };

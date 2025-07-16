@@ -8,3 +8,7 @@ So really: rewrite the code to use "file" instances that can be saved onto file-
 
 
 At the least. That way most of the code can be generic, and the CM specific code can just work with those file objects.
+
+NOTE: this should now be possible, with the file-tree having persistent state.
+
+Second todo: make the browser aware of the fact that there's no server to work with.
