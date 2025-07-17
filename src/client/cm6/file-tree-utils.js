@@ -1,4 +1,9 @@
-import { fetchSafe } from "../utils.js";
+import {
+  fetchSafe,
+  getEditorComponent,
+  removeEditorBinding,
+  setEditorComponent,
+} from "../utils.js";
 import { getMimeType } from "../content-types.js";
 import { updatePreview } from "../preview.js";
 import { getOrCreateFileEditTab } from "./editor-components.js";
@@ -23,11 +28,14 @@ export async function setupFileTree(test) {
 function addFileTreeHandling(test) {
   const { cmInstances, contentDir } = test;
 
-  function updateEditorBindings(entry, key, oldKey) {
+  function updateEditorBindings(fileTreeEntry, entry, key, oldKey) {
     if (oldKey) {
-      delete cmInstances[oldKey];
+      removeEditorBinding(fileTreeEntry, cmInstances, oldKey);
     }
-    cmInstances[key] = entry;
+
+    setEditorComponent(fileTreeEntry, cmInstances, key, entry);
+    fileTreeEntry.setState(entry);
+
     const { tab, panel } = entry;
     entry.filename = key;
     tab.title = key;
@@ -39,11 +47,10 @@ function addFileTreeHandling(test) {
     panel.title = panel.id = key;
   }
 
-  // TODO: lots of duplication happening here
-
   fileTree.addEventListener(`file:click`, async (evt) => {
     const fileEntry = evt.detail.grant();
     getOrCreateFileEditTab(
+      fileEntry,
       cmInstances,
       contentDir,
       fileEntry.getAttribute(`path`)
@@ -89,6 +96,7 @@ function addFileTreeHandling(test) {
       if (response.status === 200) {
         const fileEntry = grant();
         getOrCreateFileEditTab(
+          fileEntry,
           cmInstances,
           contentDir,
           fileEntry.getAttribute(`path`)
@@ -108,12 +116,12 @@ function addFileTreeHandling(test) {
     });
     if (response instanceof Error) return;
     if (response.status === 200) {
-      grant();
+      const fileEntry = grant();
       let key = oldPath.replace(contentDir, ``);
-      const entry = cmInstances[key];
+      const entry = getEditorComponent(fileEntry, cmInstances, key);
       if (entry) {
         const newKey = newPath.replace(contentDir, ``);
-        updateEditorBindings(entry, newKey, key);
+        updateEditorBindings(fileEntry, entry, newKey, key);
       }
     } else {
       console.error(
@@ -155,12 +163,12 @@ function addFileTreeHandling(test) {
     });
     if (response instanceof Error) return;
     if (response.status === 200) {
-      grant();
+      const fileEntry = grant();
       let key = oldPath.replace(contentDir, ``);
-      const entry = cmInstances[key];
+      const entry = getEditorComponent(fileEntry, cmInstances, key);
       if (entry) {
         const newKey = newPath.replace(contentDir, ``);
-        updateEditorBindings(entry, newKey, key);
+        updateEditorBindings(fileEntry, entry, newKey, key);
       }
     } else {
       console.error(
@@ -179,8 +187,8 @@ function addFileTreeHandling(test) {
         });
         if (response instanceof Error) return;
         if (response.status === 200) {
-          grant();
-          cmInstances[path]?.close?.click();
+          const [fileEntry] = grant();
+          getEditorComponent(fileEntry, cmInstances, path)?.close?.click();
         } else {
           console.error(`Could not delete ${path} (status:${response.status})`);
         }
@@ -209,12 +217,12 @@ function addFileTreeHandling(test) {
     });
     if (response instanceof Error) return;
     if (response.status === 200) {
-      const { oldPath, newPath } = grant();
+      const firEntry = grant();
       // update all cmInstances
       Object.entries(cmInstances).forEach(([key, entry]) => {
         if (key.startsWith(oldPath)) {
           const newKey = key.replace(oldPath, newPath);
-          updateEditorBindings(entry, newKey, key);
+          updateEditorBindings(firEntry, entry, newKey, key);
           updatePreview();
         }
       });
@@ -233,12 +241,12 @@ function addFileTreeHandling(test) {
     });
     if (response instanceof Error) return;
     if (response.status === 200) {
-      grant();
+      const dirEntry = grant();
       // update all cmInstances
       Object.entries(cmInstances).forEach(([key, entry]) => {
         if (key.startsWith(oldPath)) {
           const newKey = key.replace(oldPath, newPath);
-          updateEditorBindings(entry, newKey, key);
+          updateEditorBindings(dirEntry, entry, newKey, key);
           updatePreview();
         }
       });

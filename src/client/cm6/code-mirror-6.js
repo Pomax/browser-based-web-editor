@@ -1,6 +1,7 @@
 // This test script uses Codemirror v6
 import { basicSetup, EditorView } from "codemirror";
 import { EditorState } from "@codemirror/state";
+import { getEditorComponent } from "../utils.js";
 
 // Language-specific features:
 import { css } from "@codemirror/lang-css";
@@ -12,7 +13,7 @@ import { markdown } from "@codemirror/lang-markdown";
 /**
  * Create an initial CodeMirror6 state object
  */
-export function getInitialState(cmInstances, filename, data) {
+export function getInitialState(fileEntry, cmInstances, filename, data) {
   const doc = data.toString();
   const extensions = [basicSetup];
 
@@ -26,12 +27,14 @@ export function getInitialState(cmInstances, filename, data) {
   }[ext];
   if (syntax) extensions.push(syntax());
 
-  // Add debounced content change syncing
+  // Add debounced content change syncing as a CM6 plugin
   extensions.push(
     EditorView.updateListener.of((e) => {
       const tab = e.view.tabElement;
       if (tab && e.docChanged) {
-        const entry = cmInstances[tab.title];
+        const entry = getEditorComponent(fileEntry, cmInstances, tab.title);
+        // If we're already on a debounce schedule clear it
+        // before we set the new debounce timeout.
         if (entry.debounce) {
           clearTimeout(entry.debounce);
         }

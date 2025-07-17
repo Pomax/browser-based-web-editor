@@ -1,6 +1,13 @@
 import { getInitialState, setupView } from "./code-mirror-6.js";
 import { getViewType, verifyViewType } from "../content-types.js";
-import { fetchFileContents, create, noop } from "../utils.js";
+import {
+  fetchFileContents,
+  create,
+  noop,
+  getEditorComponent,
+  setEditorComponent,
+  removeEditorBinding,
+} from "../utils.js";
 import { syncContent } from "../sync.js";
 
 const tabs = document.getElementById(`tabs`);
@@ -49,6 +56,7 @@ export function setupEditorTab(filename) {
  * @param {*} view
  */
 export function addEditorEventHandling(
+  fileEntry,
   cmInstances,
   filename,
   panel,
@@ -57,7 +65,12 @@ export function addEditorEventHandling(
   view
 ) {
   tab.addEventListener(`click`, () => {
-    if (!cmInstances[tab.title]) return;
+    if (!getEditorComponent(fileEntry, cmInstances, tab.title)) return;
+    if (!fileEntry.parentNode) {
+      // TODO: we should select a different tab, this file got deleted.
+      return document.querySelector(`div.tab`).click();
+    }
+    fileEntry.select();
     document
       .querySelectorAll(`.editor`)
       .forEach((e) => e.setAttribute(`hidden`, `hidden`));
@@ -67,7 +80,6 @@ export function addEditorEventHandling(
       .forEach((e) => e.classList.remove(`active`));
     tab.classList.add(`active`);
     tab.scrollIntoView();
-    filetree.select(tab.title);
     view.focus();
   });
 
@@ -78,7 +90,7 @@ export function addEditorEventHandling(
       let newTab = tabPos === 0 ? tabs[1] : tabs[tabPos - 1];
       // newTab might exist as entry but not have an editor associated with it.
       if (newTab) {
-        cmInstances[newTab].tab?.click();
+        getEditorComponent(fileEntry, cmInstances, newTab).tab?.click();
       } else {
         filetree.unselect();
       }
@@ -89,7 +101,7 @@ export function addEditorEventHandling(
     const label = [...tab.childNodes].find(
       (c) => c.nodeName === `#text`
     ).textContent;
-    delete cmInstances[label];
+    removeEditorBinding(fileEntry, cmInstances, label);
   });
 }
 
@@ -98,11 +110,13 @@ export function addEditorEventHandling(
  * component for a given file.
  */
 export async function getOrCreateFileEditTab(
+  fileEntry,
   cmInstances,
   contentDir,
   filename
 ) {
-  const entry = cmInstances[filename];
+  const entry = getEditorComponent(fileEntry, cmInstances, filename);
+
   if (entry?.view) {
     return entry.tab?.click();
   }
@@ -122,7 +136,12 @@ export async function getOrCreateFileEditTab(
 
   let view;
   if (viewType.text || viewType.unknown) {
-    const initialState = getInitialState(cmInstances, filename, data);
+    const initialState = getInitialState(
+      fileEntry,
+      cmInstances,
+      filename,
+      data
+    );
     view = setupView(panel, initialState);
   } else if (viewType.media) {
     const { type } = viewType;
@@ -143,7 +162,15 @@ export async function getOrCreateFileEditTab(
   view.tabElement = tab;
 
   // Add tab and tab-close event hanlding:
-  addEditorEventHandling(cmInstances, filename, panel, tab, close, view);
+  addEditorEventHandling(
+    fileEntry,
+    cmInstances,
+    filename,
+    panel,
+    tab,
+    close,
+    view
+  );
 
   // Track this collection
   const properties = {
@@ -155,7 +182,8 @@ export async function getOrCreateFileEditTab(
     content: viewType.editable ? view.state.doc.toString() : data,
     sync: () => {
       if (viewType.editable) {
-        syncContent(cmInstances, contentDir, tab.title);
+        const entry = getEditorComponent(fileEntry, cmInstances, tab.title);
+        syncContent(entry, contentDir);
       }
     },
     noSync: !viewType.editable,
@@ -164,7 +192,8 @@ export async function getOrCreateFileEditTab(
   if (entry) {
     Object.assign(entry, properties);
   } else {
-    cmInstances[filename] = properties;
+    setEditorComponent(fileEntry, cmInstances, filename, properties);
+    fileEntry.setState(properties);
   }
 
   // And activate this editor

@@ -9,8 +9,11 @@ import { updatePreview } from "../client/preview.js";
  * made was correct by comparing the on-disk "hash" value with
  * the same value based on the current editor content.
  */
-export async function syncContent(cmInstances, contentDir, filename) {
-  const entry = cmInstances[filename];
+export async function syncContent(
+  entry,
+  contentDir,
+  filename = entry.filename
+) {
   if (entry.noSync) return;
 
   const currentContent = entry.content;
