@@ -1,13 +1,6 @@
 import { getInitialState, setupView } from "./code-mirror-6.js";
 import { getViewType, verifyViewType } from "../content-types.js";
-import {
-  fetchFileContents,
-  create,
-  noop,
-  getEditorComponent,
-  setEditorComponent,
-  removeEditorBinding,
-} from "../utils.js";
+import { fetchFileContents, create } from "../utils.js";
 import { syncContent } from "../sync.js";
 
 const tabs = document.getElementById(`tabs`);
@@ -65,7 +58,7 @@ export function addEditorEventHandling(
   view
 ) {
   tab.addEventListener(`click`, () => {
-    if (!getEditorComponent(fileEntry, cmInstances, tab.title)) return;
+    if (!fileEntry.state) return;
     if (!fileEntry.parentNode) {
       // TODO: we should select a different tab, this file got deleted.
       return document.querySelector(`div.tab`).click();
@@ -90,7 +83,7 @@ export function addEditorEventHandling(
       let newTab = tabPos === 0 ? tabs[1] : tabs[tabPos - 1];
       // newTab might exist as entry but not have an editor associated with it.
       if (newTab) {
-        getEditorComponent(fileEntry, cmInstances, newTab).tab?.click();
+        fileEntry.state.tab?.click();
       } else {
         filetree.unselect();
       }
@@ -101,7 +94,7 @@ export function addEditorEventHandling(
     const label = [...tab.childNodes].find(
       (c) => c.nodeName === `#text`
     ).textContent;
-    removeEditorBinding(fileEntry, cmInstances, label);
+    fileEntry.state = {};
   });
 }
 
@@ -115,7 +108,7 @@ export async function getOrCreateFileEditTab(
   contentDir,
   filename
 ) {
-  const entry = getEditorComponent(fileEntry, cmInstances, filename);
+  const entry = fileEntry.state;
 
   if (entry?.view) {
     return entry.tab?.click();
@@ -182,7 +175,7 @@ export async function getOrCreateFileEditTab(
     content: viewType.editable ? view.state.doc.toString() : data,
     sync: () => {
       if (viewType.editable) {
-        const entry = getEditorComponent(fileEntry, cmInstances, tab.title);
+        const entry = fileEntry.state;
         syncContent(entry, contentDir);
       }
     },
@@ -192,7 +185,6 @@ export async function getOrCreateFileEditTab(
   if (entry) {
     Object.assign(entry, properties);
   } else {
-    setEditorComponent(fileEntry, cmInstances, filename, properties);
     fileEntry.setState(properties);
   }
 

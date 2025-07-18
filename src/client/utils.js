@@ -55,22 +55,3 @@ export function listEquals(a1, a2) {
   if (a1.length !== a2.length) return false;
   return a1.every((v, i) => a2[i] === v);
 }
-
-// TEMPORARY REFACTOR FUNCTION
-export function getEditorComponent(fileEntry, cmInstances, name) {
-  return fileEntry.state;
-  //  return cmInstances[name];
-}
-export function setEditorComponent(
-  fileTreeEntry,
-  cmInstances,
-  name,
-  value = {}
-) {
-  fileTreeEntry.setState(value);
-  // cmInstances[name] = value;
-}
-export function removeEditorBinding(fileEntry, cmInstances, name) {
-  fileEntry.state = {};
-  // delete cmInstances[name];
-}

@@ -1,7 +1,6 @@
 // This test script uses Codemirror v6
 import { basicSetup, EditorView } from "codemirror";
 import { EditorState } from "@codemirror/state";
-import { getEditorComponent } from "../utils.js";
 
 // Language-specific features:
 import { css } from "@codemirror/lang-css";
@@ -32,7 +31,7 @@ export function getInitialState(fileEntry, cmInstances, filename, data) {
     EditorView.updateListener.of((e) => {
       const tab = e.view.tabElement;
       if (tab && e.docChanged) {
-        const entry = getEditorComponent(fileEntry, cmInstances, tab.title);
+        const entry = fileEntry.state;
         // If we're already on a debounce schedule clear it
         // before we set the new debounce timeout.
         if (entry.debounce) {

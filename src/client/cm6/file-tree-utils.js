@@ -1,9 +1,4 @@
-import {
-  fetchSafe,
-  getEditorComponent,
-  removeEditorBinding,
-  setEditorComponent,
-} from "../utils.js";
+import { fetchSafe } from "../utils.js";
 import { getMimeType } from "../content-types.js";
 import { updatePreview } from "../preview.js";
 import { getOrCreateFileEditTab } from "./editor-components.js";
@@ -30,10 +25,9 @@ function addFileTreeHandling(test) {
 
   function updateEditorBindings(fileTreeEntry, entry, key, oldKey) {
     if (oldKey) {
-      removeEditorBinding(fileTreeEntry, cmInstances, oldKey);
+      fileTreeEntry.state = {};
     }
 
-    setEditorComponent(fileTreeEntry, cmInstances, key, entry);
     fileTreeEntry.setState(entry);
 
     const { tab, panel } = entry;
@@ -118,7 +112,7 @@ function addFileTreeHandling(test) {
     if (response.status === 200) {
       const fileEntry = grant();
       let key = oldPath.replace(contentDir, ``);
-      const entry = getEditorComponent(fileEntry, cmInstances, key);
+      const entry = fileEntry.state;
       if (entry) {
         const newKey = newPath.replace(contentDir, ``);
         updateEditorBindings(fileEntry, entry, newKey, key);
@@ -165,7 +159,7 @@ function addFileTreeHandling(test) {
     if (response.status === 200) {
       const fileEntry = grant();
       let key = oldPath.replace(contentDir, ``);
-      const entry = getEditorComponent(fileEntry, cmInstances, key);
+      const entry = fileEntry.state;
       if (entry) {
         const newKey = newPath.replace(contentDir, ``);
         updateEditorBindings(fileEntry, entry, newKey, key);
@@ -188,7 +182,7 @@ function addFileTreeHandling(test) {
         if (response instanceof Error) return;
         if (response.status === 200) {
           const [fileEntry] = grant();
-          getEditorComponent(fileEntry, cmInstances, path)?.close?.click();
+          fileEntry.state?.close?.click();
         } else {
           console.error(`Could not delete ${path} (status:${response.status})`);
         }
