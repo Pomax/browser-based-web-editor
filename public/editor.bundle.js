@@ -498,15 +498,6 @@ function listEquals(a1, a2) {
   if (a1.length !== a2.length) return false;
   return a1.every((v2, i) => a2[i] === v2);
 }
-function getEditorComponent(fileEntry) {
-  return fileEntry.state;
-}
-function setEditorComponent(fileTreeEntry, value = {}) {
-  fileTreeEntry.setState(value);
-}
-function removeEditorBinding(fileEntry) {
-  fileEntry.state = {};
-}
 
 // src/client/content-types.js
 function getMimeType(fileName2) {
@@ -29164,7 +29155,7 @@ function getInitialState(fileEntry, cmInstances, filename, data3) {
     EditorView.updateListener.of((e) => {
       const tab = e.view.tabElement;
       if (tab && e.docChanged) {
-        const entry = getEditorComponent(fileEntry);
+        const entry = fileEntry.state;
         if (entry.debounce) {
           clearTimeout(entry.debounce);
         }
@@ -29814,7 +29805,7 @@ function setupEditorPanel(filename) {
 function setupEditorTab(filename) {
   const tab = create(`div`);
   tab.title = filename;
-  tab.textContent = filename;
+  tab.textContent = filename.includes(`/`) ? filename.substring(filename.lastIndexOf(`/`) + 1) : filename;
   document.querySelectorAll(`.active`).forEach((e) => e.classList.remove(`active`));
   tab.classList.add(`tab`, `active`);
   const close = create(`button`);
@@ -29825,7 +29816,7 @@ function setupEditorTab(filename) {
 }
 function addEditorEventHandling(fileEntry, cmInstances, filename, panel, tab, close, view) {
   tab.addEventListener(`click`, () => {
-    if (!getEditorComponent(fileEntry)) return;
+    if (!fileEntry.state) return;
     if (!fileEntry.parentNode) {
       return document.querySelector(`div.tab`).click();
     }
@@ -29843,7 +29834,7 @@ function addEditorEventHandling(fileEntry, cmInstances, filename, panel, tab, cl
       const tabPos = tabs3.indexOf(tab.title);
       let newTab = tabPos === 0 ? tabs3[1] : tabs3[tabPos - 1];
       if (newTab) {
-        getEditorComponent(fileEntry).tab?.click();
+        fileEntry.state.tab?.click();
       } else {
         filetree.unselect();
       }
@@ -29853,11 +29844,11 @@ function addEditorEventHandling(fileEntry, cmInstances, filename, panel, tab, cl
     const label = [...tab.childNodes].find(
       (c) => c.nodeName === `#text`
     ).textContent;
-    removeEditorBinding(fileEntry);
+    fileEntry.state = {};
   });
 }
 async function getOrCreateFileEditTab(fileEntry, cmInstances, contentDir, filename) {
-  const entry = getEditorComponent(fileEntry);
+  const entry = fileEntry.state;
   if (entry?.view) {
     return entry.tab?.click();
   }
@@ -29909,7 +29900,7 @@ async function getOrCreateFileEditTab(fileEntry, cmInstances, contentDir, filena
     content: viewType.editable ? view.state.doc.toString() : data3,
     sync: () => {
       if (viewType.editable) {
-        const entry2 = getEditorComponent(fileEntry);
+        const entry2 = fileEntry.state;
         syncContent(entry2, contentDir);
       }
     },
@@ -29918,7 +29909,6 @@ async function getOrCreateFileEditTab(fileEntry, cmInstances, contentDir, filena
   if (entry) {
     Object.assign(entry, properties2);
   } else {
-    setEditorComponent(fileEntry, properties2);
     fileEntry.setState(properties2);
   }
   tab.click();
@@ -30792,9 +30782,8 @@ function addFileTreeHandling(test) {
   const { cmInstances, contentDir } = test;
   function updateEditorBindings(fileTreeEntry, entry, key, oldKey) {
     if (oldKey) {
-      removeEditorBinding(fileTreeEntry);
+      fileTreeEntry.state = {};
     }
-    setEditorComponent(fileTreeEntry, entry);
     fileTreeEntry.setState(entry);
     const { tab, panel } = entry;
     entry.filename = key;
@@ -30866,7 +30855,7 @@ function addFileTreeHandling(test) {
     if (response.status === 200) {
       const fileEntry = grant();
       let key = oldPath.replace(contentDir, ``);
-      const entry = getEditorComponent(fileEntry);
+      const entry = fileEntry.state;
       if (entry) {
         const newKey = newPath.replace(contentDir, ``);
         updateEditorBindings(fileEntry, entry, newKey, key);
@@ -30909,7 +30898,7 @@ function addFileTreeHandling(test) {
     if (response.status === 200) {
       const fileEntry = grant();
       let key = oldPath.replace(contentDir, ``);
-      const entry = getEditorComponent(fileEntry);
+      const entry = fileEntry.state;
       if (entry) {
         const newKey = newPath.replace(contentDir, ``);
         updateEditorBindings(fileEntry, entry, newKey, key);
@@ -30931,7 +30920,7 @@ function addFileTreeHandling(test) {
         if (response instanceof Error) return;
         if (response.status === 200) {
           const [fileEntry] = grant();
-          getEditorComponent(fileEntry)?.close?.click();
+          fileEntry.state?.close?.click();
         } else {
           console.error(`Could not delete ${path} (status:${response.status})`);
         }

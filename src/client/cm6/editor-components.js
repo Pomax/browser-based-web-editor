@@ -23,7 +23,9 @@ export function setupEditorPanel(filename) {
 export function setupEditorTab(filename) {
   const tab = create(`div`);
   tab.title = filename;
-  tab.textContent = filename;
+  tab.textContent = filename.includes(`/`)
+    ? filename.substring(filename.lastIndexOf(`/`) + 1)
+    : filename;
   // TODO: make tabs draggable so users can reorder them
   document
     .querySelectorAll(`.active`)
