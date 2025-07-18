@@ -4,7 +4,13 @@ This is an attempt at implementing a friend browser-based web content editor, us
 
 ## how do I use this?
 
-It's a node project, so you'll need that installed (I recommend `nvm` or its windows equivalent), then clone this repo (or fork it and then clone that) and run `npm install`. Things should be cross-platform enough to work on Windows, Mac, and Linux by running `npm start` and then opening the URL that tells you things are running on.
+It's a node project, so you'll need that installed (I recommend `nvm` or its windows equivalent), then:
+
+- clone this repo (or fork it and then clone that),
+- run `git checkout with-filetree` in the repo folder,
+- run `npm install` in the repo folder.
+
+Things should be cross-platform enough to work on Windows, Mac, and Linux by running `npm start` and then opening the URL that tells you things are running on.
 
 The initial view is the "anonymous" view but you can click the "Switch" button and pick any username that isn't `anonymous` or `testuser`. Doing so will either load the content associated with that content folder, or will build a new folder with a copy of the content found in the testuser folder.
 
