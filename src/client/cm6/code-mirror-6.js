@@ -12,7 +12,7 @@ import { markdown } from "@codemirror/lang-markdown";
 /**
  * Create an initial CodeMirror6 state object
  */
-export function getInitialState(fileEntry, cmInstances, filename, data) {
+export function getInitialState(fileEntry, filename, data) {
   const doc = data.toString();
   const extensions = [basicSetup];
 

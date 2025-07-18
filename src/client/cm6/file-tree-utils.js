@@ -21,7 +21,7 @@ export async function setupFileTree(test) {
  * Deal with all the events that might be coming from the file tree
  */
 function addFileTreeHandling(test) {
-  const { cmInstances, contentDir } = test;
+  const { contentDir } = test;
 
   function updateEditorBindings(fileTreeEntry, entry, key, oldKey) {
     if (oldKey) {
@@ -45,7 +45,6 @@ function addFileTreeHandling(test) {
     const fileEntry = evt.detail.grant();
     getOrCreateFileEditTab(
       fileEntry,
-      cmInstances,
       contentDir,
       fileEntry.getAttribute(`path`)
     );
@@ -91,7 +90,6 @@ function addFileTreeHandling(test) {
         const fileEntry = grant();
         getOrCreateFileEditTab(
           fileEntry,
-          cmInstances,
           contentDir,
           fileEntry.getAttribute(`path`)
         );
@@ -211,15 +209,7 @@ function addFileTreeHandling(test) {
     });
     if (response instanceof Error) return;
     if (response.status === 200) {
-      const firEntry = grant();
-      // update all cmInstances
-      Object.entries(cmInstances).forEach(([key, entry]) => {
-        if (key.startsWith(oldPath)) {
-          const newKey = key.replace(oldPath, newPath);
-          updateEditorBindings(firEntry, entry, newKey, key);
-          updatePreview();
-        }
-      });
+      grant();
     } else {
       console.error(
         `Could not rename ${oldPath} to ${newPath} (status:${response.status})`
@@ -235,15 +225,7 @@ function addFileTreeHandling(test) {
     });
     if (response instanceof Error) return;
     if (response.status === 200) {
-      const dirEntry = grant();
-      // update all cmInstances
-      Object.entries(cmInstances).forEach(([key, entry]) => {
-        if (key.startsWith(oldPath)) {
-          const newKey = key.replace(oldPath, newPath);
-          updateEditorBindings(dirEntry, entry, newKey, key);
-          updatePreview();
-        }
-      });
+      grant();
     } else {
       console.error(
         `Could not move ${oldPath} to ${newPath} (status:${response.status})`

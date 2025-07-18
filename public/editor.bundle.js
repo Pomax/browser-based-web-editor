@@ -29140,7 +29140,7 @@ function htmlTagCompletions() {
 }
 
 // src/client/cm6/code-mirror-6.js
-function getInitialState(fileEntry, cmInstances, filename, data3) {
+function getInitialState(fileEntry, filename, data3) {
   const doc2 = data3.toString();
   const extensions = [basicSetup];
   const ext = filename.substring(filename.lastIndexOf(`.`) + 1);
@@ -29793,6 +29793,7 @@ async function syncContent(entry, contentDir, filename = entry.filename) {
 }
 
 // src/client/cm6/editor-components.js
+var fileTree = document.querySelector(`file-tree`);
 var tabs2 = document.getElementById(`tabs`);
 var editors = document.getElementById(`editors`);
 function setupEditorPanel(filename) {
@@ -29814,12 +29815,11 @@ function setupEditorTab(filename) {
   tab.appendChild(close);
   return { tab, close };
 }
-function addEditorEventHandling(fileEntry, cmInstances, filename, panel, tab, close, view) {
+function addEditorEventHandling(fileEntry, panel, tab, close, view) {
   tab.addEventListener(`click`, () => {
     if (!fileEntry.state) return;
-    if (!fileEntry.parentNode) {
-      return document.querySelector(`div.tab`).click();
-    }
+    if (!fileEntry.state.tab) return;
+    if (!fileEntry.parentNode) return;
     fileEntry.select();
     document.querySelectorAll(`.editor`).forEach((e) => e.setAttribute(`hidden`, `hidden`));
     panel.removeAttribute(`hidden`);
@@ -29829,25 +29829,20 @@ function addEditorEventHandling(fileEntry, cmInstances, filename, panel, tab, cl
     view.focus();
   });
   close.addEventListener(`click`, () => {
+    let newTab;
     if (tab.classList.contains(`active`)) {
-      const tabs3 = Object.keys(cmInstances);
-      const tabPos = tabs3.indexOf(tab.title);
-      let newTab = tabPos === 0 ? tabs3[1] : tabs3[tabPos - 1];
-      if (newTab) {
-        fileEntry.state.tab?.click();
-      } else {
-        filetree.unselect();
-      }
+      fileTree.unselect();
+      const tabs3 = Array.from(document.querySelectorAll(`div.tab`));
+      const tabPos = tabs3.findIndex((t2) => t2 === tab);
+      newTab = tabPos === 0 ? tabs3[1] : tabs3[tabPos - 1];
     }
+    fileEntry.state = {};
     tab.remove();
     panel.remove();
-    const label = [...tab.childNodes].find(
-      (c) => c.nodeName === `#text`
-    ).textContent;
-    fileEntry.state = {};
+    newTab?.click();
   });
 }
-async function getOrCreateFileEditTab(fileEntry, cmInstances, contentDir, filename) {
+async function getOrCreateFileEditTab(fileEntry, contentDir, filename) {
   const entry = fileEntry.state;
   if (entry?.view) {
     return entry.tab?.click();
@@ -29862,12 +29857,7 @@ async function getOrCreateFileEditTab(fileEntry, cmInstances, contentDir, filena
   if (!verified) return alert(`File contents does not match extension.`);
   let view;
   if (viewType.text || viewType.unknown) {
-    const initialState = getInitialState(
-      fileEntry,
-      cmInstances,
-      filename,
-      data3
-    );
+    const initialState = getInitialState(fileEntry, filename, data3);
     view = setupView(panel, initialState);
   } else if (viewType.media) {
     const { type } = viewType;
@@ -29882,15 +29872,7 @@ async function getOrCreateFileEditTab(fileEntry, cmInstances, contentDir, filena
     panel.appendChild(view);
   }
   view.tabElement = tab;
-  addEditorEventHandling(
-    fileEntry,
-    cmInstances,
-    filename,
-    panel,
-    tab,
-    close,
-    view
-  );
+  addEditorEventHandling(fileEntry, panel, tab, close, view);
   const properties2 = {
     filename,
     tab,
@@ -30771,15 +30753,15 @@ async function unzip(source) {
 }
 
 // src/client/cm6/file-tree-utils.js
-var fileTree = document.getElementById(`filetree`);
+var fileTree2 = document.getElementById(`filetree`);
 async function setupFileTree(test) {
   const dirData = await fetchSafe(`/dir`).then((r) => r.json());
   if (dirData instanceof Error) return;
-  fileTree.setContent(dirData);
+  fileTree2.setContent(dirData);
   addFileTreeHandling(test);
 }
 function addFileTreeHandling(test) {
-  const { cmInstances, contentDir } = test;
+  const { contentDir } = test;
   function updateEditorBindings(fileTreeEntry, entry, key, oldKey) {
     if (oldKey) {
       fileTreeEntry.state = {};
@@ -30795,22 +30777,21 @@ function addFileTreeHandling(test) {
     });
     panel.title = panel.id = key;
   }
-  fileTree.addEventListener(`file:click`, async (evt) => {
+  fileTree2.addEventListener(`file:click`, async (evt) => {
     const fileEntry = evt.detail.grant();
     getOrCreateFileEditTab(
       fileEntry,
-      cmInstances,
       contentDir,
       fileEntry.getAttribute(`path`)
     );
   });
-  fileTree.addEventListener(`dir:click`, async (evt) => {
+  fileTree2.addEventListener(`dir:click`, async (evt) => {
     evt.detail.grant();
   });
-  fileTree.addEventListener(`dir:toggle`, async (evt) => {
+  fileTree2.addEventListener(`dir:toggle`, async (evt) => {
     evt.detail.grant();
   });
-  fileTree.addEventListener(`file:create`, async (evt) => {
+  fileTree2.addEventListener(`file:create`, async (evt) => {
     const { path, grant, content: content2 } = evt.detail;
     if (content2) {
       if (path.endsWith(`.zip`) && confirm(`Unpack zip file?`)) {
@@ -30821,7 +30802,7 @@ function addFileTreeHandling(test) {
           const content3 = new TextDecoder().decode(arrayBuffer);
           if (content3.trim()) {
             path2 = basePath + path2;
-            uploadFile(path2, content3, () => fileTree.addEntry(path2));
+            uploadFile(path2, content3, () => fileTree2.addEntry(path2));
           }
         }
       } else {
@@ -30835,7 +30816,6 @@ function addFileTreeHandling(test) {
         const fileEntry = grant();
         getOrCreateFileEditTab(
           fileEntry,
-          cmInstances,
           contentDir,
           fileEntry.getAttribute(`path`)
         );
@@ -30846,7 +30826,7 @@ function addFileTreeHandling(test) {
       }
     }
   });
-  fileTree.addEventListener(`file:rename`, async (evt) => {
+  fileTree2.addEventListener(`file:rename`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
       method: `post`
@@ -30889,7 +30869,7 @@ function addFileTreeHandling(test) {
       console.error(`Could not upload ${fileName2} (status:${response.status})`);
     }
   }
-  fileTree.addEventListener(`file:move`, async (evt) => {
+  fileTree2.addEventListener(`file:move`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
       method: `post`
@@ -30910,7 +30890,7 @@ function addFileTreeHandling(test) {
     }
     updatePreview();
   });
-  fileTree.addEventListener(`file:delete`, async (evt) => {
+  fileTree2.addEventListener(`file:delete`, async (evt) => {
     const { path, grant } = evt.detail;
     if (path) {
       try {
@@ -30930,7 +30910,7 @@ function addFileTreeHandling(test) {
     }
     updatePreview();
   });
-  fileTree.addEventListener(`dir:create`, async (evt) => {
+  fileTree2.addEventListener(`dir:create`, async (evt) => {
     const { dirName, grant } = evt.detail;
     const response = await fetchSafe(`/new/${dirName}`, { method: `post` });
     if (response instanceof Error) return;
@@ -30940,21 +30920,14 @@ function addFileTreeHandling(test) {
       console.error(`Could not create ${dirName} (status:${response.status})`);
     }
   });
-  fileTree.addEventListener(`dir:rename`, async (evt) => {
+  fileTree2.addEventListener(`dir:rename`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
       method: `post`
     });
     if (response instanceof Error) return;
     if (response.status === 200) {
-      const firEntry = grant();
-      Object.entries(cmInstances).forEach(([key, entry]) => {
-        if (key.startsWith(oldPath)) {
-          const newKey = key.replace(oldPath, newPath);
-          updateEditorBindings(firEntry, entry, newKey, key);
-          updatePreview();
-        }
-      });
+      grant();
     } else {
       console.error(
         `Could not rename ${oldPath} to ${newPath} (status:${response.status})`
@@ -30962,21 +30935,14 @@ function addFileTreeHandling(test) {
     }
     updatePreview();
   });
-  fileTree.addEventListener(`dir:move`, async (evt) => {
+  fileTree2.addEventListener(`dir:move`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
     const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
       method: `post`
     });
     if (response instanceof Error) return;
     if (response.status === 200) {
-      const dirEntry = grant();
-      Object.entries(cmInstances).forEach(([key, entry]) => {
-        if (key.startsWith(oldPath)) {
-          const newKey = key.replace(oldPath, newPath);
-          updateEditorBindings(dirEntry, entry, newKey, key);
-          updatePreview();
-        }
-      });
+      grant();
     } else {
       console.error(
         `Could not move ${oldPath} to ${newPath} (status:${response.status})`
@@ -30984,7 +30950,7 @@ function addFileTreeHandling(test) {
     }
     updatePreview();
   });
-  fileTree.addEventListener(`dir:delete`, async (evt) => {
+  fileTree2.addEventListener(`dir:delete`, async (evt) => {
     const { path, grant } = evt.detail;
     const response = await fetchSafe(`/delete-dir/${path}`, {
       method: `delete`
@@ -31005,7 +30971,7 @@ var all = document.getElementById(`all`);
 var format = document.getElementById(`format`);
 var left = document.getElementById(`left`);
 var right = document.getElementById(`right`);
-function addEventHandling(cmInstances, contentDir) {
+function addEventHandling(contentDir) {
   changeUser.addEventListener(`click`, async () => {
     const name2 = prompt(`Username?`).trim();
     if (name2) {
@@ -31020,18 +30986,23 @@ function addEventHandling(cmInstances, contentDir) {
   addTabScrollHandling();
   format.addEventListener(`click`, async () => {
     const tab = document.querySelector(`.active`);
-    const entry = Object.values(cmInstances).find((e) => e.tab === tab);
-    const filename = entry.filename;
+    const fileEntry = document.querySelector(`file-entry.selected`);
+    if (fileEntry.state?.tab !== tab) {
+      throw new Error(`active tab has no associated selected file? O_o`);
+    }
+    const filename = fileEntry.path;
     format.hidden = true;
     const result = await fetchSafe(`/format/${filename}`, { method: `post` });
     if (result instanceof Error) return;
-    entry.content = await fetchFileContents(contentDir, filename);
     format.hidden = false;
-    entry.view.dispatch({
+    const { view } = fileEntry.state;
+    const content2 = await fetchFileContents(contentDir, filename);
+    fileEntry.setState({ content: content2 });
+    view.dispatch({
       changes: {
         from: 0,
-        to: entry.view.state.doc.length,
-        insert: entry.content
+        to: view.state.doc.length,
+        insert: content2
       }
     });
   });
@@ -31078,12 +31049,11 @@ var BrowserEditorTest = class {
 var CodeMirror6Test = class extends BrowserEditorTest {
   constructor() {
     super();
-    this.cmInstances = {};
   }
   async init() {
     await setupFileTree(this);
-    const { cmInstances, contentDir } = this;
-    addEventHandling(cmInstances, contentDir);
+    const { contentDir } = this;
+    addEventHandling(contentDir);
     super.init();
   }
 };

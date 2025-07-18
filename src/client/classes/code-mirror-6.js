@@ -8,15 +8,14 @@ import { BrowserEditorTest } from "./browser-editor-test.js";
 export class CodeMirror6Test extends BrowserEditorTest {
   constructor() {
     super();
-    this.cmInstances = {};
   }
 
   async init() {
     // CodeMirror 6 has no built in file browser, so we need to add one.
     await setupFileTree(this);
     // as such we also need custom handling for editor panes and tabs
-    const { cmInstances, contentDir } = this;
-    addEventHandling(cmInstances, contentDir);
+    const { contentDir } = this;
+    addEventHandling(contentDir);
     super.init();
   }
 }

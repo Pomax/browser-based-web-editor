@@ -3,6 +3,7 @@ import { getViewType, verifyViewType } from "../content-types.js";
 import { fetchFileContents, create } from "../utils.js";
 import { syncContent } from "../sync.js";
 
+const fileTree = document.querySelector(`file-tree`);
 const tabs = document.getElementById(`tabs`);
 const editors = document.getElementById(`editors`);
 
@@ -50,21 +51,11 @@ export function setupEditorTab(filename) {
  * @param {*} close
  * @param {*} view
  */
-export function addEditorEventHandling(
-  fileEntry,
-  cmInstances,
-  filename,
-  panel,
-  tab,
-  close,
-  view
-) {
+export function addEditorEventHandling(fileEntry, panel, tab, close, view) {
   tab.addEventListener(`click`, () => {
     if (!fileEntry.state) return;
-    if (!fileEntry.parentNode) {
-      // TODO: we should select a different tab, this file got deleted.
-      return document.querySelector(`div.tab`).click();
-    }
+    if (!fileEntry.state.tab) return;
+    if (!fileEntry.parentNode) return;
     fileEntry.select();
     document
       .querySelectorAll(`.editor`)
@@ -79,24 +70,18 @@ export function addEditorEventHandling(
   });
 
   close.addEventListener(`click`, () => {
+    let newTab;
     if (tab.classList.contains(`active`)) {
-      const tabs = Object.keys(cmInstances);
-      const tabPos = tabs.indexOf(tab.title);
-      let newTab = tabPos === 0 ? tabs[1] : tabs[tabPos - 1];
-      // newTab might exist as entry but not have an editor associated with it.
-      if (newTab) {
-        fileEntry.state.tab?.click();
-      } else {
-        filetree.unselect();
-      }
+      // move focus to another tab, if there is one...
+      fileTree.unselect();
+      const tabs = Array.from(document.querySelectorAll(`div.tab`));
+      const tabPos = tabs.findIndex((t) => t === tab);
+      newTab = tabPos === 0 ? tabs[1] : tabs[tabPos - 1];
     }
+    fileEntry.state = {};
     tab.remove();
     panel.remove();
-    // get current label
-    const label = [...tab.childNodes].find(
-      (c) => c.nodeName === `#text`
-    ).textContent;
-    fileEntry.state = {};
+    newTab?.click();
   });
 }
 
@@ -104,12 +89,7 @@ export function addEditorEventHandling(
  * Create the collection of page UI elements and associated editor
  * component for a given file.
  */
-export async function getOrCreateFileEditTab(
-  fileEntry,
-  cmInstances,
-  contentDir,
-  filename
-) {
+export async function getOrCreateFileEditTab(fileEntry, contentDir, filename) {
   const entry = fileEntry.state;
 
   if (entry?.view) {
@@ -131,12 +111,7 @@ export async function getOrCreateFileEditTab(
 
   let view;
   if (viewType.text || viewType.unknown) {
-    const initialState = getInitialState(
-      fileEntry,
-      cmInstances,
-      filename,
-      data
-    );
+    const initialState = getInitialState(fileEntry, filename, data);
     view = setupView(panel, initialState);
   } else if (viewType.media) {
     const { type } = viewType;
@@ -157,15 +132,7 @@ export async function getOrCreateFileEditTab(
   view.tabElement = tab;
 
   // Add tab and tab-close event hanlding:
-  addEditorEventHandling(
-    fileEntry,
-    cmInstances,
-    filename,
-    panel,
-    tab,
-    close,
-    view
-  );
+  addEditorEventHandling(fileEntry, panel, tab, close, view);
 
   // Track this collection
   const properties = {

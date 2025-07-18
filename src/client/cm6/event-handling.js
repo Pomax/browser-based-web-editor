@@ -9,7 +9,7 @@ const right = document.getElementById(`right`);
 /**
  * Hook up the "Add new file" and "Format this file" buttons
  */
-export function addEventHandling(cmInstances, contentDir) {
+export function addEventHandling(contentDir) {
   changeUser.addEventListener(`click`, async () => {
     const name = prompt(`Username?`).trim();
     if (name) {
@@ -27,18 +27,23 @@ export function addEventHandling(cmInstances, contentDir) {
 
   format.addEventListener(`click`, async () => {
     const tab = document.querySelector(`.active`);
-    const entry = Object.values(cmInstances).find((e) => e.tab === tab);
-    const filename = entry.filename;
+    const fileEntry = document.querySelector(`file-entry.selected`);
+    if (fileEntry.state?.tab !== tab) {
+      throw new Error(`active tab has no associated selected file? O_o`);
+    }
+    const filename = fileEntry.path;
     format.hidden = true;
     const result = await fetchSafe(`/format/${filename}`, { method: `post` });
     if (result instanceof Error) return;
-    entry.content = await fetchFileContents(contentDir, filename);
     format.hidden = false;
-    entry.view.dispatch({
+    const { view } = fileEntry.state;
+    const content = await fetchFileContents(contentDir, filename);
+    fileEntry.setState({ content });
+    view.dispatch({
       changes: {
         from: 0,
-        to: entry.view.state.doc.length,
-        insert: entry.content,
+        to: view.state.doc.length,
+        insert: content,
       },
     });
   });
