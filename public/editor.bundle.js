@@ -14,9 +14,9 @@ function I(s) {
 }
 var u = window.customElements;
 function g(s) {
-  return new Promise((t2, e) => {
+  return new Promise((t2, e2) => {
     let r = new FileReader();
-    r.onloadend = ({ target: i }) => t2(i.result), r.onerror = e, r.readAsArrayBuffer(s);
+    r.onloadend = ({ target: i }) => t2(i.result), r.onerror = e2, r.readAsArrayBuffer(s);
   });
 }
 var _ = globalThis.HTMLElement ?? class {
@@ -38,12 +38,12 @@ var f = class extends _ {
       t2.classList.add("buttons"), this.appendChild(t2);
     }
   }
-  addExternalListener(t2, e, r, i = {}) {
+  addExternalListener(t2, e2, r, i = {}) {
     let n = new AbortController();
-    i.signal = n.signal, t2.addEventListener(e, r, i), this.addAbortController(n);
+    i.signal = n.signal, t2.addEventListener(e2, r, i), this.addAbortController(n);
   }
-  addListener(t2, e, r = {}) {
-    this.addExternalListener(this, t2, e, r);
+  addListener(t2, e2, r = {}) {
+    this.addExternalListener(this, t2, e2, r);
   }
   addAbortController(t2) {
     this.eventControllers.push(t2);
@@ -66,19 +66,19 @@ var f = class extends _ {
   }
   set path(t2) {
     if (!t2) return;
-    let e = t2.endsWith("/") ? -2 : -1;
-    if (this.name = t2.split("/").at(e).replace(/#.*/, ""), !this.name && t2) throw Error(`why? path is ${t2}`);
+    let e2 = t2.endsWith("/") ? -2 : -1;
+    if (this.name = t2.split("/").at(e2).replace(/#.*/, ""), !this.name && t2) throw Error(`why? path is ${t2}`);
     let r = this.find("& > entry-heading");
     r.textContent = this.name, this.setAttribute("path", t2);
   }
-  updatePath(t2, e) {
+  updatePath(t2, e2) {
     let r = new RegExp(`^${t2}`);
-    this.path = this.path.replace(r, e);
+    this.path = this.path.replace(r, e2);
   }
   get dirPath() {
-    let { path: t2, name: e } = this;
-    if (this.isFile) return t2.replace(e, "");
-    if (this.isDir) return t2.substring(0, t2.lastIndexOf(e));
+    let { path: t2, name: e2 } = this;
+    if (this.isFile) return t2.replace(e2, "");
+    if (this.isDir) return t2.substring(0, t2.lastIndexOf(e2));
     throw Error("entry is file nor dir.");
   }
   get root() {
@@ -88,9 +88,9 @@ var f = class extends _ {
     let t2 = this;
     return t2.tagName === "DIR-ENTRY" && (t2 = t2.parentNode), t2.closest("dir-entry");
   }
-  emit(t2, e = {}, r = () => {
+  emit(t2, e2 = {}, r = () => {
   }) {
-    e.grant = r, this.root.dispatchEvent(new CustomEvent(t2, { detail: e }));
+    e2.grant = r, this.root.dispatchEvent(new CustomEvent(t2, { detail: e2 }));
   }
   find(t2) {
     return this.querySelector(t2);
@@ -122,19 +122,19 @@ var O = "en-GB";
 var S = globalThis.navigator?.language;
 var o = y[S] || y[O];
 function C({ root: s, path: t2 }) {
-  let e = d("input");
-  e.type = "file", e.multiple = true, confirm('To upload one or more files, press "OK". To upload an entire folder, press "Cancel".') || (e.webkitdirectory = true), e.addEventListener("change", () => {
-    let { files: i } = e;
+  let e2 = d("input");
+  e2.type = "file", e2.multiple = true, confirm('To upload one or more files, press "OK". To upload an entire folder, press "Cancel".') || (e2.webkitdirectory = true), e2.addEventListener("change", () => {
+    let { files: i } = e2;
     i && T(s, i, t2);
-  }), e.click();
+  }), e2.click();
 }
-async function T(s, t2, e = "") {
+async function T(s, t2, e2 = "") {
   async function r(i, n = "") {
     if (i instanceof File && !i.isDirectory) {
-      let a = await g(i), c = n + (i.webkitRelativePath || i.name), l = (e === "." ? "" : e) + c;
+      let a = await g(i), c = n + (i.webkitRelativePath || i.name), l = (e2 === "." ? "" : e2) + c;
       s.createEntry(l, a);
     } else if (i.isFile) i.file(async (a) => {
-      let c = await g(a), l = n + a.name, h = (e === "." ? "" : e) + l;
+      let c = await g(a), l = n + a.name, h = (e2 === "." ? "" : e2) + l;
       s.createEntry(h, c);
     });
     else if (i.isDirectory) {
@@ -154,20 +154,20 @@ async function T(s, t2, e = "") {
 function N(s) {
   let t2 = new AbortController();
   s.draggable = true;
-  let e = () => {
+  let e2 = () => {
     s.findAllInTree(".drop-target").forEach((r) => r.classList.remove("drop-target"));
   };
   return s.addEventListener("dragstart", (r) => {
     r.stopPropagation(), s.classList.add("dragging"), s.dataset.id = `${Date.now()}-${Math.random()}`, r.dataTransfer.setData("id", s.dataset.id);
   }, { signal: t2.signal }), s.addEventListener("dragenter", (r) => {
-    r.preventDefault(), e(), s.classList.add("drop-target");
+    r.preventDefault(), e2(), s.classList.add("drop-target");
   }, { signal: t2.signal }), s.addEventListener("dragover", (r) => {
     let i = r.target;
-    b(s, i) && (r.preventDefault(), e(), s.classList.add("drop-target"));
+    b(s, i) && (r.preventDefault(), e2(), s.classList.add("drop-target"));
   }, { signal: t2.signal }), s.addEventListener("dragleave", (r) => {
-    r.preventDefault(), e();
+    r.preventDefault(), e2();
   }, { signal: t2.signal }), s.addEventListener("drop", async (r) => {
-    r.preventDefault(), r.stopPropagation(), e();
+    r.preventDefault(), r.stopPropagation(), e2();
     let i = r.dataTransfer.getData("id");
     if (i) return v(s, i);
     await T(s.root, r.dataTransfer.items, s.path);
@@ -177,10 +177,10 @@ function b(s, t2) {
   return t2 === s ? true : t2.closest("dir-entry") === s;
 }
 function v(s, t2) {
-  let e = s.findInTree(`[data-id="${t2}"]`);
-  if (delete e.dataset.id, e.classList.remove("dragging"), e === s) return;
-  let r = e.path, i = s.path, n = (i !== "." ? i : "") + e.name;
-  e.isDir && (n += "/"), s.root.moveEntry(e, r, n);
+  let e2 = s.findInTree(`[data-id="${t2}"]`);
+  if (delete e2.dataset.id, e2.classList.remove("dragging"), e2 === s) return;
+  let r = e2.path, i = s.path, n = (i !== "." ? i : "") + e2.name;
+  e2.isDir && (n += "/"), s.root.moveEntry(e2, r, n);
 }
 var E = class extends f {
   isDir = true;
@@ -194,19 +194,19 @@ var E = class extends f {
     super.path = t2, t2 === "." && (this.find("& > .rename-dir")?.remove(), this.find("& > .delete-dir")?.remove());
   }
   connectedCallback() {
-    this.addListener("click", (e) => this.selectListener(e)), this.addExternalListener(this.icon, "click", (e) => this.foldListener(e));
+    this.addListener("click", (e2) => this.selectListener(e2)), this.addExternalListener(this.icon, "click", (e2) => this.foldListener(e2));
     let t2 = N(this);
     t2 && this.addAbortController(t2);
   }
   selectListener(t2) {
     if (t2.stopPropagation(), t2.preventDefault(), this.path === ".") return;
-    let e = t2.target.tagName;
-    e !== "DIR-ENTRY" && e !== "ENTRY-HEADING" || (this.root.selectEntry(this), this.classList.contains("closed") && this.foldListener(t2));
+    let e2 = t2.target.tagName;
+    e2 !== "DIR-ENTRY" && e2 !== "ENTRY-HEADING" || (this.root.selectEntry(this), this.classList.contains("closed") && this.foldListener(t2));
   }
   foldListener(t2) {
     if (t2.stopPropagation(), t2.preventDefault(), this.path === ".") return;
-    let e = this.classList.contains("closed");
-    this.root.toggleDirectory(this, { currentState: e ? "closed" : "open" });
+    let e2 = this.classList.contains("closed");
+    this.root.toggleDirectory(this, { currentState: e2 ? "closed" : "open" });
   }
   addButtons(t2) {
     this.createFileButton(), this.createDirButton(), this.addUploadButton(), t2 || (this.addRenameButton(), this.addDeleteButton());
@@ -232,8 +232,8 @@ var E = class extends f {
     let t2 = prompt(String.CREATE_DIRECTORY_PROMPT)?.trim();
     if (t2) {
       if (t2.includes("/")) return alert(o.CREATE_DIRECTORY_NO_NESTING);
-      let e = (this.path !== "." ? this.path : "") + t2 + "/";
-      this.root.createEntry(e);
+      let e2 = (this.path !== "." ? this.path : "") + t2 + "/";
+      this.root.createEntry(e2);
     }
   }
   addUploadButton() {
@@ -269,7 +269,7 @@ var E = class extends f {
     if (!this.removeEmptyDir || this.find("dir-entry, file-entry")) return;
     this.root.removeEntry(this, true);
   }
-  sort(t2 = true, e = true) {
+  sort(t2 = true, e2 = true) {
     let r = [...this.children];
     r.sort((i, n) => {
       if (i.tagName === "SPAN" && i.classList.contains("icon")) return -1;
@@ -279,7 +279,7 @@ var E = class extends f {
       if (i.tagName === "SPAN" && n.tagName === "SPAN") return 0;
       if (i.tagName === "SPAN") return -1;
       if (n.tagName === "SPAN") return 1;
-      if (e) {
+      if (e2) {
         if (i.tagName === "DIR-ENTRY" && n.tagName === "DIR-ENTRY") return i = i.path, n = n.path, i < n ? -1 : 1;
         if (i.tagName === "DIR-ENTRY") return -1;
         if (n.tagName === "DIR-ENTRY") return 1;
@@ -303,14 +303,14 @@ var E = class extends f {
 u.define("dir-entry", E);
 var m = class extends f {
   isFile = true;
-  constructor(t2, e) {
-    super(t2, e), this.addRenameButton(), this.addDeleteButton(), this.addEventHandling();
+  constructor(t2, e2) {
+    super(t2, e2), this.addRenameButton(), this.addDeleteButton(), this.addEventHandling();
   }
   addRenameButton() {
     if (this.hasButton("rename-file")) return;
     let t2 = d("button");
-    t2.classList.add("rename-file"), t2.title = o.RENAME_FILE, t2.textContent = "\u270F\uFE0F", this.buttons.appendChild(t2), t2.addEventListener("click", (e) => {
-      e.preventDefault(), e.stopPropagation();
+    t2.classList.add("rename-file"), t2.title = o.RENAME_FILE, t2.textContent = "\u270F\uFE0F", this.buttons.appendChild(t2), t2.addEventListener("click", (e2) => {
+      e2.preventDefault(), e2.stopPropagation();
       let r = prompt(o.RENAME_FILE_PROMPT, this.heading.textContent)?.trim();
       if (r) {
         if (r.includes("/")) return alert(o.RENAME_FILE_MOVE_INSTEAD);
@@ -321,8 +321,8 @@ var m = class extends f {
   addDeleteButton() {
     if (this.hasButton("delete-file")) return;
     let t2 = d("button");
-    t2.classList.add("delete-file"), t2.title = o.DELETE_FILE, t2.textContent = "\u{1F5D1}\uFE0F", this.buttons.appendChild(t2), t2.addEventListener("click", (e) => {
-      e.preventDefault(), e.stopPropagation(), confirm(o.DELETE_FILE_PROMPT(this.path)) && this.root.removeEntry(this);
+    t2.classList.add("delete-file"), t2.title = o.DELETE_FILE, t2.textContent = "\u{1F5D1}\uFE0F", this.buttons.appendChild(t2), t2.addEventListener("click", (e2) => {
+      e2.preventDefault(), e2.stopPropagation(), confirm(o.DELETE_FILE_PROMPT(this.path)) && this.root.removeEntry(this);
     });
   }
   addEventHandling() {
@@ -358,14 +358,14 @@ var R = class extends f {
     return this.rootDir;
   }
   clear() {
-    this.ready = false, this.emit("tree:clear"), Object.keys(this.entries).forEach((e) => delete this.entries[e]), this.rootDir && this.removeChild(this.rootDir);
+    this.ready = false, this.emit("tree:clear"), Object.keys(this.entries).forEach((e2) => delete this.entries[e2]), this.rootDir && this.removeChild(this.rootDir);
     let t2 = this.rootDir = new E(true);
     t2.path = ".", this.appendChild(t2);
   }
   connectedCallback() {
     this.addExternalListener(document, "dragend", () => this.findAll(".dragging").forEach((t2) => t2.classList.remove("dragging")));
   }
-  attributeChangedCallback(t2, e, r) {
+  attributeChangedCallback(t2, e2, r) {
     t2 === "src" && r && this.#r(r);
   }
   async #r(t2) {
@@ -373,16 +373,16 @@ var R = class extends f {
     r && this.setContent(r);
   }
   setContent(t2 = []) {
-    return this.clear(), t2.forEach((e) => {
-      let r = p(e) ? "file" : "dir";
-      this.#t(e, void 0, `tree:add:${r}`, true);
+    return this.clear(), t2.forEach((e2) => {
+      let r = p(e2) ? "file" : "dir";
+      this.#t(e2, void 0, `tree:add:${r}`, true);
     }), this.ready = true, this.emit("tree:ready");
   }
-  createEntry(t2, e = void 0) {
+  createEntry(t2, e2 = void 0) {
     let r = (p(t2) ? "file" : "dir") + ":create";
-    this.#t(t2, e, r);
+    this.#t(t2, e2, r);
   }
-  #t(t2, e = void 0, r, i = false) {
+  #t(t2, e2 = void 0, r, i = false) {
     let { entries: n } = this;
     if (!p(t2) && !t2.endsWith("/") && (t2 += "/"), n[t2]) return this.emit(`${r}:error`, { error: o.PATH_EXISTS(t2) });
     let a = () => {
@@ -390,38 +390,38 @@ var R = class extends f {
       return l.path = t2, n[t2] = l, this.#i(l).addEntry(l), l;
     };
     if (i) return a();
-    this.emit(r, { path: t2, content: e }, a);
+    this.emit(r, { path: t2, content: e2 }, a);
   }
   #i({ dirPath: t2 }) {
-    let { entries: e } = this;
+    let { entries: e2 } = this;
     if (!t2) return this.rootDir;
     let r = this.find(`[path="${t2}"`);
     return r || (r = this.rootDir, t2.split("/").forEach((i) => {
       if (!i) return;
       let n = (r.path === "." ? "" : r.path) + i + "/", a = this.find(`[path="${n}"`);
-      a || (a = new E(), a.path = n, r.addEntry(a), e[n] = a), r = a;
+      a || (a = new E(), a.path = n, r.addEntry(a), e2[n] = a), r = a;
     }), r);
   }
-  renameEntry(t2, e) {
-    let r = t2.path, i = r.lastIndexOf(t2.name), n = r.substring(0, i) + e;
+  renameEntry(t2, e2) {
+    let r = t2.path, i = r.lastIndexOf(t2.name), n = r.substring(0, i) + e2;
     t2.isDir && (n += "/");
     let a = (t2.isFile ? "file" : "dir") + ":rename";
     this.#e(t2, r, n, a);
   }
-  moveEntry(t2, e, r) {
+  moveEntry(t2, e2, r) {
     let i = (t2.isFile ? "file" : "dir") + ":move";
-    this.#e(t2, e, r, i);
+    this.#e(t2, e2, r, i);
   }
-  #e(t2, e, r, i) {
+  #e(t2, e2, r, i) {
     let { entries: n } = this;
-    if (e !== r) {
-      if (r.startsWith(e)) return this.emit(`${i}:error`, { oldPath: e, newPath: r, error: o.PATH_INSIDE_ITSELF(e) });
-      if (n[r]) return this.emit(`${i}:error`, { oldPath: e, newPath: r, error: o.PATH_EXISTS(r) });
-      this.emit(i, { oldPath: e, newPath: r }, () => {
+    if (e2 !== r) {
+      if (r.startsWith(e2)) return this.emit(`${i}:error`, { oldPath: e2, newPath: r, error: o.PATH_INSIDE_ITSELF(e2) });
+      if (n[r]) return this.emit(`${i}:error`, { oldPath: e2, newPath: r, error: o.PATH_EXISTS(r) });
+      this.emit(i, { oldPath: e2, newPath: r }, () => {
         Object.keys(n).forEach((l) => {
-          if (l.startsWith(e)) {
+          if (l.startsWith(e2)) {
             let h = n[l];
-            h.updatePath(e, r), n[h.path] = h, delete n[l];
+            h.updatePath(e2, r), n[h.path] = h, delete n[l];
           }
         });
         let { dirPath: a } = n[r] = t2;
@@ -429,30 +429,30 @@ var R = class extends f {
       });
     }
   }
-  removeEntry(t2, e = false) {
+  removeEntry(t2, e2 = false) {
     let { entries: r } = this, { path: i, isFile: n, parentDir: a } = t2, c = (n ? "file" : "dir") + ":delete", l = { path: i };
-    e && (l.emptyDir = true), this.emit(c, l, () => {
+    e2 && (l.emptyDir = true), this.emit(c, l, () => {
       let h = [t2];
-      return n || e ? (t2.remove(), delete r[i]) : Object.entries(r).forEach(([L, A]) => {
+      return n || e2 ? (t2.remove(), delete r[i]) : Object.entries(r).forEach(([L, A]) => {
         L.startsWith(i) && (h.push(A), A.remove(), delete r[L]);
       }), a.checkEmpty(), h;
     });
   }
   select(t2) {
-    let e = this.entries[t2];
-    if (!e) throw new Error(o.PATH_DOES_NOT_EXIST(t2));
-    e.select();
+    let e2 = this.entries[t2];
+    if (!e2) throw new Error(o.PATH_DOES_NOT_EXIST(t2));
+    e2.select();
   }
   unselect() {
     this.find(".selected")?.classList.remove("selected");
   }
-  selectEntry(t2, e = {}) {
+  selectEntry(t2, e2 = {}) {
     let r = (t2.isFile ? "file" : "dir") + ":click";
-    e.path = t2.path, this.emit(r, e, () => (t2.select(), t2));
+    e2.path = t2.path, this.emit(r, e2, () => (t2.select(), t2));
   }
-  toggleDirectory(t2, e = {}) {
+  toggleDirectory(t2, e2 = {}) {
     let r = "dir:toggle";
-    e.path = t2.path, this.emit(r, e, () => t2.toggle());
+    e2.path = t2.path, this.emit(r, e2, () => t2.toggle());
   }
   sort() {
     this.rootDir.sort();
@@ -492,7 +492,7 @@ async function fetchSafe(url, options) {
 }
 function getFileSum(data3) {
   const enc = new TextEncoder();
-  return enc.encode(data3).reduce((t2, e) => t2 + e, 0);
+  return enc.encode(data3).reduce((t2, e2) => t2 + e2, 0);
 }
 function listEquals(a1, a2) {
   if (a1.length !== a2.length) return false;
@@ -582,20 +582,31 @@ function verifyRIFF(bytes) {
 
 // src/client/preview.js
 var preview = document.getElementById(`preview`);
+var first_time_load = true;
 function updatePreview() {
+  if (first_time_load) {
+    console.log(`delaying first time load`);
+    first_time_load = false;
+    return setTimeout(() => updatePreview(), 1e3);
+  }
   const iframe = preview.querySelector(`iframe`);
   const newFrame = document.createElement(`iframe`);
+  newFrame.onerror = () => {
+    console.log(`what?`, e);
+  };
   newFrame.onload = () => {
-    setTimeout(() => {
-      newFrame.style.opacity = 1;
-      setTimeout(() => iframe.remove(), 750);
-    }, 250);
+    console.log(`loaded ${newFrame.src}`);
+    setTimeout(() => newFrame.style.opacity = 1, 250);
+    setTimeout(() => iframe.remove(), 500);
   };
   newFrame.style.opacity = 0;
   newFrame.style.transition = "opacity 0.25s";
+  let src = iframe.src ? iframe.src : iframe.dataset.src;
+  src = src.replace(/\?v=\d+/, ``);
+  src += `?v=${Date.now()}`;
+  console.log(`using ${src}`);
   preview.append(newFrame);
-  const src = iframe.src ? iframe.src : iframe.dataset.src;
-  newFrame.src = src;
+  setTimeout(() => newFrame.src = src, 100);
 }
 
 // node_modules/@codemirror/state/dist/index.js
@@ -1605,7 +1616,7 @@ var ChangeSet = class _ChangeSet extends ChangeDesc {
       let part = json[i];
       if (typeof part == "number") {
         sections.push(part, -1);
-      } else if (!Array.isArray(part) || typeof part[0] != "number" || part.some((e, i2) => i2 && typeof e != "string")) {
+      } else if (!Array.isArray(part) || typeof part[0] != "number" || part.some((e2, i2) => i2 && typeof e2 != "string")) {
         throw new RangeError("Invalid JSON representation of ChangeSet");
       } else if (part.length == 1) {
         sections.push(part[0], 0);
@@ -2112,7 +2123,7 @@ var Facet = class _Facet {
   }
 };
 function sameArray(a, b2) {
-  return a == b2 || a.length == b2.length && a.every((e, i) => e === b2[i]);
+  return a == b2 || a.length == b2.length && a.every((e2, i) => e2 === b2[i]);
 }
 var FacetProvider = class {
   constructor(dependencies, facet, type, value) {
@@ -2453,8 +2464,8 @@ function flatten(extension, compartments, newCompartments) {
     }
     seen.set(ext, prec2);
     if (Array.isArray(ext)) {
-      for (let e of ext)
-        inner(e, prec2);
+      for (let e2 of ext)
+        inner(e2, prec2);
     } else if (ext instanceof CompartmentInstance) {
       if (newCompartments.has(ext.compartment))
         throw new RangeError(`Duplicate use of compartment in extensions`);
@@ -2684,8 +2695,8 @@ var Transaction = class _Transaction {
   `"select.pointer"` will match it.
   */
   isUserEvent(event) {
-    let e = this.annotation(_Transaction.userEvent);
-    return !!(e && (e == event || e.length > event.length && e.slice(0, event.length) == event && e[event.length] == "."));
+    let e2 = this.annotation(_Transaction.userEvent);
+    return !!(e2 && (e2 == event || e2.length > event.length && e2.slice(0, event.length) == event && e2[event.length] == "."));
   }
 };
 Transaction.time = /* @__PURE__ */ Annotation.define();
@@ -3257,7 +3268,7 @@ var Chunk = class _Chunk {
     }
   }
   between(offset, from, to, f2) {
-    for (let i = this.findIndex(from, -1e9, true), e = this.findIndex(to, 1e9, false, i); i < e; i++)
+    for (let i = this.findIndex(from, -1e9, true), e2 = this.findIndex(to, 1e9, false, i); i < e2; i++)
       if (f2(this.from[i] + offset, this.to[i] + offset, this.value[i]) === false)
         return false;
   }
@@ -3938,7 +3949,7 @@ function sameValues(a, b2) {
   return true;
 }
 function remove(array, index) {
-  for (let i = index, e = array.length - 1; i < e; i++)
+  for (let i = index, e2 = array.length - 1; i < e2; i++)
     array[i] = array[i + 1];
   array.pop();
 }
@@ -6463,8 +6474,8 @@ var PluginInstance = class {
       if (this.spec) {
         try {
           this.value = this.spec.create(view);
-        } catch (e) {
-          logException(view.state, e, "CodeMirror plugin crashed");
+        } catch (e2) {
+          logException(view.state, e2, "CodeMirror plugin crashed");
           this.deactivate();
         }
       }
@@ -6474,8 +6485,8 @@ var PluginInstance = class {
       if (this.value.update) {
         try {
           this.value.update(update);
-        } catch (e) {
-          logException(update.state, e, "CodeMirror plugin crashed");
+        } catch (e2) {
+          logException(update.state, e2, "CodeMirror plugin crashed");
           if (this.value.destroy)
             try {
               this.value.destroy();
@@ -6492,8 +6503,8 @@ var PluginInstance = class {
     if ((_a2 = this.value) === null || _a2 === void 0 ? void 0 : _a2.destroy) {
       try {
         this.value.destroy();
-      } catch (e) {
-        logException(view.state, e, "CodeMirror plugin crashed");
+      } catch (e2) {
+        logException(view.state, e2, "CodeMirror plugin crashed");
       }
     }
   }
@@ -7133,8 +7144,8 @@ var DocView = class extends ContentView {
       try {
         if (handler(this.view, target.range, target))
           return true;
-      } catch (e) {
-        logException(this.view.state, e, "scroll handler");
+      } catch (e2) {
+        logException(this.view.state, e2, "scroll handler");
       }
     }
     let { range } = target;
@@ -7750,8 +7761,8 @@ function bindHandler(plugin, handler) {
   return (view, event) => {
     try {
       return handler.call(plugin, event, view);
-    } catch (e) {
-      logException(view.state, e);
+    } catch (e2) {
+      logException(view.state, e2);
     }
   };
 }
@@ -8000,7 +8011,7 @@ handlers.keydown = (view, event) => {
     view.inputState.lastEscPress = Date.now();
   return false;
 };
-observers.touchstart = (view, e) => {
+observers.touchstart = (view, e2) => {
   view.inputState.lastTouchTime = Date.now();
   view.inputState.setSelectionOrigin("select.pointer");
 };
@@ -10264,15 +10275,15 @@ var DOMObserver = class {
     this.listenForScroll();
     this.readSelectionRange();
   }
-  onScrollChanged(e) {
-    this.view.inputState.runHandlers("scroll", e);
+  onScrollChanged(e2) {
+    this.view.inputState.runHandlers("scroll", e2);
     if (this.intersecting)
       this.view.measure();
   }
-  onScroll(e) {
+  onScroll(e2) {
     if (this.intersecting)
       this.flush(false);
-    this.onScrollChanged(e);
+    this.onScrollChanged(e2);
   }
   onResize() {
     if (this.resizeTimeout < 0)
@@ -10779,9 +10790,9 @@ var EditorView = class _EditorView {
           let { main } = tr.state.selection;
           scrollTarget = new ScrollTarget(main.empty ? main : EditorSelection.cursor(main.head, main.head > main.anchor ? -1 : 1));
         }
-        for (let e of tr.effects)
-          if (e.is(scrollIntoView))
-            scrollTarget = e.value.clip(this.state);
+        for (let e2 of tr.effects)
+          if (e2.is(scrollIntoView))
+            scrollTarget = e2.value.clip(this.state);
       }
       this.viewState.update(update, scrollTarget);
       this.bidiCache = CachedOrder.update(this.bidiCache, update.changes);
@@ -10808,8 +10819,8 @@ var EditorView = class _EditorView {
       for (let listener of this.state.facet(updateListener)) {
         try {
           listener(update);
-        } catch (e) {
-          logException(this.state, e, "update listener");
+        } catch (e2) {
+          logException(this.state, e2, "update listener");
         }
       }
     if (dispatchFocus || domChange)
@@ -10893,8 +10904,8 @@ var EditorView = class _EditorView {
       if (val && val.docViewUpdate) {
         try {
           val.docViewUpdate(this);
-        } catch (e) {
-          logException(this.state, e, "doc view update listener");
+        } catch (e2) {
+          logException(this.state, e2, "doc view update listener");
         }
       }
     }
@@ -10947,8 +10958,8 @@ var EditorView = class _EditorView {
         let measured = measuring.map((m2) => {
           try {
             return m2.read(this);
-          } catch (e) {
-            logException(this.state, e);
+          } catch (e2) {
+            logException(this.state, e2);
             return BadMeasure;
           }
         });
@@ -10973,8 +10984,8 @@ var EditorView = class _EditorView {
               let m2 = measuring[i2];
               if (m2.write)
                 m2.write(measured[i2], this);
-            } catch (e) {
-              logException(this.state, e);
+            } catch (e2) {
+              logException(this.state, e2);
             }
           }
         if (redrawn)
@@ -12063,7 +12074,7 @@ var dropCursorPos = /* @__PURE__ */ StateField.define({
   update(pos, tr) {
     if (pos != null)
       pos = tr.changes.mapPos(pos);
-    return tr.effects.reduce((pos2, e) => e.is(setDropCursorPos) ? e.value : pos2, pos);
+    return tr.effects.reduce((pos2, e2) => e2.is(setDropCursorPos) ? e2.value : pos2, pos);
   }
 });
 var drawDropCursor = /* @__PURE__ */ ViewPlugin.fromClass(class {
@@ -12489,14 +12500,14 @@ function rectangleSelectionStyle(view, event) {
   };
 }
 function rectangularSelection(options) {
-  let filter = (options === null || options === void 0 ? void 0 : options.eventFilter) || ((e) => e.altKey && e.button == 0);
+  let filter = (options === null || options === void 0 ? void 0 : options.eventFilter) || ((e2) => e2.altKey && e2.button == 0);
   return EditorView.mouseSelectionStyle.of((view, event) => filter(event) ? rectangleSelectionStyle(view, event) : null);
 }
 var keys = {
-  Alt: [18, (e) => !!e.altKey],
-  Control: [17, (e) => !!e.ctrlKey],
-  Shift: [16, (e) => !!e.shiftKey],
-  Meta: [91, (e) => !!e.metaKey]
+  Alt: [18, (e2) => !!e2.altKey],
+  Control: [17, (e2) => !!e2.ctrlKey],
+  Shift: [16, (e2) => !!e2.shiftKey],
+  Meta: [91, (e2) => !!e2.metaKey]
 };
 var showCrosshair = { style: "cursor: crosshair" };
 function crosshairCursor(options = {}) {
@@ -12514,15 +12525,15 @@ function crosshairCursor(options = {}) {
     }
   }, {
     eventObservers: {
-      keydown(e) {
-        this.set(e.keyCode == code || getter(e));
+      keydown(e2) {
+        this.set(e2.keyCode == code || getter(e2));
       },
-      keyup(e) {
-        if (e.keyCode == code || !getter(e))
+      keyup(e2) {
+        if (e2.keyCode == code || !getter(e2))
           this.set(false);
       },
-      mousemove(e) {
-        this.set(getter(e));
+      mousemove(e2) {
+        this.set(getter(e2));
       }
     }
   });
@@ -13053,7 +13064,7 @@ var HoverPlugin = class {
           if (result && !(Array.isArray(result) && !result.length))
             view.dispatch({ effects: this.setHover.of(Array.isArray(result) ? result : [result]) });
         }
-      }, (e) => logException(view.state, e, "hover tooltip"));
+      }, (e2) => logException(view.state, e2, "hover tooltip"));
     } else if (open && !(Array.isArray(open) && !open.length)) {
       view.dispatch({ effects: this.setHover.of(Array.isArray(open) ? open : [open]) });
     }
@@ -14325,7 +14336,7 @@ var TreeNode = class _TreeNode extends BaseNode {
   }
   nextChild(i, dir, pos, side, mode = 0) {
     for (let parent = this; ; ) {
-      for (let { children, positions } = parent._tree, e = dir > 0 ? children.length : -1; i != e; i += dir) {
+      for (let { children, positions } = parent._tree, e2 = dir > 0 ? children.length : -1; i != e2; i += dir) {
         let next = children[i], start = positions[i] + parent.from;
         if (!checkSide(side, pos, start, start + next.length))
           continue;
@@ -14839,7 +14850,7 @@ var TreeCursor = class {
     }
     for (; parent; { index, _parent: parent } = parent) {
       if (index > -1)
-        for (let i = index + dir, e = dir < 0 ? -1 : parent._tree.children.length; i != e; i += dir) {
+        for (let i = index + dir, e2 = dir < 0 ? -1 : parent._tree.children.length; i != e2; i += dir) {
           let child = parent._tree.children[i];
           if (this.mode & IterMode.IncludeAnonymous || child instanceof TreeBuffer || !child.type.isAnonymous || hasChild(child))
             return false;
@@ -15855,7 +15866,7 @@ function sameArray2(a, b2) {
 function powerSet(array) {
   let sets = [[]];
   for (let i = 0; i < array.length; i++) {
-    for (let j = 0, e = sets.length; j < e; j++) {
+    for (let j = 0, e2 = sets.length; j < e2; j++) {
       sets.push(sets[j].concat(array[i]));
     }
   }
@@ -16871,9 +16882,9 @@ var LanguageState = class _LanguageState {
 Language.state = /* @__PURE__ */ StateField.define({
   create: LanguageState.init,
   update(value, tr) {
-    for (let e of tr.effects)
-      if (e.is(Language.setState))
-        return e.value;
+    for (let e2 of tr.effects)
+      if (e2.is(Language.setState))
+        return e2.value;
     if (tr.startState.facet(language) != tr.state.facet(language))
       return LanguageState.init(tr.state);
     return value.apply(tr);
@@ -17081,7 +17092,7 @@ var indentUnit = /* @__PURE__ */ Facet.define({
     if (!values2.length)
       return "  ";
     let unit = values2[0];
-    if (!unit || /\S/.test(unit) || Array.from(unit).some((e) => e != unit[0]))
+    if (!unit || /\S/.test(unit) || Array.from(unit).some((e2) => e2 != unit[0]))
       throw new Error("Invalid indent unit: " + JSON.stringify(values2[0]));
     return unit;
   }
@@ -17425,16 +17436,16 @@ var foldState = /* @__PURE__ */ StateField.define({
   },
   update(folded, tr) {
     folded = folded.map(tr.changes);
-    for (let e of tr.effects) {
-      if (e.is(foldEffect) && !foldExists(folded, e.value.from, e.value.to)) {
+    for (let e2 of tr.effects) {
+      if (e2.is(foldEffect) && !foldExists(folded, e2.value.from, e2.value.to)) {
         let { preparePlaceholder } = tr.state.facet(foldConfig);
-        let widget = !preparePlaceholder ? foldWidget : Decoration.replace({ widget: new PreparedFoldWidget(preparePlaceholder(tr.state, e.value)) });
-        folded = folded.update({ add: [widget.range(e.value.from, e.value.to)] });
-      } else if (e.is(unfoldEffect)) {
+        let widget = !preparePlaceholder ? foldWidget : Decoration.replace({ widget: new PreparedFoldWidget(preparePlaceholder(tr.state, e2.value)) });
+        folded = folded.update({ add: [widget.range(e2.value.from, e2.value.to)] });
+      } else if (e2.is(unfoldEffect)) {
         folded = folded.update({
-          filter: (from, to) => e.value.from != from || e.value.to != to,
-          filterFrom: e.value.from,
-          filterTo: e.value.to
+          filter: (from, to) => e2.value.from != from || e2.value.to != to,
+          filterFrom: e2.value.from,
+          filterTo: e2.value.to
         });
       }
     }
@@ -18284,7 +18295,7 @@ var historyField_ = /* @__PURE__ */ StateField.define({
     return state;
   },
   toJSON(value) {
-    return { done: value.done.map((e) => e.toJSON()), undone: value.undone.map((e) => e.toJSON()) };
+    return { done: value.done.map((e2) => e2.toJSON()), undone: value.undone.map((e2) => e2.toJSON()) };
   },
   fromJSON(json) {
     return new HistoryState(json.done.map(HistEvent.fromJSON), json.undone.map(HistEvent.fromJSON));
@@ -18295,11 +18306,11 @@ function history(config3 = {}) {
     historyField_,
     historyConfig.of(config3),
     EditorView.domEventHandlers({
-      beforeinput(e, view) {
-        let command2 = e.inputType == "historyUndo" ? undo : e.inputType == "historyRedo" ? redo : null;
+      beforeinput(e2, view) {
+        let command2 = e2.inputType == "historyUndo" ? undo : e2.inputType == "historyRedo" ? redo : null;
         if (!command2)
           return false;
-        e.preventDefault();
+        e2.preventDefault();
         return command2(view);
       }
     })
@@ -19467,9 +19478,9 @@ var dialogField = /* @__PURE__ */ StateField.define({
     return true;
   },
   update(value, tr) {
-    for (let e of tr.effects)
-      if (e.is(dialogEffect))
-        value = e.value;
+    for (let e2 of tr.effects)
+      if (e2.is(dialogEffect))
+        value = e2.value;
     return value;
   },
   provide: (f2) => showPanel.from(f2, (val) => val ? createLineDialog : null)
@@ -20091,7 +20102,7 @@ var SearchPanel = class {
     function button(name2, onclick, content2) {
       return crelt("button", { class: "cm-button", name: name2, onclick, type: "button" }, content2);
     }
-    this.dom = crelt("div", { onkeydown: (e) => this.keydown(e), class: "cm-search" }, [
+    this.dom = crelt("div", { onkeydown: (e2) => this.keydown(e2), class: "cm-search" }, [
       this.searchField,
       button("next", () => findNext(view), [phrase(view, "next")]),
       button("prev", () => findPrevious(view), [phrase(view, "previous")]),
@@ -20126,14 +20137,14 @@ var SearchPanel = class {
       this.view.dispatch({ effects: setSearchQuery.of(query) });
     }
   }
-  keydown(e) {
-    if (runScopeHandlers(this.view, e, "search-panel")) {
-      e.preventDefault();
-    } else if (e.keyCode == 13 && e.target == this.searchField) {
-      e.preventDefault();
-      (e.shiftKey ? findPrevious : findNext)(this.view);
-    } else if (e.keyCode == 13 && e.target == this.replaceField) {
-      e.preventDefault();
+  keydown(e2) {
+    if (runScopeHandlers(this.view, e2, "search-panel")) {
+      e2.preventDefault();
+    } else if (e2.keyCode == 13 && e2.target == this.searchField) {
+      e2.preventDefault();
+      (e2.shiftKey ? findPrevious : findNext)(this.view);
+    } else if (e2.keyCode == 13 && e2.target == this.replaceField) {
+      e2.preventDefault();
       replaceNext(this.view);
     }
   }
@@ -20409,7 +20420,7 @@ var FuzzyMatcher = class {
       return this.ret(word.length == this.pattern.length ? 0 : -100, [0, this.pattern.length]);
     let len = chars.length, anyTo = 0;
     if (direct < 0) {
-      for (let i = 0, e = Math.min(word.length, 200); i < e && anyTo < len; ) {
+      for (let i = 0, e2 = Math.min(word.length, 200); i < e2 && anyTo < len; ) {
         let next = codePointAt(word, i);
         if (next == chars[anyTo] || next == folded[anyTo])
           any[anyTo++] = i;
@@ -20422,7 +20433,7 @@ var FuzzyMatcher = class {
     let byWordTo = 0, byWordFolded = false;
     let adjacentTo = 0, adjacentStart = -1, adjacentEnd = -1;
     let hasLower = /[a-z]/.test(word), wordAdjacent = true;
-    for (let i = 0, e = Math.min(word.length, 200), prevType = 0; i < e && byWordTo < len; ) {
+    for (let i = 0, e2 = Math.min(word.length, 200), prevType = 0; i < e2 && byWordTo < len; ) {
       let next = codePointAt(word, i);
       if (direct < 0) {
         if (preciseTo < len && next == chars[preciseTo])
@@ -20644,19 +20655,19 @@ var CompletionTooltip = class {
     this.dom = document.createElement("div");
     this.dom.className = "cm-tooltip-autocomplete";
     this.updateTooltipClass(view.state);
-    this.dom.addEventListener("mousedown", (e) => {
+    this.dom.addEventListener("mousedown", (e2) => {
       let { options: options2 } = view.state.field(stateField).open;
-      for (let dom = e.target, match; dom && dom != this.dom; dom = dom.parentNode) {
+      for (let dom = e2.target, match; dom && dom != this.dom; dom = dom.parentNode) {
         if (dom.nodeName == "LI" && (match = /-(\d+)$/.exec(dom.id)) && +match[1] < options2.length) {
           this.applyCompletion(view, options2[+match[1]]);
-          e.preventDefault();
+          e2.preventDefault();
           return;
         }
       }
     });
-    this.dom.addEventListener("focusout", (e) => {
+    this.dom.addEventListener("focusout", (e2) => {
       let state = view.state.field(this.stateField, false);
-      if (state && state.tooltip && view.state.facet(completionConfig).closeOnBlur && e.relatedTarget != view.contentDOM)
+      if (state && state.tooltip && view.state.facet(completionConfig).closeOnBlur && e2.relatedTarget != view.contentDOM)
         view.dispatch({ effects: closeCompletionEffect.of(null) });
     });
     this.showOptions(options, cState.id);
@@ -20725,7 +20736,7 @@ var CompletionTooltip = class {
         infoResult.then((obj) => {
           if (obj && this.view.state.field(this.stateField, false) == cState)
             this.addInfoPane(obj, completion);
-        }).catch((e) => logException(this.view.state, e, "completion info"));
+        }).catch((e2) => logException(this.view.state, e2, "completion info"));
       } else {
         this.addInfoPane(infoResult, completion);
       }
@@ -21270,8 +21281,8 @@ var completionPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
         for (let handler of query.context.abortListeners) {
           try {
             handler();
-          } catch (e) {
-            logException(this.view.state, e);
+          } catch (e2) {
+            logException(this.view.state, e2);
           }
         }
         query.context.abortListeners = null;
@@ -21282,7 +21293,7 @@ var completionPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
     }
     if (this.debounceUpdate > -1)
       clearTimeout(this.debounceUpdate);
-    if (update.transactions.some((tr) => tr.effects.some((e) => e.is(startCompletionEffect))))
+    if (update.transactions.some((tr) => tr.effects.some((e2) => e2.is(startCompletionEffect))))
       this.pendingStart = true;
     let delay = this.pendingStart ? 50 : conf.activateOnTypingDelay;
     this.debounceUpdate = cState.active.some((a) => a.state == 1 && !this.running.some((q) => q.active.source == a.source)) ? setTimeout(() => this.startUpdate(), delay) : -1;
@@ -22033,7 +22044,7 @@ function hideTooltip(tr, tooltip) {
   if (result != null)
     return result;
   let line = tr.startState.doc.lineAt(tooltip.pos);
-  return !!(tr.effects.some((e) => e.is(setDiagnosticsEffect)) || tr.changes.touchesRange(line.from, Math.max(line.to, to)));
+  return !!(tr.effects.some((e2) => e2.is(setDiagnosticsEffect)) || tr.changes.touchesRange(line.from, Math.max(line.to, to)));
 }
 function maybeEnableLint(state, effects) {
   return state.field(lintState, false) ? effects : effects.concat(StateEffect.appendConfig.of(lintExtensions));
@@ -22166,8 +22177,8 @@ function renderDiagnostic(view, diagnostic, inPanel) {
   var _a2;
   let keys2 = inPanel ? assignKeys(diagnostic.actions) : [];
   return crelt("li", { class: "cm-diagnostic cm-diagnostic-" + diagnostic.severity }, crelt("span", { class: "cm-diagnosticText" }, diagnostic.renderMessage ? diagnostic.renderMessage(view) : diagnostic.message), (_a2 = diagnostic.actions) === null || _a2 === void 0 ? void 0 : _a2.map((action, i) => {
-    let fired = false, click = (e) => {
-      e.preventDefault();
+    let fired = false, click = (e2) => {
+      e2.preventDefault();
       if (fired)
         return;
       fired = true;
@@ -27129,7 +27140,7 @@ function isHTMLBlock(line, _cx, breaking) {
   if (line.next != 60)
     return -1;
   let rest = line.text.slice(line.pos);
-  for (let i = 0, e = HTMLBlockStyle.length - (breaking ? 1 : 0); i < e; i++)
+  for (let i = 0, e2 = HTMLBlockStyle.length - (breaking ? 1 : 0); i < e2; i++)
     if (HTMLBlockStyle[i][0].test(rest))
       return i;
   return -1;
@@ -27885,8 +27896,8 @@ var Buffer = class {
     return this;
   }
   writeElements(elts, offset = 0) {
-    for (let e of elts)
-      e.writeTo(this, offset);
+    for (let e2 of elts)
+      e2.writeTo(this, offset);
     return this;
   }
   finish(type, length) {
@@ -28334,9 +28345,9 @@ function injectMarks(elements, marks2) {
     while (eI < elts.length && elts[eI].to < mark.to)
       eI++;
     if (eI < elts.length && elts[eI].from < mark.from) {
-      let e = elts[eI];
-      if (e instanceof Element2)
-        elts[eI] = new Element2(e.type, e.from, e.to, injectMarks(e.children, [mark]));
+      let e2 = elts[eI];
+      if (e2 instanceof Element2)
+        elts[eI] = new Element2(e2.type, e2.from, e2.to, injectMarks(e2.children, [mark]));
     } else {
       elts.splice(eI++, 0, mark);
     }
@@ -28991,8 +29002,8 @@ var insertNewlineContinueMarkup = ({ state, dispatch }) => {
     let continued = inner.item && inner.item.from < line.from;
     let insert2 = "";
     if (!continued || /^[\s\d.)\-+*>]*/.exec(line.text)[0].length >= inner.to) {
-      for (let i = 0, e = context.length - 1; i <= e; i++) {
-        insert2 += i == e && !continued ? context[i].marker(doc2, 1) : context[i].blank(i < e ? countColumn(line.text, 4, context[i + 1].from) - insert2.length : null);
+      for (let i = 0, e2 = context.length - 1; i <= e2; i++) {
+        insert2 += i == e2 && !continued ? context[i].marker(doc2, 1) : context[i].blank(i < e2 ? countColumn(line.text, 4, context[i + 1].from) - insert2.length : null);
       }
     }
     let from = pos;
@@ -29024,8 +29035,8 @@ function nonTightList(node, doc2) {
 }
 function blankLine(context, state, line) {
   let insert2 = "";
-  for (let i = 0, e = context.length - 2; i <= e; i++) {
-    insert2 += context[i].blank(i < e ? countColumn(line.text, 4, context[i + 1].from) - insert2.length : null, i < e);
+  for (let i = 0, e2 = context.length - 2; i <= e2; i++) {
+    insert2 += context[i].blank(i < e2 ? countColumn(line.text, 4, context[i + 1].from) - insert2.length : null, i < e2);
   }
   return normalizeIndent(insert2, state);
 }
@@ -29152,9 +29163,9 @@ function getInitialState(fileEntry, filename, data3) {
   }[ext];
   if (syntax) extensions.push(syntax());
   extensions.push(
-    EditorView.updateListener.of((e) => {
-      const tab = e.view.tabElement;
-      if (tab && e.docChanged) {
+    EditorView.updateListener.of((e2) => {
+      const tab = e2.view.tabElement;
+      if (tab && e2.docChanged) {
         const entry = fileEntry.state;
         if (entry.debounce) {
           clearTimeout(entry.debounce);
@@ -29807,7 +29818,7 @@ function setupEditorTab(filename) {
   const tab = create(`div`);
   tab.title = filename;
   tab.textContent = filename.includes(`/`) ? filename.substring(filename.lastIndexOf(`/`) + 1) : filename;
-  document.querySelectorAll(`.active`).forEach((e) => e.classList.remove(`active`));
+  document.querySelectorAll(`.active`).forEach((e2) => e2.classList.remove(`active`));
   tab.classList.add(`tab`, `active`);
   const close = create(`button`);
   close.textContent = `x`;
@@ -29821,9 +29832,9 @@ function addEditorEventHandling(fileEntry, panel, tab, close, view) {
     if (!fileEntry.state.tab) return;
     if (!fileEntry.parentNode) return;
     fileEntry.select();
-    document.querySelectorAll(`.editor`).forEach((e) => e.setAttribute(`hidden`, `hidden`));
+    document.querySelectorAll(`.editor`).forEach((e2) => e2.setAttribute(`hidden`, `hidden`));
     panel.removeAttribute(`hidden`);
-    document.querySelectorAll(`.active`).forEach((e) => e.classList.remove(`active`));
+    document.querySelectorAll(`.active`).forEach((e2) => e2.classList.remove(`active`));
     tab.classList.add(`active`);
     tab.scrollIntoView();
     view.focus();
@@ -30251,9 +30262,9 @@ var workers = [];
 var availableWorkers = [];
 var waitingForWorkerQueue = [];
 var currentlyProcessingIdToRequestMap = /* @__PURE__ */ new Map();
-function handleResult(e) {
-  makeWorkerAvailable(e.target);
-  const { id: id2, error, data: data3 } = e.data;
+function handleResult(e2) {
+  makeWorkerAvailable(e2.target);
+  const { id: id2, error, data: data3 } = e2.data;
   const request = currentlyProcessingIdToRequestMap.get(id2);
   currentlyProcessingIdToRequestMap.delete(id2);
   if (error) {
@@ -30265,13 +30276,13 @@ function handleResult(e) {
 function startWorker(url) {
   return new Promise((resolve, reject) => {
     const worker = new Worker(url);
-    worker.onmessage = (e) => {
-      if (e.data === "start") {
+    worker.onmessage = (e2) => {
+      if (e2.data === "start") {
         worker.onerror = void 0;
         worker.onmessage = void 0;
         resolve(worker);
       } else {
-        reject(new Error(`unexpected message: ${e.data}`));
+        reject(new Error(`unexpected message: ${e2.data}`));
       }
     };
     worker.onerror = reject;
@@ -30302,7 +30313,7 @@ var workerHelper = function() {
         try {
           const worker = await startWorker(url);
           return worker;
-        } catch (e) {
+        } catch (e2) {
           console.warn("could not load worker:", url);
         }
         let text;
@@ -30316,7 +30327,7 @@ var workerHelper = function() {
           const worker = await startWorker(url);
           config2.workerURL = url;
           return worker;
-        } catch (e) {
+        } catch (e2) {
           console.warn("could not load worker via fetch:", url);
         }
         if (text !== void 0) {
@@ -30325,7 +30336,7 @@ var workerHelper = function() {
             const worker = await startWorker(url);
             config2.workerURL = url;
             return worker;
-          } catch (e) {
+          } catch (e2) {
             console.warn("could not load worker via dataURI");
           }
         }
@@ -30353,7 +30364,7 @@ async function getAvailableWorker() {
       workers.push(worker);
       availableWorkers.push(worker);
       workerHelper.addEventListener(worker, handleResult);
-    } catch (e) {
+    } catch (e2) {
       canUseWorkers = false;
     }
   }
@@ -30540,7 +30551,7 @@ async function readEntries(reader, centralDirectoryOffset, centralDirectorySize,
   let readEntryCursor = 0;
   const allEntriesBuffer = await readAs(reader, centralDirectoryOffset, centralDirectorySize);
   const rawEntries = [];
-  for (let e = 0; e < rawEntryCount; ++e) {
+  for (let e2 = 0; e2 < rawEntryCount; ++e2) {
     const buffer = allEntriesBuffer.subarray(readEntryCursor, readEntryCursor + 46);
     const signature = getUint32LE(buffer, 0);
     if (signature !== CENTRAL_DIRECTORY_FILE_HEADER_SIGNATURE) {
@@ -30608,7 +30619,7 @@ async function readEntries(reader, centralDirectoryOffset, centralDirectorySize,
     rawEntry.comment = decodeBuffer(rawEntry.commentBytes);
     readEntryCursor += data3.length;
     if (rawEntry.uncompressedSize === 4294967295 || rawEntry.compressedSize === 4294967295 || rawEntry.relativeOffsetOfLocalHeader === 4294967295) {
-      const zip64ExtraField = rawEntry.extraFields.find((e2) => e2.id === 1);
+      const zip64ExtraField = rawEntry.extraFields.find((e3) => e3.id === 1);
       if (!zip64ExtraField) {
         throw new Error("expected zip64 extended information extra field");
       }
@@ -30636,9 +30647,9 @@ async function readEntries(reader, centralDirectoryOffset, centralDirectorySize,
         index += 8;
       }
     }
-    const nameField = rawEntry.extraFields.find((e2) => e2.id === 28789 && e2.data.length >= 6 && // too short to be meaningful
-    e2.data[0] === 1 && // Version       1 byte      version of this extra field, currently 1
-    getUint32LE(e2.data, 1), crc$1.unsigned(rawEntry.nameBytes));
+    const nameField = rawEntry.extraFields.find((e3) => e3.id === 28789 && e3.data.length >= 6 && // too short to be meaningful
+    e3.data[0] === 1 && // Version       1 byte      version of this extra field, currently 1
+    getUint32LE(e3.data, 1), crc$1.unsigned(rawEntry.nameBytes));
     if (nameField) {
       rawEntry.fileName = decodeBuffer(nameField.data.slice(5));
     }
@@ -30659,7 +30670,7 @@ async function readEntries(reader, centralDirectoryOffset, centralDirectorySize,
   };
   return {
     zip,
-    entries: rawEntries.map((e) => new ZipEntry(reader, e))
+    entries: rawEntries.map((e2) => new ZipEntry(reader, e2))
   };
 }
 async function readEntryDataHeader(reader, rawEntry) {
@@ -30904,8 +30915,8 @@ function addFileTreeHandling(test) {
         } else {
           console.error(`Could not delete ${path} (status:${response.status})`);
         }
-      } catch (e) {
-        console.error(e);
+      } catch (e2) {
+        console.error(e2);
       }
     }
     updatePreview();
@@ -30981,7 +30992,7 @@ function addEventHandling(contentDir) {
     }
   });
   all.addEventListener(`click`, async () => {
-    document.querySelectorAll(`file-entry`).forEach((e) => e.click());
+    document.querySelectorAll(`file-entry`).forEach((e2) => e2.click());
   });
   addTabScrollHandling();
   format.addEventListener(`click`, async () => {

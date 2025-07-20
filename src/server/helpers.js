@@ -19,10 +19,11 @@ import {
   rmSync,
 } from "fs";
 
+import { isWindows, npm, getFreePort } from "./utils.js";
+
 // Are we on Windows, or something unixy?
 import { sep, posix } from "path";
 import { exec, execSync } from "child_process";
-const isWindows = process.platform === `win32`;
 
 // Set up the vars we need for pointing to the right dirs
 const CONTENT_BASE = process.env.CONTENT_BASE ?? `content`;
@@ -115,7 +116,7 @@ async function readContentDir(dir) {
 /**
  * ...
  */
-function switchUser(req, name = req.params.name) {
+async function switchUser(req, name = req.params.name) {
   const oldName = req.session.name;
   const oldDir = req.session.dir;
   const dir = `${CONTENT_DIR}/${name}`;
@@ -125,6 +126,38 @@ function switchUser(req, name = req.params.name) {
   req.session.name = name;
   req.session.dir = dir;
   req.session.save();
+
+  if (!name.startsWith(`anonymous`)) {
+    // check if we need to build a container
+    const env = {
+      PORT: await getFreePort(),
+      USERNAME: name,
+    };
+    req.session.port = env.PORT;
+    req.session.save();
+    const options = { env: { ...process.env, ...env }, shell: true };
+    console.log(
+      `Running user container for ${env.USERNAME} on port ${env.PORT}`
+    );
+    console.log(`- Checking for image`);
+    let result = execSync(`${npm} run docker:exists`, options)
+      .toString()
+      .trim();
+    if (!result.match(new RegExp(`\\b${name}\\b`, `gm`))) {
+      console.log(`- Building image`);
+      execSync(`${npm} run docker:build -- --tag ${name}`, options);
+    }
+    console.log(`- Checking for running container`);
+    result = execSync(`${npm} run docker:running`, options).toString().trim();
+    if (!result.match(new RegExp(`\\b${name}\\b`, `gm`))) {
+      console.log(`- Starting container`);
+      exec(`${npm} run docker:run`, options);
+    } else {
+      req.session.port = result.match(/0.0.0.0:(\d+)->/m)[1];
+      req.session.save();
+    }
+    console.log(`container should be running`);
+  }
 
   let newUser = false;
   if (!existsSync(dir)) {
