@@ -21,6 +21,8 @@ The initial view is the "anonymous" view but you can click the "Switch" button a
 
 While user _content_ lives in the content directory, you don't want it to _run_ in that context. That would give it access to.. well... everything. Including other user's content, the editor code, etc. etc. So instead, the runtime is handled by creating a Docker image running Ubuntu with Node and Python installed, with the user content as a "bind mount" (meaning the files live on the host OS, but the docker container has read/write access to them), with the container running whatever is in `run.sh` as its startup instruction.
 
+(NOTE: updating `run.sh` does nothing on its own right now, because there's no `fs.watch` instruction to see if containers need to be restarted because the run file got updated yet. That's not overly complicated to add in, but also something for "soon" rather than "now")
+
 When you switch users, the server runs through the following four steps:
 
 1. Check if there is a docker image for this user
