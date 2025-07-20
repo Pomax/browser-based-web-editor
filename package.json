@@ -7,11 +7,7 @@
   "scripts": {
     "build": "esbuild --log-level=info --bundle --format=esm src/client/script.js > public/editor.bundle.js",
     "prettier": "npx prettier --write --no-config --ignore-path '' ",
-    "start": "node src/server/index.js",
-    "docker:exists": "docker image list",
-    "docker:build": "docker build --tag $USERNAME --no-cache .",
-    "docker:running": "docker ps -f name=$USERNAME",
-    "docker:run": "docker run --rm --name $USERNAME --mount type=bind,src=./content/$USERNAME,dst=/app -p $PORT:8000 -t $USERNAME"
+    "start": "node src/server/index.js"
   },
   "author": "",
   "license": "ISC",

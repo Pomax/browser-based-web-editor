@@ -58,7 +58,15 @@ function deleteExpiredAnonymousContent(_req, _res, next) {
  * to reload so that a new session can be negotiated.
  */
 function verifyOwnership(req, res, next) {
-  if (!req.url.startsWith(`/${req.session.name}`)) {
+  const name = req.session.name;
+  const url = req.url;
+
+  if (name.startsWith(`anonymous-`) && url.startsWith(`/anonymous/`)) {
+    req.url = url.replace(/\?v=\d+/, ``);
+    return next();
+  }
+
+  if (!url.startsWith(`/${name}`)) {
     req.session.name = undefined;
     req.session.dir = undefined;
     return reloadPageInstruction(req, res, 403);
