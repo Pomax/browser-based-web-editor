@@ -29847,7 +29847,7 @@ function addEditorEventHandling(fileEntry, panel, tab, close, view) {
     tab.scrollIntoView();
     view.focus();
   });
-  close.addEventListener(`click`, () => {
+  close.addEventListener(`pointerdown`, () => {
     let newTab;
     if (tab.classList.contains(`active`)) {
       fileTree.unselect();
@@ -29855,7 +29855,7 @@ function addEditorEventHandling(fileEntry, panel, tab, close, view) {
       const tabPos = tabs3.findIndex((t2) => t2 === tab);
       newTab = tabPos === 0 ? tabs3[1] : tabs3[tabPos - 1];
     }
-    fileEntry.state = {};
+    fileEntry.state.closed = true;
     tab.remove();
     panel.remove();
     newTab?.click();
@@ -29864,7 +29864,12 @@ function addEditorEventHandling(fileEntry, panel, tab, close, view) {
 async function getOrCreateFileEditTab(fileEntry, contentDir, filename) {
   const entry = fileEntry.state;
   if (entry?.view) {
-    return entry.tab?.click();
+    const { closed, tab: tab2, panel: panel2 } = entry;
+    if (closed) {
+      tabs2.appendChild(tab2);
+      editors.appendChild(panel2);
+    }
+    return tab2.click();
   }
   const panel = setupEditorPanel(filename);
   editors.appendChild(panel);

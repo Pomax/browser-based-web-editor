@@ -69,7 +69,7 @@ export function addEditorEventHandling(fileEntry, panel, tab, close, view) {
     view.focus();
   });
 
-  close.addEventListener(`click`, () => {
+  close.addEventListener(`pointerdown`, () => {
     let newTab;
     if (tab.classList.contains(`active`)) {
       // move focus to another tab, if there is one...
@@ -78,7 +78,7 @@ export function addEditorEventHandling(fileEntry, panel, tab, close, view) {
       const tabPos = tabs.findIndex((t) => t === tab);
       newTab = tabPos === 0 ? tabs[1] : tabs[tabPos - 1];
     }
-    fileEntry.state = {};
+    fileEntry.state.closed = true;
     tab.remove();
     panel.remove();
     newTab?.click();
@@ -93,7 +93,12 @@ export async function getOrCreateFileEditTab(fileEntry, contentDir, filename) {
   const entry = fileEntry.state;
 
   if (entry?.view) {
-    return entry.tab?.click();
+    const { closed, tab, panel } = entry;
+    if (closed) {
+      tabs.appendChild(tab);
+      editors.appendChild(panel);
+    }
+    return tab.click();
   }
 
   const panel = setupEditorPanel(filename);
