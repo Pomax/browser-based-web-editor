@@ -188,7 +188,7 @@ html {
             background-color 0.25s linear;
         }
         &.restarting iframe {
-          background-color: #800;
+          background-color: #FDE;
         }
         #restart {
           position: fixed;

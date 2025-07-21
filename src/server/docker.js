@@ -7,7 +7,7 @@ const commands = {
   running: (name) => `docker ps -f name=${name}`,
   run: (name, port) =>
     `docker run --name ${name} --mount type=bind,src=./content/${name},dst=/app -p ${port}:8000 -t ${name}`,
-  restart: (name) => `docker container restart ${name}`,
+  restart: (name) => `docker container restart -t 0 ${name}`,
 };
 
 const { exists, build, running, run, restart } = commands;
