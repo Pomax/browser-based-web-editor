@@ -1,3 +1,4 @@
+const restart = document.getElementById(`restart`);
 const preview = document.getElementById(`preview`);
 
 let first_time_load = true;
@@ -28,7 +29,6 @@ export function updatePreview() {
   };
 
   newFrame.style.opacity = 0;
-  newFrame.style.transition = "opacity 0.25s";
   let src = iframe.src ? iframe.src : iframe.dataset.src;
   src = src.replace(/\?v=\d+/, ``);
   src += `?v=${Date.now()}`;
@@ -37,3 +37,12 @@ export function updatePreview() {
   preview.append(newFrame);
   setTimeout(() => (newFrame.src = src), 100);
 }
+
+restart?.addEventListener(`click`, async () => {
+  preview.classList.add(`restarting`);
+  await fetch(`/restart`, { method: `POST` });
+  setTimeout(() => {
+    preview.classList.remove(`restarting`);
+    updatePreview();
+  }, 1000);
+});

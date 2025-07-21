@@ -7,6 +7,8 @@ import {
   createRewindPoint,
 } from "../helpers.js";
 
+import { restartContainer } from "../docker.js";
+
 import {
   parseBodyText,
   parseMultiPartBody,
@@ -178,5 +180,11 @@ function addPostRoutes(app) {
     writeFileSync(full, fileData, `ascii`);
     res.send(`ok`);
     createRewindPoint(req);
+  });
+
+  // Restart a user's container
+  app.post(`/restart`, async (req, res) => {
+    restartContainer(req);
+    res.send(`ok`);
   });
 }

@@ -581,6 +581,7 @@ function verifyRIFF(bytes) {
 }
 
 // src/client/preview.js
+var restart = document.getElementById(`restart`);
 var preview = document.getElementById(`preview`);
 var first_time_load = true;
 function updatePreview() {
@@ -600,7 +601,6 @@ function updatePreview() {
     setTimeout(() => iframe.remove(), 500);
   };
   newFrame.style.opacity = 0;
-  newFrame.style.transition = "opacity 0.25s";
   let src = iframe.src ? iframe.src : iframe.dataset.src;
   src = src.replace(/\?v=\d+/, ``);
   src += `?v=${Date.now()}`;
@@ -608,6 +608,14 @@ function updatePreview() {
   preview.append(newFrame);
   setTimeout(() => newFrame.src = src, 100);
 }
+restart?.addEventListener(`click`, async () => {
+  preview.classList.add(`restarting`);
+  await fetch(`/restart`, { method: `POST` });
+  setTimeout(() => {
+    preview.classList.remove(`restarting`);
+    updatePreview();
+  }, 1e3);
+});
 
 // node_modules/@codemirror/state/dist/index.js
 var Text = class _Text {

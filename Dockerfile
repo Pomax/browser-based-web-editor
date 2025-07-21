@@ -22,10 +22,6 @@ WORKDIR app
 
 ENV PORT=8000
 EXPOSE 8000
-HEALTHCHECK --start-period=5s --interval=5m CMD curl -f http://127.0.0.1:8000 || exit 1
+HEALTHCHECK --start-period=30s --interval=5m CMD curl -f http://127.0.0.1:8000 || exit 1
 
 CMD ["sh", "./run.sh"]
-
-# build with: docker build --tag '${USERNAME}' --no-cache .
-# run with: docker run --mount type=bind,src=./content/${USERNAME},dst=/app -p ${PORT}:8000 -t ${USERNAME}
-# note that the USERNAME and PORT variables should be exec-injected based on user login

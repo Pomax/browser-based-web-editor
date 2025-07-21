@@ -36,6 +36,9 @@
 
       <div id="preview" style="position: relative">
         {% if port %}
+        <button id="restart" title="Restart your host container">
+          restart
+        </button>
         <iframe sandbox data-src="http://localhost:{{ port }}"></iframe>
         {% else %}
         <iframe

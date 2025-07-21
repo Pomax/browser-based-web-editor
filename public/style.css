@@ -173,15 +173,29 @@ html {
         }
       }
 
-      iframe {
-        background: white;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: calc(100% - 1px);
-        height: 100%;
-        border: 1px solid gray;
-        box-sizing: border-box;
+      #preview {
+        iframe {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: calc(100% - 1px);
+          height: 100%;
+          border: 1px solid gray;
+          box-sizing: border-box;
+          background-color: #fff;
+          transition:
+            opacity 0.25s,
+            background-color 0.25s linear;
+        }
+        &.restarting iframe {
+          background-color: #800;
+        }
+        #restart {
+          position: fixed;
+          right: 0.5em;
+          top: 0.5em;
+          z-index: 2;
+        }
       }
 
       graphics-element {
