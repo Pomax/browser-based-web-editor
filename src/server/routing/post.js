@@ -184,7 +184,7 @@ function addPostRoutes(app) {
 
   // Restart a user's container
   app.post(`/restart`, async (req, res) => {
-    restartContainer(req);
+    restartContainer(req.session.name);
     res.send(`ok`);
   });
 }

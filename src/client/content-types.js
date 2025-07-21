@@ -60,7 +60,7 @@ export function getViewType(filename) {
     };
 
   // Treat anything we don't know as text, but not editable
-  return { type: `text/plain`, unknown: true };
+  return { type: `text/plain`, editable: true, unknown: true };
 }
 
 /**

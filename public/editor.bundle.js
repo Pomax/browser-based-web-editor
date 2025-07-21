@@ -545,7 +545,7 @@ function getViewType(filename) {
       media: true,
       editable: false
     };
-  return { type: `text/plain`, unknown: true };
+  return { type: `text/plain`, editable: true, unknown: true };
 }
 function verifyViewType(type, data3) {
   const bytes = new Uint8Array(data3);

@@ -44,9 +44,8 @@ export async function runContainer(req, name = req.session.name, port) {
   }
 }
 
-export function restartContainer(req) {
-  const { name } = req.session;
+export function restartContainer(name) {
   console.log(`restarting container for ${name}...`);
-  execSync(restart(req.session.name));
+  execSync(restart(name));
   console.log(`...done!`);
 }
