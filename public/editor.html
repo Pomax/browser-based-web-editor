@@ -35,13 +35,13 @@
       <div id="editors"></div>
 
       <div id="preview" style="position: relative">
-        <!--
-        <iframe sandbox data-src="{{dir}}/index.html?preview=true"></iframe>
-        -->
         {% if port %}
         <iframe sandbox data-src="http://localhost:{{ port }}"></iframe>
         {% else %}
-        <iframe sandbox data-src="http://localhost:8000/content/anonymous/index.html"></iframe>
+        <iframe
+          sandbox
+          data-src="http://localhost:8000/content/anonymous/index.html"
+        ></iframe>
         {% endif %}
       </div>
 

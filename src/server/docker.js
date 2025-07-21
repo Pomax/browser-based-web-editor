@@ -1,11 +1,15 @@
 import { getFreePort } from "./utils.js";
 import { exec, execSync } from "child_process";
 
-const exists = () => `docker image list`;
-const build = (name) => `docker build --tag ${name} --no-cache .`;
-const running = (name) => `docker ps -f name=${name}`;
-const run = (name, port) =>
-  `docker run --name ${name} --mount type=bind,src=./content/${name},dst=/app -p ${port}:8000 -t ${name}`;
+const commands = {
+  exists: () => `docker image list`,
+  build: (name) => `docker build --tag ${name} --no-cache .`,
+  running: (name) => `docker ps -f name=${name}`,
+  run: (name, port) =>
+    `docker run --name ${name} --mount type=bind,src=./content/${name},dst=/app -p ${port}:8000 -t ${name}`,
+};
+
+const { exists, build, running, run } = commands;
 
 export async function runContainer(req, name = req.session.name, port) {
   port ??= await getFreePort();
