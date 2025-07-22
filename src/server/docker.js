@@ -1,3 +1,4 @@
+import { sep } from "node:path";
 import { getFreePort } from "./utils.js";
 import { exec, execSync } from "child_process";
 
@@ -6,7 +7,7 @@ const commands = {
   build: (name) => `docker build --tag ${name} --no-cache .`,
   running: (name) => `docker ps -f name=${name}`,
   run: (name, port) =>
-    `docker run --name ${name} --mount type=bind,src=./content/${name},dst=/app -p ${port}:8000 -t ${name}`,
+    `docker run --name ${name} --mount type=bind,src=.${sep}content${sep}${name},dst=/app -p ${port}:8000 -t ${name}`,
   restart: (name) => `docker container restart -t 0 ${name}`,
 };
 
