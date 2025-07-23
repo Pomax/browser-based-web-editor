@@ -32,16 +32,16 @@ On Linux, you already know how to install Docker. And if you don't, you know how
 
 On Windows... &lt;sigh&gt; on Windows it's both "easy" and "truly ridiculous", so here's what I had to do:
 
-1. make sure the Hyper-V, Containers, and WSL windows components are installed
-1. install Docker Desktop, but I'd recommend using [v4.38 of Docker Desktop](https://docs.docker.com/desktop/release-notes/#4380) because I can't get any more recent versions to work properly myself.
-1. after installing Docker Desktop and restarting (seriously? we need to restart the OS?), first fire up WSL and make sure you have a linux installed. Any will do, just make it install Ubuntu, you don't care (unless you do, in which case you probablya already have something installed. Nice!)
+- make sure the Hyper-V, Containers, and WSL windows components are installed
+- install Docker Desktop, but I'd recommend using [v4.38 of Docker Desktop](https://docs.docker.com/desktop/release-notes/#4380) because I can't get any more recent versions to work properly myself.
+- after installing Docker Desktop and restarting (seriously? we need to restart the OS?), first fire up WSL and make sure you have a linux installed. Any will do, just make it install Ubuntu, you don't care (unless you do, in which case you probablya already have something installed. Nice!)
 
 This is about to get stupid. We're not going to do _anything_ with WSL, we just need to have a linux flavour installed _and have a command prompt open for it_.
 
-1. Then, we'll need to switch Docker Desktop from using "docker-windows" to using "docker-linux" (i.e. _the thing everyone else uses), so open Docker Desktop, go to the settings, go to "builders", click the "docker-linux" ⋮ menu and click "use". This will fail with an irrelevant API error.
-1. Keep Docker Desktop open, and open a cmd prompt with admin rights, cd to `C:\Program Files\Docker\Docker` and then run `DockerCLI.exe -SwitchDaemon`.
-1. Once that's done, close the command prompt, WSL, and quit (really quit, not close-and-minimize) Docker Desktop.
-1. Reopen Docker Desktop. Check the builders. F'ing magic, it worked, it now works the way it works everywhere else, which is what it should have been in the first place.
+- Then, we'll need to switch Docker Desktop from using "docker-windows" to using "docker-linux" (i.e. _the thing everyone else uses_), so open Docker Desktop, go to the settings, go to "builders", click the "docker-linux" ⋮ menu and click "use". This will fail with an irrelevant API error.
+- Keep Docker Desktop open, and open a cmd prompt with admin rights, cd to `C:\Program Files\Docker\Docker` and then run `DockerCLI.exe -SwitchDaemon`.
+- Once that's done, close the command prompt, WSL, and quit (really quit, not close-and-minimize) Docker Desktop.
+- Reopen Docker Desktop. Check the builders. F'ing magic, it worked, it now works the way it works everywhere else, which is what it should have been in the first place.
 
 ### So then what?
 
