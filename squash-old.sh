@@ -6,7 +6,7 @@
 #
 # One day is a bit aggressive, but this is a PoC
 # script more than anything right now. In real
-# user, you'd make it collapse everything older
+# use, you'd make it collapse everything older
 # than a month into "the new base commit", squash
 # anything older than 7 days into one commit per
 # day, and leave the most recent week of commits
@@ -15,7 +15,7 @@
 # So that you can do sensible rollbaks.
 #
 
-# Run this with ./squash-old.sh username
+# Run this with ./squash-old.sh projectname
 DIR="content/$1"
 cd ${DIR}
 

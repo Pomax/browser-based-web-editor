@@ -1,6 +1,6 @@
 import { fetchFileContents, fetchSafe } from "../utils.js";
 
-const changeUser = document.getElementById(`switch`);
+const changeProject = document.getElementById(`switch`);
 const all = document.getElementById(`all`);
 const format = document.getElementById(`format`);
 const left = document.getElementById(`left`);
@@ -10,10 +10,10 @@ const right = document.getElementById(`right`);
  * Hook up the "Add new file" and "Format this file" buttons
  */
 export function addEventHandling(contentDir) {
-  changeUser.addEventListener(`click`, async () => {
-    const name = prompt(`Username?`).trim();
+  changeProject.addEventListener(`click`, async () => {
+    const name = prompt(`Project name?`).trim();
     if (name) {
-      const result = await fetchSafe(`/login/${name}`, { method: `post` });
+      const result = await fetchSafe(`/switch/${name}`, { method: `post` });
       if (result instanceof Error) return;
       location.reload();
     }

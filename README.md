@@ -6,6 +6,7 @@ This is an attempt at implementing a friend browser-based web content editor, us
 
 1. It's a node project, so you'll need that installed (I recommend `nvm` or its windows equivalent).
 1. You'll also need docker installed, which has different instructions depending on the OS you're using.
+1. And you'll want `caddy` installed, for reverse-proxying container ports so you can just load https://projectname.localhost
 
 With those installed:
 
@@ -15,24 +16,24 @@ With those installed:
 
 Things should be cross-platform enough to work on Windows, Mac, and Linux by running `npm start` and then opening the URL that tells you things are running on.
 
-The initial view is the "anonymous" view but you can click the "Switch" button and pick any username that isn't `anonymous` or `testuser`. Doing so will either load the content associated with that user's content folder, or will build a new folder with a copy of the content found in the testuser folder, then build a docker container for that content, then run that container.
+The initial view is the "anonymous" view but you can click the "Switch" button and pick any project name that isn't `anonymous` or `testproject`. Doing so will either load the content associated with that project's content folder, or will build a new folder with a copy of the content found in the testproject folder, then build a docker container for that content, then run that container.
 
 ## Docker?
 
-While user _content_ lives in the content directory, you don't want it to _run_ in that context. That would give it access to.. well... everything. Including other user's content, the editor code, etc. etc. So instead, the runtime is handled by creating a Docker image running Ubuntu with Node and Python installed, with the user content as a "bind mount" (meaning the files live on the host OS, but the docker container has read/write access to them), with the container running whatever is in `run.sh` as its startup instruction.
+While project _content_ lives in the content directory, you don't want it to _run_ in that context. That would give it access to.. well... everything. Including other project's content, the editor code, etc. etc. So instead, the runtime is handled by creating a Docker image running Ubuntu with Node and Python installed, with the project content as a "bind mount" (meaning the files live on the host OS, but the docker container has read/write access to them), with the container running whatever is in `run.sh` as its startup instruction.
 
 (NOTE: updating `run.sh` does nothing on its own right now, because there's no `fs.watch` instruction to see if containers need to be restarted because the run file got updated yet. That's not overly complicated to add in, but also something for "soon" rather than "now")
 
-When you switch users, the server runs through the following four steps:
+When you switch projects, the server runs through the following four steps:
 
-1. Check if there is a docker image for this user
+1. Check if there is a docker image for this project
 1. If not, build one
 1. Check if there is a container running, based on that image
 1. If not, run a container
 
-(this also means that on first-time switching, it'll take a while before the server finally loads up the editor for your new user).
+(this also means that on first-time switching, it'll take a while before the server finally loads up the editor for your new project).
 
-The run command includes a PORT variable that allows the preview to work: each docker container exposes its port 8000, which gets bound to "whichever free port is available on the host OS", save alongside the user's name and dir in their server session, and the editor the makes sure that that port gets used for the preview iframe.
+The run command includes a PORT variable that allows the preview to work: each docker container exposes its port 8000, which gets bound to "whichever free port is available on the host OS", save alongside the project's name and dir in their server session, and the editor the makes sure that that port gets used for the preview iframe.
 
 ## Edit syncing
 

@@ -1,4 +1,5 @@
-const restart = document.getElementById(`restart`);
+const restart = document.querySelector(`#preview-buttons .restart`);
+const newtab = document.querySelector(`#preview-buttons .newtab`);
 const preview = document.getElementById(`preview`);
 
 let first_time_load = true;
@@ -45,4 +46,12 @@ restart?.addEventListener(`click`, async () => {
     preview.classList.remove(`restarting`);
     updatePreview();
   }, 1000);
+});
+
+newtab?.addEventListener(`click`, async () => {
+  const iframe = preview.querySelector(`iframe`);
+  const link = document.createElement(`a`);
+  link.href = iframe.src.replace(/\?v=\d+/, ``);
+  link.target = `_blank`;
+  link.click();
 });

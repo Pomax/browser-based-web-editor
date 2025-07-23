@@ -581,7 +581,8 @@ function verifyRIFF(bytes) {
 }
 
 // src/client/preview.js
-var restart = document.getElementById(`restart`);
+var restart = document.querySelector(`#preview-buttons .restart`);
+var newtab = document.querySelector(`#preview-buttons .newtab`);
 var preview = document.getElementById(`preview`);
 var first_time_load = true;
 function updatePreview() {
@@ -615,6 +616,13 @@ restart?.addEventListener(`click`, async () => {
     preview.classList.remove(`restarting`);
     updatePreview();
   }, 1e3);
+});
+newtab?.addEventListener(`click`, async () => {
+  const iframe = preview.querySelector(`iframe`);
+  const link = document.createElement(`a`);
+  link.href = iframe.src.replace(/\?v=\d+/, ``);
+  link.target = `_blank`;
+  link.click();
 });
 
 // node_modules/@codemirror/state/dist/index.js
@@ -30924,7 +30932,9 @@ function addFileTreeHandling(test) {
         if (response instanceof Error) return;
         if (response.status === 200) {
           const [fileEntry] = grant();
-          fileEntry.state?.close?.click();
+          const { tab, panel } = fileEntry.state ?? {};
+          tab?.remove();
+          panel?.remove();
         } else {
           console.error(`Could not delete ${path} (status:${response.status})`);
         }
@@ -30935,13 +30945,13 @@ function addFileTreeHandling(test) {
     updatePreview();
   });
   fileTree2.addEventListener(`dir:create`, async (evt) => {
-    const { dirName, grant } = evt.detail;
-    const response = await fetchSafe(`/new/${dirName}`, { method: `post` });
+    const { path, grant } = evt.detail;
+    const response = await fetchSafe(`/new/${path}`, { method: `post` });
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
     } else {
-      console.error(`Could not create ${dirName} (status:${response.status})`);
+      console.error(`Could not create ${path} (status:${response.status})`);
     }
   });
   fileTree2.addEventListener(`dir:rename`, async (evt) => {
@@ -30990,16 +31000,16 @@ function addFileTreeHandling(test) {
 }
 
 // src/client/cm6/event-handling.js
-var changeUser = document.getElementById(`switch`);
+var changeProject = document.getElementById(`switch`);
 var all = document.getElementById(`all`);
 var format = document.getElementById(`format`);
 var left = document.getElementById(`left`);
 var right = document.getElementById(`right`);
 function addEventHandling(contentDir) {
-  changeUser.addEventListener(`click`, async () => {
-    const name2 = prompt(`Username?`).trim();
+  changeProject.addEventListener(`click`, async () => {
+    const name2 = prompt(`Project name?`).trim();
     if (name2) {
-      const result = await fetchSafe(`/login/${name2}`, { method: `post` });
+      const result = await fetchSafe(`/switch/${name2}`, { method: `post` });
       if (result instanceof Error) return;
       location.reload();
     }
@@ -31060,8 +31070,8 @@ function addTabScrollHandling() {
 // src/client/classes/browser-editor-test.js
 var BrowserEditorTest = class {
   constructor() {
-    this.user = document.querySelector(`.username`)?.textContent;
-    this.contentDir = `content/${this.user ?? `anonymous`}`;
+    this.project = document.querySelector(`.projectname`)?.textContent;
+    this.contentDir = `content/${this.project ?? `anonymous`}`;
     this.init();
   }
   async init() {

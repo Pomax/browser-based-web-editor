@@ -22,6 +22,9 @@ html {
         overflow-x: auto;
         white-space: nowrap;
 
+        width: calc-size(auto, size);
+        transition: width 1s ease-in-out !important;
+
         &:not([show-top-level]) {
           --highlight-background-bw: #44ffd8;
           dir-entry[path="."] {
@@ -52,7 +55,7 @@ html {
         white-space: nowrap;
         align-items: center;
 
-        .username {
+        .projectname {
           background: #222;
           color: white;
           padding: 1px 5px 3px;
@@ -188,9 +191,9 @@ html {
             background-color 0.25s linear;
         }
         &.restarting iframe {
-          background-color: #FDE;
+          background-color: #fde;
         }
-        #restart {
+        #preview-buttons {
           position: fixed;
           right: 0.5em;
           top: 0.5em;
@@ -222,8 +225,16 @@ html {
     }
   }
 
-  #filetree button {
-    opacity: 0.5;
+  #filetree {
+    & button {
+      opacity: 0.5;
+      cursor: pointer;
+    }
+
+    & file-entry:hover > .buttons {
+      display: inline-block;
+      height: var(--line-height);
+    }
   }
 
   button {

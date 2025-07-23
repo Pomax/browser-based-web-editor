@@ -6,7 +6,7 @@ export {
   getFileSum,
   readContentDir,
   setupGit,
-  switchUser,
+  switchProject,
   reloadPageInstruction,
 };
 
@@ -117,20 +117,20 @@ async function readContentDir(dir) {
 /**
  * ...
  */
-async function switchUser(req, name = req.params.name) {
+async function switchProject(req, name = req.params.name) {
   const oldName = req.session.name;
   const oldDir = req.session.dir;
   const dir = `${CONTENT_DIR}/${name}`;
 
-  console.log(`switching user from ${oldName} to ${name}`);
+  console.log(`switching project from ${oldName} to ${name}`);
 
   req.session.name = name;
   req.session.dir = dir;
   req.session.save();
 
-  let newUser = false;
+  let newProject = false;
   if (!existsSync(dir)) {
-    newUser = true;
+    newProject = true;
     mkdirSync(dir);
     // New, temporary anonymous dir?
     if (name.startsWith(`anonymous-`)) {
@@ -139,13 +139,13 @@ async function switchUser(req, name = req.params.name) {
       console.log(`${index} => ${target}`);
       copyFileSync(index, target);
     }
-    // "regular" user, give them the test user content
+    // "regular" project, give them the test project content
     else {
-      cpSync(dir.replace(name, `testuser`), dir, { recursive: true });
+      cpSync(dir.replace(name, `testproject`), dir, { recursive: true });
     }
   } else if (oldName.startsWith(`anonymous-`)) {
-    // If we switch from anonymous to real user, we
-    // delete the anonymous dir because that content
+    // If we switch from anonymous to a real project,
+    // we delete the anonymous dir because that content
     // was mostly a signal for someone to log in.
     rmSync(oldDir, { recursive: true, force: true });
   }
@@ -157,8 +157,8 @@ async function switchUser(req, name = req.params.name) {
   }
 
   // If not, is this a switch from an anonymous "account" to a new, real "account"?
-  else if (oldName.startsWith(`anonymous-`) && oldDir && newUser) {
-    // TODO: Copy the anonymous user's files to their new, real
+  else if (oldName.startsWith(`anonymous-`) && oldDir && newProject) {
+    // TODO: Copy the anonymous project's files to their new, real
     //       dir, and then delete the anonymous-12345 directory.
   }
 

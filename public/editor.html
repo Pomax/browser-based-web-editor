@@ -15,8 +15,10 @@
   <body>
     <main>
       <li id="buttons">
-        <span class="username">{{ name }}</span>
-        <button id="switch" title="Switch to a different user">switch</button>
+        <span class="projectname">{{ name }}</span>
+        <button id="switch" title="Switch to a different project">
+          switch
+        </button>
         <button id="all" title="Open all files">!!!</button>
         <button id="format" title="Make my code pretty!">🤩</button>
       </li>
@@ -36,10 +38,13 @@
 
       <div id="preview" style="position: relative">
         {% if port %}
-        <button id="restart" title="Restart your host container">
-          restart
-        </button>
-        <iframe sandbox data-src="http://localhost:{{ port }}"></iframe>
+        <span id="preview-buttons">
+          <button class="restart" title="Restart your host container">
+            restart
+          </button>
+          <button class="newtab" title="Open preview in new tab">new tab</button>
+        </span>
+        <iframe sandbox data-src="https://{{name}}.localhost"></iframe>
         {% else %}
         <iframe
           sandbox

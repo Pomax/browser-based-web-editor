@@ -3,7 +3,7 @@ export { addPostRoutes };
 import {
   getFileSum,
   execPromise,
-  switchUser,
+  switchProject,
   createRewindPoint,
 } from "../helpers.js";
 
@@ -80,14 +80,13 @@ function addPostRoutes(app) {
     createRewindPoint(req);
   });
 
-  // fake user login
-  app.post(`/login/:name`, (req, res) => {
+  // project switching route
+  app.post(`/switch/:name`, (req, res) => {
     const name = req.params.name;
-    if ([`anonymous`, `testuser`].includes(name)) {
+    if ([`anonymous`, `testproject`].includes(name)) {
       return res.status(400).send("Reserved name, pick a different one.");
     }
-    console.log(`we got a login for ${name}`);
-    switchUser(req);
+    switchProject(req);
     res.send(`ok`);
   });
 
@@ -182,7 +181,7 @@ function addPostRoutes(app) {
     createRewindPoint(req);
   });
 
-  // Restart a user's container
+  // Restart a project container
   app.post(`/restart`, async (req, res) => {
     restartContainer(req.session.name);
     res.send(`ok`);

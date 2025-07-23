@@ -9,7 +9,7 @@ import session from "express-session";
 import helmet from "helmet";
 import nocache from "nocache";
 import { readdirSync, rmSync } from "fs";
-import { reloadPageInstruction, switchUser } from "../helpers.js";
+import { reloadPageInstruction, switchProject } from "../helpers.js";
 import { __dirname } from "../../constants.js";
 
 /**
@@ -77,7 +77,7 @@ function verifyOwnership(req, res, next) {
 function addMiddleware(app) {
   app.use(nocache());
 
-  // Use session management, so we can use different dirs for different "users".
+  // Use session management, so we can use different dirs for different projects.
   app.use(
     session({
       secret: `this shouldn't matter but here we are anyway`,
@@ -92,8 +92,8 @@ function addMiddleware(app) {
   app.use(async (req, res, next) => {
     if (!req.session.dir) {
       const name = `anonymous-${Date.now()}`;
-      console.log(`switching to userdir ${name}`);
-      switchUser(req, name);
+      console.log(`switching to project dir ${name}`);
+      switchProject(req, name);
     }
     next();
   });

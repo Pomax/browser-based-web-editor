@@ -180,7 +180,9 @@ function addFileTreeHandling(test) {
         if (response instanceof Error) return;
         if (response.status === 200) {
           const [fileEntry] = grant();
-          fileEntry.state?.close?.click();
+          const { tab, panel } = fileEntry.state ?? {};
+          tab?.remove();
+          panel?.remove();
         } else {
           console.error(`Could not delete ${path} (status:${response.status})`);
         }
@@ -192,13 +194,13 @@ function addFileTreeHandling(test) {
   });
 
   fileTree.addEventListener(`dir:create`, async (evt) => {
-    const { dirName, grant } = evt.detail;
-    const response = await fetchSafe(`/new/${dirName}`, { method: `post` });
+    const { path, grant } = evt.detail;
+    const response = await fetchSafe(`/new/${path}`, { method: `post` });
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
     } else {
-      console.error(`Could not create ${dirName} (status:${response.status})`);
+      console.error(`Could not create ${path} (status:${response.status})`);
     }
   });
 
