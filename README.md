@@ -41,7 +41,7 @@ This is about to get stupid. We're not going to do _anything_ with WSL, we just 
 - Then, we'll need to switch Docker Desktop from using "docker-windows" to using "docker-linux" (i.e. _the thing everyone else uses_), so open Docker Desktop, go to the settings, go to "builders", click the "docker-linux" ⋮ menu and click "use". This will fail with an irrelevant API error.
 - Keep Docker Desktop open, and open a cmd prompt with admin rights, cd to `C:\Program Files\Docker\Docker` and then run `DockerCLI.exe -SwitchDaemon`.
 - Once that's done, close the command prompt, WSL, and quit (really quit, not close-and-minimize) Docker Desktop.
-- Reopen Docker Desktop. Check the builders. F'ing magic, it worked, it now works the way it works everywhere else, which is what it should have been in the first place.
+- Reopen Docker Desktop. Check the builders. F'ing magic, it worked, it'll now use linux containers just like every other OS, which is what it should have been using in the first place.
 
 ### So then what?
 
