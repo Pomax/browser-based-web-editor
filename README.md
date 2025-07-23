@@ -26,11 +26,11 @@ While project _content_ lives in the content directory, you don't want it to _ru
 
 ### How do I install Docker?
 
-On MacOS, install `docker` and `colima` using your favourite package manager, I use `brew` but people have opinions about this so use whatever works for you.
+On MacOS, install `docker` and `colima` using your favourite package manager, I use `brew` but people have opinions about this so use whatever works for you. Just remember that you'll need to run `colima start` any time you reboot your mac, because otherwise anything docker-related will crash out with super fun error messages.
 
-On Linux, you already know how to install Docker. And if you don't, you know how to look it up. And you know it's going to be a whole bunch of terminal commands.
+On Linux, you already know how to install Docker. And if you don't, you know how to look it up. And you know it's either going to be two commands, or half a day of work, depending on your chosen flavour of Linux.
 
-On Windows, it's both "easy" and truly ridiculous, so here's what I had to do:
+On Windows... &lt;sigh&gt; on Windows it's both "easy" and "truly ridiculous", so here's what I had to do:
 
 1. make sure the Hyper-V, Containers, and WSL windows components are installed
 1. install Docker Desktop, but I'd recommend using [v4.38 of Docker Desktop](https://docs.docker.com/desktop/release-notes/#4380) because I can't get any more recent versions to work properly myself.
