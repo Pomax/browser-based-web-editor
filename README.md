@@ -43,7 +43,23 @@ This is about to get stupid. We're not going to do _anything_ with WSL, we just 
 - Once that's done, close the command prompt, WSL, and quit (really quit, not close-and-minimize) Docker Desktop.
 - Reopen Docker Desktop. Check the builders. F'ing magic, it worked, it'll now use linux containers just like every other OS, which is what it should have been using in the first place.
 
-### So then what?
+## Caddy?
+
+Caddy's a general purpose server (similar to Nginx) that automatically handles HTTPS, and lets us set up bindings for things like https://yourproject.localhost rather than having to guess at which port number a project is running on. Installing it on Linux or Mac is relatively easy (tell your package manager to install it. Done), but Windows is (of course) a bit more work:
+
+- Go to https://caddyserver.com/download, pick your windows platform, the click the blue download button.
+- Rename the resulting .exe to `caddy.exe`
+- Create a folder `C:\Program Files\Caddy` and then move `caddy.exe` into that (this hopefully requires UAC admin rights. If not, I may have questions about why you're logged in with an admin account rather than a normal user account)
+- Hit start-x and pick "system"
+- on the right of the window that opens, click "advanced system settings"
+- In the sysem properties dialog this opens, click the "environment variables" button.
+- In the lower panel, scroll down to `path` and double click it.
+- Click "new", which will create a new, empty, entry at the bottom, and then click "browse", browse to the `C:\Program Files\Caddy` folder and select that.
+- Click OK, then click OK again, then click OK again (omg Windows) and then close the system settings dialog.
+
+You can now run `caddy` anywhere.
+
+## So then what?
 
 When you switch projects, the server runs through the following four steps:
 
@@ -55,6 +71,10 @@ When you switch projects, the server runs through the following four steps:
 (this also means that on first-time switching, it'll take a while before the server finally loads up the editor for your new project because building the image takes time).
 
 The run command includes a PORT variable that allows the preview to work: each docker container exposes its port 8000, which gets bound to "whichever free port is available on the host OS", save alongside the project's name and dir in their server session, and the editor the makes sure that that port gets used for the preview iframe.
+
+### One-time Caddy permissions
+
+Caddy will set up a name binding when you switch projects, but the first time you do that after having installed it, it will need your permission to add a new certificate authority to your OS's list of certificate authorities. You'll want to allow that, because otherwise HTTPS won't work =)
 
 ## Edit syncing
 
