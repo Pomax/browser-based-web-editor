@@ -1,8 +1,13 @@
 import express from "express";
 import nunjucks from "nunjucks";
-import { addMiddleware, pageNotFound, verifyOwnership } from "./middleware/middleware.js";
+import {
+  addMiddleware,
+  pageNotFound,
+  verifyOwnership,
+} from "./middleware/middleware.js";
 import { addGetRoutes, addPostRoutes } from "./routing/index.js";
 import { watchForRebuild } from "./watcher.js";
+import { startCaddy } from "./caddy.js";
 
 const PORT = process.env.PORT ?? 8000;
 process.env.PORT = PORT;
@@ -37,4 +42,5 @@ app.listen(PORT, () => {
   const mid = `=${` `.repeat(msg.length - 2)}=`;
   console.log([``, line, mid, msg, mid, line, ``].join(`\n`));
   watchForRebuild();
+  startCaddy();
 });

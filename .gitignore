@@ -3,3 +3,4 @@ content/*
 !content/testproject
 node_modules
 .DS_Store
+Caddyfile

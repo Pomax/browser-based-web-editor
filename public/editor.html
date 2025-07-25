@@ -42,13 +42,15 @@
           <button class="restart" title="Restart your host container">
             restart
           </button>
-          <button class="newtab" title="Open preview in new tab">new tab</button>
+          <button class="newtab" title="Open preview in new tab">
+            new tab
+          </button>
         </span>
-        <iframe sandbox data-src="https://{{name}}.localhost"></iframe>
+        <iframe sandbox data-src="https://{{name}}.app.localhost"></iframe>
         {% else %}
         <iframe
           sandbox
-          data-src="http://localhost:8000/content/anonymous/index.html"
+          data-src="https://editor.com.localhost/content/anonymous/index.html"
         ></iframe>
         {% endif %}
       </div>

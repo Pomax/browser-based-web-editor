@@ -1,6 +1,7 @@
 import { sep } from "node:path";
 import { getFreePort } from "./utils.js";
-import { exec, execSync, spawn } from "child_process";
+import { exec, execSync } from "child_process";
+import { updateCaddyFile } from "./caddy.js";
 
 const commands = {
   exists: () => `docker image list`,
@@ -39,17 +40,11 @@ export async function runContainer(req, name = req.session.name, port) {
     console.log(container);
     exec(container);
   } else {
-    req.session.port = result.match(/0.0.0.0:(\d+)->/m)[1];
+    port = req.session.port = result.match(/0.0.0.0:(\d+)->/m)[1];
     req.session.save();
     console.log(`- found a running container`);
   }
-  console.log(`- Running reverse proxy for https://${name}.localhost`);
-  const caddy =
-    `caddy reverse-proxy --from https://${name}.localhost --to http://localhost:${port}`.split(
-      ` `
-    );
-  console.log(caddy);
-  spawn(caddy.shift(), caddy, { stdio: `inherit`, shell: true });
+  updateCaddyFile(name, port);
 }
 
 export function restartContainer(name) {

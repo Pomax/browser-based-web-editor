@@ -13,7 +13,7 @@ export function updatePreview() {
   if (first_time_load) {
     console.log(`delaying first time load`);
     first_time_load = false;
-    return setTimeout(() => updatePreview(), 1000);
+    return setTimeout(() => updatePreview(), 500);
   }
 
   const iframe = preview.querySelector(`iframe`);
