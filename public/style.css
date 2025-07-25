@@ -17,13 +17,9 @@ html {
       #filetree {
         border: 1px solid #444;
         font-family: Arial;
-        padding-right: 0.25em;
-        padding-bottom: 0.25em;
+        padding: 0 1em 0.25em 0;
         overflow-x: auto;
         white-space: nowrap;
-
-        width: calc-size(auto, size);
-        transition: width 1s ease-in-out !important;
 
         &:not([show-top-level]) {
           --highlight-background-bw: #44ffd8;
