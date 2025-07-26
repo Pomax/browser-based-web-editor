@@ -8,6 +8,7 @@ import {
 import { addGetRoutes, addPostRoutes } from "./routing/index.js";
 import { watchForRebuild } from "./watcher.js";
 import { startCaddy } from "./caddy.js";
+import { addPassportAuth } from "./middleware/passport.js";
 
 const PORT = process.env.PORT ?? 8000;
 process.env.PORT = PORT;
@@ -28,6 +29,7 @@ app.use((req, res, next) => {
 addMiddleware(app);
 addGetRoutes(app);
 addPostRoutes(app);
+addPassportAuth(app);
 
 // static routes
 app.use(`/`, express.static(`public`));

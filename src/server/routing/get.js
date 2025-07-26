@@ -1,12 +1,7 @@
 export { addGetRoutes };
 
 import { deleteExpiredAnonymousContent } from "../middleware/middleware.js";
-import {
-  getFileSum,
-  execPromise,
-  readContentDir,
-  reloadPageInstruction,
-} from "../helpers.js";
+import { getFileSum, execPromise, readContentDir } from "../helpers.js";
 import { posix } from "path";
 import { __dirname } from "../../constants.js";
 
@@ -25,9 +20,12 @@ function addGetRoutes(app) {
 
   // Add an extra job when loading the editor that destroys old
   // anonymous content, cleaning up the dirs based on the timestamp.
-  app.get(`/editor.html`, deleteExpiredAnonymousContent, (req, res) =>
-    res.render(`editor.html`, req.session)
-  );
+  app.get(`/editor.html`, deleteExpiredAnonymousContent, (req, res) => {
+    if (!req.session.passport?.user) {
+      return res.redirect(`/`);
+    }
+    res.render(`editor.html`, req.session);
+  });
 
   // Get the git log, to show all rewind points.
   app.get(`/history`, async (req, res) => {
@@ -46,5 +44,7 @@ function addGetRoutes(app) {
   });
 
   // the default page is editor.html:
-  app.get(`/`, (_, res) => res.redirect(`/editor.html`));
+  app.get(`/`, (req, res) => {
+    res.render(`main.html`, req.session);
+  });
 }
