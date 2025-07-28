@@ -61,3 +61,5 @@ export function addPassportAuth(app) {
     });
   });
 }
+
+export const authenticate = passport.authenticate(`github`);

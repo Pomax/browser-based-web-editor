@@ -7,13 +7,53 @@
     <link rel="icon" type="image/png" href="favicon.png" />
     <link rel="stylesheet" href="./layout.css" />
     <link rel="stylesheet" href="./style.css" />
+    <style>
+      html,
+      body {
+        overflow: auto !important;
+        padding: 1em;
+      }
+    </style>
+    <script src="main.js" async defer></script>
   </head>
   <body>
-    {% if passport.user %} Welcome {{ passport.user.displayName }}. Click here
-    to open the
-    <a href="/editor.html">editor</a>, or if you really want, you can
-    <a href="/auth/logout">logout</a>
-    {% else %} You'll probably want to <a href="/auth/github">login</a>
+    <h1>Welcome</h1>
+    {% if passport.user %} Currently logged in as {{ passport.user.displayName
+    }}, click here to <a href="/auth/logout">logout</a>. {% else %} You'll
+    probably want to <a href="/auth/github">login</a>
+    {% endif %} {% if projectList %}
+
+    <h2>Your projects:</h2>
+    <ul
+      style="list-style: none; display: flex; flex-direction: row; gap: 0.5em"
+    >
+      {% for project in projectList %}
+      <li>
+        <a
+          href="https://editor.com.localhost/editor.html?project={{project.name}}"
+          >{{ project.name }}</a
+        >
+        ({{ project.created_at }})
+        <button data-project-id="{{ project.id }}" class="delete-project">
+          delete
+        </button>
+        <br />
+        <iframe
+          width="400"
+          height="300"
+          src="https://{{project.name}}.app.localhost"
+        ></iframe>
+        <!--
+      TODO: download button
+      TODO: export to github button
+      TODO: embed?
+      --></li>
+      {% endfor %}
+    </ul>
+    <form action="/project/create" method="POST">
+      <input name="name" type="text" placeholder="project name" />
+      <button>create new project</button>
+    </form>
     {% endif %}
   </body>
 </html>

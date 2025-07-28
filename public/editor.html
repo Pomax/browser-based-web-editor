@@ -15,7 +15,8 @@
   <body>
     <main>
       <li id="buttons">
-        {% if passport.user %} {{ passport.user.displayName }} {% endif %}
+        {% if passport.user %} {{ passport.user.displayName }} {% if
+        projectOwner %} {{ projectOwner }} {% endif %} {% endif %}
         <span class="projectname">{{ name }}</span>
         <button id="switch" title="Switch to a different project">
           switch

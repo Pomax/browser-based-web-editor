@@ -13,9 +13,7 @@ export function addEventHandling(contentDir) {
   changeProject.addEventListener(`click`, async () => {
     const name = prompt(`Project name?`).trim();
     if (name) {
-      const result = await fetchSafe(`/switch/${name}`, { method: `post` });
-      if (result instanceof Error) return;
-      location.reload();
+      location = `${location.toString().replace(location.search, ``)}?project=${name}`;
     }
   });
 

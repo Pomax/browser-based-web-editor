@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFile, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 
 const caddyFile = `./Caddyfile`;
+let caddy;
 
 /**
  * Ensure a local Caddyfile exists for us to work with
@@ -13,7 +14,15 @@ export function startCaddy() {
       `editor.com.localhost {\n  reverse_proxy localhost:8000\n}\n`
     );
   }
-  spawn(`caddy`, [`start`], { shell: true, stdio: `inherit` });
+  if (caddy) stopCaddy();
+  caddy = spawn(`caddy`, [`start`], { shell: true, stdio: `inherit` });
+}
+
+/**
+ * Stop caddy.
+ */
+export function stopCaddy() {
+  caddy?.kill("SIGKILL");
 }
 
 /**
@@ -36,8 +45,15 @@ export function updateCaddyFile(name, port) {
     }
   } else {
     // Create a new binding
-    const entry = `\n${host} {\n  reverse_proxy localhost:${port}\n}\n`;
+    const entry = `\n${host} {\n\treverse_proxy localhost:${port}\n}\n`;
     writeFileSync(caddyFile, data + entry);
   }
+  spawn(`caddy`, [`reload`], { shell: true, stdio: `inherit` });
+}
+
+export function removeCaddyEntry(name) {
+  const re = new RegExp(`${name}\\.app\\.localhost \\{[^}]+\\}\n\n?`, `gm`);
+  const data = readFileSync(caddyFile).toString().replace(re, ``);
+  writeFileSync(caddyFile, data);
   spawn(`caddy`, [`reload`], { shell: true, stdio: `inherit` });
 }

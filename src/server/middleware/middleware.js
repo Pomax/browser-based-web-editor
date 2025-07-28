@@ -5,11 +5,13 @@ export {
   verifyOwnership,
 };
 
+import { getProjectListForUser } from "../../../data/database.js";
+
 import session from "express-session";
 import helmet from "helmet";
 import nocache from "nocache";
 import { readdirSync, rmSync } from "fs";
-import { reloadPageInstruction, switchProject } from "../helpers.js";
+import { switchProject } from "../helpers.js";
 import { __dirname } from "../../constants.js";
 
 /**
@@ -66,11 +68,8 @@ function verifyOwnership(req, res, next) {
     return next();
   }
 
-  if (!url.startsWith(`/${name}`)) {
-    req.session.name = undefined;
-    req.session.dir = undefined;
-    return reloadPageInstruction(req, res, 403);
-  }
+  // FIXME: we need "real" verification based on the database here.
+
   next();
 }
 
@@ -115,4 +114,28 @@ function addMiddleware(app) {
       },
     })
   );
+}
+
+export function loadProjectList(req, res, next) {
+  const { user } = req.session?.passport ?? {};
+  if (user) {
+    const { displayName } = user;
+    const list = getProjectListForUser(displayName);
+    if (list) {
+      req.session.projectList = list;
+      req.session.save();
+    }
+  }
+  next();
+}
+
+export async function loadProject(req, res, next) {
+  const name = req.query.project;
+  if (name) {
+    await switchProject(req, name);
+    const found = req.session.projectList?.find((p) => p.name === name);
+    req.session.projectOwner = !!found;
+    req.session.save();
+  }
+  next();
 }

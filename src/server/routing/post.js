@@ -3,16 +3,28 @@ export { addPostRoutes };
 import {
   getFileSum,
   execPromise,
-  switchProject,
   createRewindPoint,
+  CONTENT_DIR,
 } from "../helpers.js";
 
-import { restartContainer } from "../docker.js";
+import {
+  restartContainer,
+  deleteContainerAndImage,
+} from "../../docker/docker.js";
+
+import { 
+  removeCaddyEntry
+} from "../../server/caddy.js";
 
 import {
   parseBodyText,
   parseMultiPartBody,
 } from "../middleware/body-parsing.js";
+
+import {
+  createProjectForUser,
+  deleteProjectForUser,
+} from "../../../data/database.js";
 
 import {
   existsSync,
@@ -23,6 +35,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from "fs";
+
 import { sep } from "path";
 import { spawnSync } from "child_process";
 import multer from "multer";
@@ -78,16 +91,6 @@ function addPostRoutes(app) {
     }
     res.json({ formatted });
     createRewindPoint(req);
-  });
-
-  // project switching route
-  app.post(`/switch/:name`, (req, res) => {
-    const name = req.params.name;
-    if ([`anonymous`, `testproject`].includes(name)) {
-      return res.status(400).send("Reserved name, pick a different one.");
-    }
-    switchProject(req);
-    res.send(`ok`);
   });
 
   // Create a new file.
@@ -185,5 +188,49 @@ function addPostRoutes(app) {
   app.post(`/restart`, async (req, res) => {
     restartContainer(req.session.name);
     res.send(`ok`);
+  });
+
+  // Create a new project
+  app.post(`/project/create`, (req, res) => {
+    // TODO: FIXME: only names that are valid domain fragments should be allowed
+    const { user } = req.session.passport ?? {};
+    const { displayName: userName } = user;
+    const { name: projectName } = req.body;
+    console.log(
+      `Creating new project "${projectName}" with ${userName} as owner`
+    );
+    try {
+      createProjectForUser(userName, projectName);
+      return res.redirect(`/editor.html?project=${projectName}`);
+    } catch (e) {
+      console.error(e);
+    }
+    res.redirect(`/`);
+  });
+
+  app.post(`/project/delete/:id`, (req, res) => {
+    try {
+      console.log(`Performing database operations`);
+      const projectName = deleteProjectForUser(
+        req.session.passport?.user.displayName,
+        req.params.id
+      );
+
+      console.log(`Cleaning up Caddyfile`);
+      removeCaddyEntry(projectName);
+
+      console.log(`Cleaning up ${projectName} container and image`);
+      deleteContainerAndImage(projectName);
+
+      console.log(`Removing ${projectName} from the filesystem`);
+      rmSync(`${CONTENT_DIR}/${projectName}`, {
+        recursive: true,
+        force: true,
+      });
+
+      res.redirect(`/`);
+    } catch (e) {
+      res.send(`Cannot delete this project.`);
+    }
   });
 }

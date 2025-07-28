@@ -481,12 +481,9 @@ async function fetchFileContents(contentDir, filename, type = `text/plain`) {
 }
 async function fetchSafe(url, options) {
   const response = await fetch(url, options);
-  if (response.status !== 200) {
-    if (response.headers.get(`x-reload-page`)) {
-      alert(`Your session expired, please reload.
-(error code: 29X784FH)`);
-      return new Error(`Page needs reloading`);
-    }
+  const { status } = response;
+  if (status !== 200) {
+    return new Error(`Page needs reloading (${status})`);
   }
   return response;
 }
@@ -31009,9 +31006,7 @@ function addEventHandling(contentDir) {
   changeProject.addEventListener(`click`, async () => {
     const name2 = prompt(`Project name?`).trim();
     if (name2) {
-      const result = await fetchSafe(`/switch/${name2}`, { method: `post` });
-      if (result instanceof Error) return;
-      location.reload();
+      location = `${location.toString().replace(location.search, ``)}?project=${name2}`;
     }
   });
   all.addEventListener(`click`, async () => {
