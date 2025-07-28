@@ -33,9 +33,6 @@ export async function runContainer(req, name = req.session.name, port) {
   // FIXME: TODO: check if `docker ps -a` has a dead container that we need to cleanup
 
   result = execSync(running(name)).toString().trim();
-
-  console.log(result);
-
   if (!result.match(new RegExp(`\\b${name}\\b`, `gm`))) {
     console.log(`- Starting container on port ${port}`);
     const container = run(name, port);
@@ -53,11 +50,11 @@ export async function runContainer(req, name = req.session.name, port) {
 
 export function checkContainerHealth(name) {
   const result = execSync(running(name)).toString().trim();
-  if (!result.includes`(`) {
-    return `not running`;
-  }
   if (result.includes(`Exited`)) {
     return `failed`;
+  }
+  if (!result.includes`0.0.0.0`) {
+    return `not running`;
   }
   if (result.includes(`starting`)) {
     return `wait`;

@@ -107,11 +107,6 @@ async function readContentDir(dir) {
 
 /**
  * Switch a user's current project.
- *
- * FIXME: if this is an unstarted new project, building the image
- *        takes rather long. Can we optimize that by running a
- *        two-step build where our we build the base image, then
- *        have a "real" image that's just "from X" directly.
  */
 async function switchProject(req, name = req.params.name) {
   const oldName = req.session.name;

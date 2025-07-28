@@ -32,9 +32,7 @@ app.use((req, res, next) => {
 });
 
 const SQLite3Store = betterSQLite3Store(session);
-const sessionsDB = new sqlite3("./data/sessions.db", {
-  // verbose: console.log,
-});
+const sessionsDB = new sqlite3("./data/sessions.sqlite3");
 
 app.use(
   session({
