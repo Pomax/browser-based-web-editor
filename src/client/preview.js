@@ -39,6 +39,7 @@ export async function updatePreview() {
   src = src.replace(/\?v=\d+/, ``);
   src += `?v=${Date.now()}`;
   newFrame.dataset.src = src;
+  newFrame.dataset.projectName = iframe.dataset.projectName;
 
   console.log(`using ${src}`);
   preview.append(newFrame);
