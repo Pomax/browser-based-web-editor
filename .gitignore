@@ -4,3 +4,6 @@ content/*
 node_modules
 .DS_Store
 Caddyfile
+.env
+*.sqlite3
+*.db

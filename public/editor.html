@@ -15,6 +15,8 @@
   <body>
     <main>
       <li id="buttons">
+        {% if passport.user %} {{ passport.user.displayName }} {% if
+        projectOwner %} {{ projectOwner }} {% endif %} {% endif %}
         <span class="projectname">{{ name }}</span>
         <button id="switch" title="Switch to a different project">
           switch
@@ -46,7 +48,12 @@
             new tab
           </button>
         </span>
-        <iframe sandbox data-src="https://{{name}}.app.localhost"></iframe>
+        <iframe
+          sandbox
+          src="https://editor.com.localhost/content/default/index.html"
+          data-src="https://{{name}}.app.localhost"
+          data-project-name="{{name}}"
+        ></iframe>
         {% else %}
         <iframe
           sandbox

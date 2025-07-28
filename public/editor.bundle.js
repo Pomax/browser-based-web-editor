@@ -481,12 +481,9 @@ async function fetchFileContents(contentDir, filename, type = `text/plain`) {
 }
 async function fetchSafe(url, options) {
   const response = await fetch(url, options);
-  if (response.status !== 200) {
-    if (response.headers.get(`x-reload-page`)) {
-      alert(`Your session expired, please reload.
-(error code: 29X784FH)`);
-      return new Error(`Page needs reloading`);
-    }
+  const { status } = response;
+  if (status !== 200) {
+    return new Error(`Page needs reloading (${status})`);
   }
   return response;
 }
@@ -584,15 +581,22 @@ function verifyRIFF(bytes) {
 var restart = document.querySelector(`#preview-buttons .restart`);
 var newtab = document.querySelector(`#preview-buttons .newtab`);
 var preview = document.getElementById(`preview`);
-var first_time_load = true;
-function updatePreview() {
-  if (first_time_load) {
-    console.log(`delaying first time load`);
-    first_time_load = false;
-    return setTimeout(() => updatePreview(), 500);
-  }
+var first_time_load = 0;
+async function updatePreview() {
   const iframe = preview.querySelector(`iframe`);
   const newFrame = document.createElement(`iframe`);
+  if (first_time_load++ < 10) {
+    console.log(`checking container for ready`);
+    const status = await fetch(
+      `https://editor.com.localhost/project/health/${iframe.dataset.projectName}?v=${Date.now()}`
+    ).then((r) => r.text());
+    console.log(`result: ${status}`);
+    if (status === `failed`) {
+      return console.error(`Project failed to start. That's bad`);
+    } else if (status === `not running` || status === `wait`) {
+      return setTimeout(updatePreview, 1e3);
+    }
+  }
   newFrame.onerror = () => {
     console.log(`what?`, e);
   };
@@ -602,9 +606,10 @@ function updatePreview() {
     setTimeout(() => iframe.remove(), 500);
   };
   newFrame.style.opacity = 0;
-  let src = iframe.src ? iframe.src : iframe.dataset.src;
+  let src = iframe.dataset.src;
   src = src.replace(/\?v=\d+/, ``);
   src += `?v=${Date.now()}`;
+  newFrame.dataset.src = src;
   console.log(`using ${src}`);
   preview.append(newFrame);
   setTimeout(() => newFrame.src = src, 100);
@@ -31009,9 +31014,7 @@ function addEventHandling(contentDir) {
   changeProject.addEventListener(`click`, async () => {
     const name2 = prompt(`Project name?`).trim();
     if (name2) {
-      const result = await fetchSafe(`/switch/${name2}`, { method: `post` });
-      if (result instanceof Error) return;
-      location.reload();
+      location = `${location.toString().replace(location.search, ``)}?project=${name2}`;
     }
   });
   all.addEventListener(`click`, async () => {
@@ -31071,7 +31074,7 @@ function addTabScrollHandling() {
 var BrowserEditorTest = class {
   constructor() {
     this.project = document.querySelector(`.projectname`)?.textContent;
-    this.contentDir = `content/${this.project ?? `anonymous`}`;
+    this.contentDir = `content/${this.project ?? `default`}`;
     this.init();
   }
   async init() {

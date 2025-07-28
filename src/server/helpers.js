@@ -7,7 +7,6 @@ export {
   readContentDir,
   setupGit,
   switchProject,
-  reloadPageInstruction,
 };
 
 import {
@@ -20,16 +19,16 @@ import {
 } from "fs";
 
 import { isWindows } from "./utils.js";
-import { runContainer } from "./docker.js";
+import { runContainer } from "../docker/docker.js";
 
 // Are we on Windows, or something unixy?
 import { sep, posix } from "path";
 import { exec, execSync } from "child_process";
 
 // Set up the vars we need for pointing to the right dirs
-const CONTENT_BASE = process.env.CONTENT_BASE ?? `content`;
+export const CONTENT_BASE = process.env.CONTENT_BASE ?? `content`;
 process.env.CONTENT_BASE = CONTENT_BASE;
-const CONTENT_DIR = isWindows ? CONTENT_BASE : `./${CONTENT_BASE}`;
+export const CONTENT_DIR = isWindows ? CONTENT_BASE : `./${CONTENT_BASE}`;
 process.env.CONTENT_DIR = CONTENT_DIR;
 
 // Set up the things we need for scheduling git commits when
@@ -72,14 +71,6 @@ function getFileSum(dir, filename, noFill = false) {
 }
 
 /**
- * Send a response that triggers a page-reload in the browser.
- */
-function reloadPageInstruction(req, res, status = 400) {
-  req.session.destroy();
-  res.status(status).header(`x-reload-page`, `1`).send();
-}
-
-/**
  * A little wrapper that turns exec() into an async rather than callback call.
  */
 function execPromise(command, options = {}) {
@@ -115,7 +106,7 @@ async function readContentDir(dir) {
 }
 
 /**
- * ...
+ * Switch a user's current project.
  */
 async function switchProject(req, name = req.params.name) {
   const oldName = req.session.name;
@@ -134,7 +125,7 @@ async function switchProject(req, name = req.params.name) {
     mkdirSync(dir);
     // New, temporary anonymous dir?
     if (name.startsWith(`anonymous-`)) {
-      const index = `${CONTENT_DIR}/anonymous/index.html`;
+      const index = `${CONTENT_DIR}/default/index.html`;
       const target = `${dir}/index.html`;
       console.log(`${index} => ${target}`);
       copyFileSync(index, target);

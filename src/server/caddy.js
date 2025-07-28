@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFile, writeFileSync } from "node:fs";
-import { spawn } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 
 const caddyFile = `./Caddyfile`;
 
@@ -13,7 +13,24 @@ export function startCaddy() {
       `editor.com.localhost {\n  reverse_proxy localhost:8000\n}\n`
     );
   }
+  stopCaddy();
   spawn(`caddy`, [`start`], { shell: true, stdio: `inherit` });
+}
+
+/**
+ * Stop caddy.
+ */
+export function stopCaddy() {
+  // TODO: this should honestly run until there's no caddy process left
+  // in the process list, but that needs to happen in a cross-platform,
+  // dependeny-cless way.
+  try {
+    execSync(`caddy stop`, { shell: true, stdio: `inherit` });
+    execSync(`caddy stop`, { shell: true, stdio: `inherit` });
+    execSync(`caddy stop`, { shell: true, stdio: `inherit` });
+    execSync(`caddy stop`, { shell: true, stdio: `inherit` });
+    execSync(`caddy stop`, { shell: true, stdio: `inherit` });
+  } catch (e) {}
 }
 
 /**
@@ -36,8 +53,15 @@ export function updateCaddyFile(name, port) {
     }
   } else {
     // Create a new binding
-    const entry = `\n${host} {\n  reverse_proxy localhost:${port}\n}\n`;
+    const entry = `\n${host} {\n\treverse_proxy localhost:${port}\n}\n`;
     writeFileSync(caddyFile, data + entry);
   }
+  spawn(`caddy`, [`reload`], { shell: true, stdio: `inherit` });
+}
+
+export function removeCaddyEntry(name) {
+  const re = new RegExp(`${name}\\.app\\.localhost \\{[^}]+\\}\n\n?`, `gm`);
+  const data = readFileSync(caddyFile).toString().replace(re, ``);
+  writeFileSync(caddyFile, data);
   spawn(`caddy`, [`reload`], { shell: true, stdio: `inherit` });
 }

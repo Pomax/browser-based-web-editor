@@ -27,11 +27,9 @@ export async function fetchFileContents(
  */
 export async function fetchSafe(url, options) {
   const response = await fetch(url, options);
-  if (response.status !== 200) {
-    if (response.headers.get(`x-reload-page`)) {
-      alert(`Your session expired, please reload.\n(error code: 29X784FH)`);
-      return new Error(`Page needs reloading`);
-    }
+  const { status } = response;
+  if (status !== 200) {
+    return new Error(`Page needs reloading (${status})`);
   }
   return response;
 }
