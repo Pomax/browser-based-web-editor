@@ -1,3 +1,5 @@
+-- make sure foreign constraints are enforced:
+
 PRAGMA foreign_keys = ON;
 
 -- users
@@ -10,8 +12,6 @@ CREATE TABLE users (
 );
 
 CREATE UNIQUE INDEX user_names ON users(name);
-
-INSERT INTO users (name, enabled_at) values ('Pomax', CURRENT_TIMESTAMP);
 
 -- user suspension
 
@@ -31,13 +31,12 @@ CREATE TABLE projects (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
   description TEXT,
-  run_script TEXT,
+  bootstrap TEXT,
+  run TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE UNIQUE INDEX project_names ON projects(name);
-
-INSERT INTO projects (name, description) VALUES ('lame', 'superellipse testing sketch');
 
 -- project suspension
 
@@ -58,9 +57,6 @@ CREATE TABLE project_access_levels (
   access_level INTEGER NOT NULL
 );
 
-INSERT INTO project_access_levels (name, access_level) VALUES ('owner', 30);
-INSERT INTO project_access_levels (name, access_level) VALUES ('member', 20);
-
 CREATE TABLE project_access (
   project_id INTEGER REFERENCES projects(id) ON DELETE NO ACTION,
   user_id INTEGER REFERENCES users(id) ON DELETE NO ACTION,
@@ -69,8 +65,6 @@ CREATE TABLE project_access (
 );
 
 CREATE INDEX access_users ON project_access(user_id);
-
-INSERT INTO project_access (project_id, user_id) VALUES (1, 1);
 
 -- project environment variables
 
@@ -81,3 +75,14 @@ CREATE TABLE project_env_vars (
 );
 
 CREATE INDEX env_vars ON project_env_vars(project_id);
+
+-- default data
+
+INSERT INTO project_access_levels (name, access_level) VALUES ('owner', 30);
+INSERT INTO project_access_levels (name, access_level) VALUES ('member', 20);
+
+-- initial seed data
+
+INSERT INTO users (name, enabled_at) values ('Pomax', CURRENT_TIMESTAMP);
+INSERT INTO projects (name, description) VALUES ('lame', 'superellipse testing sketch');
+INSERT INTO project_access (project_id, user_id) VALUES (1, 1);

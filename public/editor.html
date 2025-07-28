@@ -48,7 +48,12 @@
             new tab
           </button>
         </span>
-        <iframe sandbox data-src="https://{{name}}.app.localhost"></iframe>
+        <iframe
+          sandbox
+          src="https://editor.com.localhost/content/default/index.html"
+          data-src="https://{{name}}.app.localhost"
+          data-project-name="{{name}}"
+        ></iframe>
         {% else %}
         <iframe
           sandbox

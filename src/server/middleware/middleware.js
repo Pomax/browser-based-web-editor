@@ -63,7 +63,7 @@ function verifyOwnership(req, res, next) {
   const name = req.session.name;
   const url = req.url;
 
-  if (name.startsWith(`anonymous-`) && url.startsWith(`/anonymous/`)) {
+  if (name.startsWith(`anonymous-`) && url.startsWith(`/default/`)) {
     req.url = url.replace(/\?v=\d+/, ``);
     return next();
   }

@@ -26,7 +26,7 @@ While project _content_ lives in the content directory, you don't want it to _ru
 
 ### How do I install Docker?
 
-On MacOS, install `docker` and `colima` using your favourite package manager, I use `brew` but people have opinions about this so use whatever works for you. Just remember that you'll need to run `colima start` any time you reboot your mac, because otherwise anything docker-related will crash out with super fun error messages.
+On MacOS, install `docker` and `colima` using your favourite package manager (I use `brew` but people have opinions about this so use whatever works for you). Just remember that you'll need to run `colima start` any time you start up your mac, because otherwise anything docker-related will crash out with super fun error messages.
 
 On Linux, you already know how to install Docker. And if you don't, you know how to look it up. And you know it's either going to be two commands, or half a day of work, depending on your chosen flavour of Linux.
 

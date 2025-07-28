@@ -2,22 +2,27 @@ const restart = document.querySelector(`#preview-buttons .restart`);
 const newtab = document.querySelector(`#preview-buttons .newtab`);
 const preview = document.getElementById(`preview`);
 
-let first_time_load = true;
+let first_time_load = 0;
 
 /**
  * update the <graphics-element> based on the current file content.
  */
-export function updatePreview() {
-  // Not a fan of this little "oh, hold on!" check, but
-  // "it works" and gets around a docker timing issue for now.
-  if (first_time_load) {
-    console.log(`delaying first time load`);
-    first_time_load = false;
-    return setTimeout(() => updatePreview(), 500);
-  }
-
+export async function updatePreview() {
   const iframe = preview.querySelector(`iframe`);
   const newFrame = document.createElement(`iframe`);
+
+  if (first_time_load++ < 10) {
+    console.log(`checking container for ready`);
+    const status = await fetch(
+      `https://editor.com.localhost/project/health/${iframe.dataset.projectName}?v=${Date.now()}`
+    ).then((r) => r.text());
+    console.log(`result: ${status}`);
+    if (status === `failed`) {
+      return console.error(`Project failed to start. That's bad`);
+    } else if (status === `not running` || status === `wait`) {
+      return setTimeout(updatePreview, 1000);
+    }
+  }
 
   newFrame.onerror = () => {
     console.log(`what?`, e);
@@ -30,9 +35,10 @@ export function updatePreview() {
   };
 
   newFrame.style.opacity = 0;
-  let src = iframe.src ? iframe.src : iframe.dataset.src;
+  let src = iframe.dataset.src;
   src = src.replace(/\?v=\d+/, ``);
   src += `?v=${Date.now()}`;
+  newFrame.dataset.src = src;
 
   console.log(`using ${src}`);
   preview.append(newFrame);

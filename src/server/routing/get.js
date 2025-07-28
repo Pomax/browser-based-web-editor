@@ -5,8 +5,8 @@ import {
   loadProject,
   loadProjectList,
 } from "../middleware/middleware.js";
-import { authenticate } from "../middleware/passport.js";
-import { getFileSum, execPromise, readContentDir } from "../helpers.js";
+import { checkContainerHealth } from "../../docker/docker.js";
+import { execPromise, readContentDir } from "../helpers.js";
 import { posix } from "path";
 import { __dirname } from "../../constants.js";
 
@@ -40,6 +40,10 @@ function addGetRoutes(app) {
       res.render(`editor.html`, req.session);
     }
   );
+
+  app.get(`/project/health/:name`, (req, res) => {
+    res.send(checkContainerHealth(req.params.name));
+  });
 
   // Get the git log, to show all rewind points.
   app.get(`/history`, async (req, res) => {

@@ -10,7 +10,7 @@
 
   with caddy:
     ...somehow make sure the root CA is installed?
-    set up a Caddyfile with the editor.com.localhost binding
+    set up a Caddyfile with the editor.com.localhost binding and open a browser for it so folks can acceps the root CA
 
 */
 

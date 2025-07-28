@@ -51,6 +51,22 @@ export async function runContainer(req, name = req.session.name, port) {
   updateCaddyFile(name, port);
 }
 
+export function checkContainerHealth(name) {
+  const result = execSync(running(name)).toString().trim();
+  if (!result.includes`(`) {
+    return `not running`;
+  }
+  if (result.includes(`Exited`)) {
+    return `failed`;
+  }
+  if (result.includes(`starting`)) {
+    return `wait`;
+  }
+  if (result.includes(`(healthy)`)) {
+    return `ready`;
+  }
+}
+
 export function restartContainer(name) {
   console.log(`restarting container for ${name}...`);
   execSync(restart(name));
@@ -69,5 +85,9 @@ export function deleteContainerAndImage(name) {
   } catch (e) {
     // same deal - just in case.
   }
-  execSync(`docker image rm ${name}`);
+  try {
+    execSync(`docker image rm ${name}`);
+  } catch (e) {
+    // and, one more time.
+  }
 }

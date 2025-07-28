@@ -107,7 +107,7 @@ async function readContentDir(dir) {
 
 /**
  * Switch a user's current project.
- * 
+ *
  * FIXME: if this is an unstarted new project, building the image
  *        takes rather long. Can we optimize that by running a
  *        two-step build where our we build the base image, then
@@ -130,7 +130,7 @@ async function switchProject(req, name = req.params.name) {
     mkdirSync(dir);
     // New, temporary anonymous dir?
     if (name.startsWith(`anonymous-`)) {
-      const index = `${CONTENT_DIR}/anonymous/index.html`;
+      const index = `${CONTENT_DIR}/default/index.html`;
       const target = `${dir}/index.html`;
       console.log(`${index} => ${target}`);
       copyFileSync(index, target);

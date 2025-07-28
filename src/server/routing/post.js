@@ -12,9 +12,7 @@ import {
   deleteContainerAndImage,
 } from "../../docker/docker.js";
 
-import { 
-  removeCaddyEntry
-} from "../../server/caddy.js";
+import { removeCaddyEntry } from "../../server/caddy.js";
 
 import {
   parseBodyText,
@@ -172,7 +170,6 @@ function addPostRoutes(app) {
     const full = `${req.session.dir}/${req.params.slug + req.params[0]}`;
     const slug = full.substring(full.lastIndexOf(`/`) + 1);
     const dirs = full.replace(`/${slug}`, ``);
-    const fileName = req.body.filename.value;
     const fileData = req.body.content.value;
     const fileSize = fileData.length;
     if (fileSize > 1_000_000) {
@@ -230,7 +227,7 @@ function addPostRoutes(app) {
 
       res.redirect(`/`);
     } catch (e) {
-      res.send(`Cannot delete this project.`);
+      res.send(`No permission to delete this project`);
     }
   });
 }

@@ -12,6 +12,14 @@
       body {
         overflow: auto !important;
         padding: 1em;
+
+        ul {
+          list-style: none;
+          display: flex;
+          flex-direction: row;
+          flex-wrap: wrap;
+          gap: 0.5em;
+        }
       }
     </style>
     <script src="main.js" async defer></script>
@@ -24,9 +32,7 @@
     {% endif %} {% if projectList %}
 
     <h2>Your projects:</h2>
-    <ul
-      style="list-style: none; display: flex; flex-direction: row; gap: 0.5em"
-    >
+    <ul>
       {% for project in projectList %}
       <li>
         <a
