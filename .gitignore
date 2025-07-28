@@ -6,3 +6,4 @@ node_modules
 Caddyfile
 .env
 *.sqlite3
+*.db
