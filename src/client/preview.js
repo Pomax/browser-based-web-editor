@@ -1,6 +1,9 @@
+import { API } from "./api.js";
+
 const restart = document.querySelector(`#preview-buttons .restart`);
 const newtab = document.querySelector(`#preview-buttons .newtab`);
 const preview = document.getElementById(`preview`);
+const projectName = document.querySelector(`.projectname`)?.textContent;
 
 let first_time_load = 0;
 
@@ -13,9 +16,7 @@ export async function updatePreview() {
 
   if (first_time_load++ < 10) {
     console.log(`checking container for ready`);
-    const status = await fetch(
-      `https://editor.com.localhost/project/health/${iframe.dataset.projectName}?v=${Date.now()}`
-    ).then((r) => r.text());
+    const status = await API.projects.health(projectName);
     console.log(`result: ${status}`);
     if (status === `failed`) {
       return console.error(`Project failed to start. That's bad`);
@@ -48,7 +49,7 @@ export async function updatePreview() {
 
 restart?.addEventListener(`click`, async () => {
   preview.classList.add(`restarting`);
-  await fetch(`/restart`, { method: `POST` });
+  await API.projects.restart(projectName);
   setTimeout(() => {
     preview.classList.remove(`restarting`);
     updatePreview();

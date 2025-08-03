@@ -1,17 +1,11 @@
-export {
-  addMiddleware,
-  deleteExpiredAnonymousContent,
-  pageNotFound,
-  verifyOwnership,
-};
+export { addMiddleware, pageNotFound, verifyOwnership };
 
-import { getProjectListForUser } from "../../../data/database.js";
+import { getProjectListForUser } from "../database.js";
 
 import session from "express-session";
 import helmet from "helmet";
 import nocache from "nocache";
-import { readdirSync, rmSync } from "fs";
-import { switchProject } from "../helpers.js";
+import { loadProject } from "../helpers.js";
 import { __dirname } from "../../constants.js";
 
 /**
@@ -26,33 +20,6 @@ function pageNotFound(req, res) {
 }
 
 /**
- * The size of an interval measured in days, represented in milliseconds,
- * but with a minimum of 10 seconds when days is set to zero.
- */
-function daysInMS(d = 1) {
-  if (d < 0) d = 0;
-  if (d === 0) return 10_000;
-  return d * 24 * 3600 * 1000;
-}
-
-/**
- * Clean up all temporary anonymous dirs that got too old.
- */
-function deleteExpiredAnonymousContent(_req, _res, next) {
-  next();
-  const dir = `${__dirname}/${process.env.CONTENT_BASE}`;
-  readdirSync(dir)
-    .filter((v) => v.startsWith(`anonymous-`))
-    .forEach((name) => {
-      const timestamp = parseFloat(name.replace(`anonymous-`, ``));
-      const now = Date.now();
-      if (timestamp < now - daysInMS(0)) {
-        rmSync(`${dir}/${name}`, { recursive: true, force: true });
-      }
-    });
-}
-
-/**
  * A simple bit of middleware that confirms that someone
  * trying to explicitly load a file from a content URL is
  * in fact the owner of that file by checking the session.
@@ -60,10 +27,8 @@ function deleteExpiredAnonymousContent(_req, _res, next) {
  * to reload so that a new session can be negotiated.
  */
 function verifyOwnership(req, res, next) {
-  const name = req.session.name;
   const url = req.url;
-
-  if (name.startsWith(`anonymous-`) && url.startsWith(`/default/`)) {
+  if (url.startsWith(`/default/`)) {
     req.url = url.replace(/\?v=\d+/, ``);
     return next();
   }
@@ -87,15 +52,6 @@ function addMiddleware(app) {
       },
     })
   );
-
-  app.use(async (req, res, next) => {
-    if (!req.session.dir) {
-      const name = `anonymous-${Date.now()}`;
-      console.log(`switching to project dir ${name}`);
-      switchProject(req, name);
-    }
-    next();
-  });
 
   // I hate CSP so much...
   app.use(
@@ -129,10 +85,10 @@ export function loadProjectList(req, res, next) {
   next();
 }
 
-export async function loadProject(req, res, next) {
+export async function loadProjectData(req, res, next) {
   const name = req.query.project;
   if (name) {
-    await switchProject(req, name);
+    await loadProject(req, name);
     const found = req.session.projectList?.find((p) => p.name === name);
     req.session.projectOwner = !!found;
     req.session.save();

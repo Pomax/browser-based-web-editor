@@ -469,23 +469,59 @@ var R = class extends f {
 };
 u.define("file-tree", R);
 
+// src/client/api.js
+var HOST = `https://editor.com.localhost`;
+var VERSION = `v1`;
+var PREFIX = `${HOST}/${VERSION}`;
+var fetch2 = (...args) => globalThis.fetch(`${PREFIX}/${args.shift()}`, ...args);
+var API = {
+  // Project related calls, such as getting project health,
+  // restarting the container, updating settings, etc.
+  projects: {
+    health: async (projectName2) => fetch2(`projects/health/${projectName2}?v=${Date.now()}`).then(
+      (r) => r.text()
+    ),
+    restart: async (projectName2) => fetch2(`projects/restart/${projectName2}`, {
+      method: `POST`
+    })
+  },
+  // File related calls, which are mostly "CRUD"
+  // (create/read/update/delete) operations.
+  files: {
+    dir: async (projectName2) => fetch2(`files/dir/${projectName2}`).then((r) => r.json()),
+    create: async (projectName2, fileName2) => fetch2(`files/create/${projectName2}/${fileName2}`, { method: `post` }),
+    upload: async (projectName2, fileName2, form) => fetch2(`files/upload/${projectName2}/${fileName2}`, {
+      method: `post`,
+      body: form
+    }),
+    get: async (projectName2, fileName2) => fetch2(`files/${projectName2}/${fileName2}`),
+    rename: async (projectName2, oldPath, newPath) => fetch2(`files/rename/${projectName2}/${oldPath}:${newPath}`, {
+      method: `post`
+    }),
+    format: async (projectName2, fileName2) => fetch2(`files/format/${projectName2}/${fileName2}`, {
+      method: `post`
+    }),
+    sync: async (projectName2, fileName2, changes) => fetch2(`files/sync/${projectName2}/${fileName2}`, {
+      headers: { "Content-Type": `text/plain` },
+      method: `post`,
+      body: changes
+    }),
+    delete: async (projectName2, fileName2) => fetch2(`files/delete/${projectName2}/${fileName2}`, {
+      method: `delete`
+    })
+    // NOTE: there is no separate delete-dir, the delete route should just "do what needs to be done".
+  }
+};
+
 // src/client/utils.js
 function create(tag) {
   return document.createElement(tag);
 }
-async function fetchFileContents(contentDir, filename, type = `text/plain`) {
-  const response = await fetchSafe(`./${contentDir}/${filename}`);
+async function fetchFileContents(projectName2, fileName2, type = `text/plain`) {
+  const response = await API.files.get(projectName2, fileName2);
   if (type.startsWith(`text`) || type.startsWith(`application`))
     return response.text();
   return response.arrayBuffer();
-}
-async function fetchSafe(url, options) {
-  const response = await fetch(url, options);
-  const { status } = response;
-  if (status !== 200) {
-    return new Error(`Page needs reloading (${status})`);
-  }
-  return response;
 }
 function getFileSum(data3) {
   const enc = new TextEncoder();
@@ -581,15 +617,14 @@ function verifyRIFF(bytes) {
 var restart = document.querySelector(`#preview-buttons .restart`);
 var newtab = document.querySelector(`#preview-buttons .newtab`);
 var preview = document.getElementById(`preview`);
+var projectName = document.querySelector(`.projectname`)?.textContent;
 var first_time_load = 0;
 async function updatePreview() {
   const iframe = preview.querySelector(`iframe`);
   const newFrame = document.createElement(`iframe`);
   if (first_time_load++ < 10) {
     console.log(`checking container for ready`);
-    const status = await fetch(
-      `https://editor.com.localhost/project/health/${iframe.dataset.projectName}?v=${Date.now()}`
-    ).then((r) => r.text());
+    const status = await API.projects.health(projectName);
     console.log(`result: ${status}`);
     if (status === `failed`) {
       return console.error(`Project failed to start. That's bad`);
@@ -617,7 +652,7 @@ async function updatePreview() {
 }
 restart?.addEventListener(`click`, async () => {
   preview.classList.add(`restarting`);
-  await fetch(`/restart`, { method: `POST` });
+  await API.projects.restart(projectName);
   setTimeout(() => {
     preview.classList.remove(`restarting`);
     updatePreview();
@@ -29794,16 +29829,12 @@ function createPatch(fileName2, oldStr, newStr, oldHeader, newHeader, options) {
 }
 
 // src/client/sync.js
-async function syncContent(entry, contentDir, filename = entry.filename) {
+async function syncContent(projectName2, entry, filename = entry.filename) {
   if (entry.noSync) return;
   const currentContent = entry.content;
   const newContent = entry.view.state.doc.toString();
   const changes = createPatch(filename, currentContent, newContent);
-  const response = await fetchSafe(`/sync/${filename}`, {
-    headers: { "Content-Type": `text/plain` },
-    method: `post`,
-    body: changes
-  });
+  const response = await API.files.sync(projectName2, filename, changes);
   const responseHash = parseFloat(await response.text());
   if (responseHash === getFileSum(newContent)) {
     entry.content = newContent;
@@ -29813,7 +29844,7 @@ async function syncContent(entry, contentDir, filename = entry.filename) {
     console.error(`POST:`, newContent);
     console.error(`HASH:`, getFileSum(newContent), responseHash);
     console.log(`forced sync: fetching file content from server`);
-    entry.content = await fetchFileContents(contentDir, entry.filename);
+    entry.content = await fetchFileContents(projectName2, entry.filename);
     entry.view.dispatch({
       changes: {
         from: 0,
@@ -29875,7 +29906,7 @@ function addEditorEventHandling(fileEntry, panel, tab, close, view) {
     newTab?.click();
   });
 }
-async function getOrCreateFileEditTab(fileEntry, contentDir, filename) {
+async function getOrCreateFileEditTab(fileEntry, projectName2, filename) {
   const entry = fileEntry.state;
   if (entry?.view) {
     const { closed, tab: tab2, panel: panel2 } = entry;
@@ -29890,7 +29921,7 @@ async function getOrCreateFileEditTab(fileEntry, contentDir, filename) {
   const { tab, close } = setupEditorTab(filename);
   tabs2.appendChild(tab);
   const viewType = getViewType(filename);
-  const data3 = await fetchFileContents(contentDir, filename, viewType.type);
+  const data3 = await fetchFileContents(projectName2, filename, viewType.type);
   const verified = verifyViewType(viewType.type, data3);
   if (!verified) return alert(`File contents does not match extension.`);
   let view;
@@ -29906,7 +29937,7 @@ async function getOrCreateFileEditTab(fileEntry, contentDir, filename) {
     } else if (type.startsWith(`video`)) {
       view = create(`video`);
     }
-    view.src = `${contentDir}/${filename}`;
+    view.src = `/v1/files/${projectName2}/${filename}`;
     panel.appendChild(view);
   }
   view.tabElement = tab;
@@ -29920,8 +29951,7 @@ async function getOrCreateFileEditTab(fileEntry, contentDir, filename) {
     content: viewType.editable ? view.state.doc.toString() : data3,
     sync: () => {
       if (viewType.editable) {
-        const entry2 = fileEntry.state;
-        syncContent(entry2, contentDir);
+        syncContent(projectName2, fileEntry.state);
       }
     },
     noSync: !viewType.editable
@@ -30792,14 +30822,13 @@ async function unzip(source) {
 
 // src/client/cm6/file-tree-utils.js
 var fileTree2 = document.getElementById(`filetree`);
-async function setupFileTree(test) {
-  const dirData = await fetchSafe(`/dir`).then((r) => r.json());
+async function setupFileTree({ projectName: projectName2 }) {
+  const dirData = await API.files.dir(projectName2);
   if (dirData instanceof Error) return;
   fileTree2.setContent(dirData);
-  addFileTreeHandling(test);
+  addFileTreeHandling(projectName2);
 }
-function addFileTreeHandling(test) {
-  const { contentDir } = test;
+function addFileTreeHandling(projectName2) {
   function updateEditorBindings(fileTreeEntry, entry, key, oldKey) {
     if (oldKey) {
       fileTreeEntry.state = {};
@@ -30819,7 +30848,7 @@ function addFileTreeHandling(test) {
     const fileEntry = evt.detail.grant();
     getOrCreateFileEditTab(
       fileEntry,
-      contentDir,
+      projectName2,
       fileEntry.getAttribute(`path`)
     );
   });
@@ -30848,15 +30877,11 @@ function addFileTreeHandling(test) {
       }
       updatePreview();
     } else {
-      const response = await fetchSafe(`/new/${path}`, { method: `post` });
+      const response = await API.files.create(projectName2, path);
       if (response instanceof Error) return;
       if (response.status === 200) {
         const fileEntry = grant();
-        getOrCreateFileEditTab(
-          fileEntry,
-          contentDir,
-          fileEntry.getAttribute(`path`)
-        );
+        getOrCreateFileEditTab(fileEntry, projectName2, path);
       } else {
         console.error(
           `Could not create ${fileName} (status:${response.status})`
@@ -30866,9 +30891,7 @@ function addFileTreeHandling(test) {
   });
   fileTree2.addEventListener(`file:rename`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
-    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
-      method: `post`
-    });
+    const response = await API.files.rename(projectName2, oldPath, newPath);
     if (response instanceof Error) return;
     if (response.status === 200) {
       const fileEntry = grant();
@@ -30896,10 +30919,7 @@ function addFileTreeHandling(test) {
       `content`,
       typeof content2 === "string" ? content2 : new Blob([content2], { type: getMimeType(fileName2) })
     );
-    const response = await fetchSafe(`/upload/${fileName2}`, {
-      method: `post`,
-      body: form
-    });
+    const response = await API.files.upload(projectName2, fileName2, form);
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant?.();
@@ -30909,9 +30929,7 @@ function addFileTreeHandling(test) {
   }
   fileTree2.addEventListener(`file:move`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
-    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
-      method: `post`
-    });
+    const response = await API.rename(projectName2, oldPath, newPath);
     if (response instanceof Error) return;
     if (response.status === 200) {
       const fileEntry = grant();
@@ -30932,9 +30950,7 @@ function addFileTreeHandling(test) {
     const { path, grant } = evt.detail;
     if (path) {
       try {
-        const response = await fetchSafe(`/delete/${path}`, {
-          method: `delete`
-        });
+        const response = await API.files.delete(projectName2, path);
         if (response instanceof Error) return;
         if (response.status === 200) {
           const [fileEntry] = grant();
@@ -30952,7 +30968,7 @@ function addFileTreeHandling(test) {
   });
   fileTree2.addEventListener(`dir:create`, async (evt) => {
     const { path, grant } = evt.detail;
-    const response = await fetchSafe(`/new/${path}`, { method: `post` });
+    const response = await API.files.create(projectName2, path);
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
@@ -30962,9 +30978,7 @@ function addFileTreeHandling(test) {
   });
   fileTree2.addEventListener(`dir:rename`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
-    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
-      method: `post`
-    });
+    const response = await API.files.rename(projectName2, oldPath, newPath);
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
@@ -30977,9 +30991,7 @@ function addFileTreeHandling(test) {
   });
   fileTree2.addEventListener(`dir:move`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
-    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
-      method: `post`
-    });
+    const response = await API.files.rename(projectName2, oldPath, newPath);
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
@@ -30992,9 +31004,7 @@ function addFileTreeHandling(test) {
   });
   fileTree2.addEventListener(`dir:delete`, async (evt) => {
     const { path, grant } = evt.detail;
-    const response = await fetchSafe(`/delete-dir/${path}`, {
-      method: `delete`
-    });
+    const response = await API.files.delete(projectName2, path);
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
@@ -31011,7 +31021,7 @@ var all = document.getElementById(`all`);
 var format = document.getElementById(`format`);
 var left = document.getElementById(`left`);
 var right = document.getElementById(`right`);
-function addEventHandling(contentDir) {
+function addEventHandling(projectName2) {
   changeProject.addEventListener(`click`, async () => {
     const name2 = prompt(`Project name?`).trim();
     if (name2) {
@@ -31028,13 +31038,13 @@ function addEventHandling(contentDir) {
     if (fileEntry.state?.tab !== tab) {
       throw new Error(`active tab has no associated selected file? O_o`);
     }
-    const filename = fileEntry.path;
+    const fileName2 = fileEntry.path;
     format.hidden = true;
-    const result = await fetchSafe(`/format/${filename}`, { method: `post` });
+    const result = await API.files.format(projectName2, fileName2);
     if (result instanceof Error) return;
     format.hidden = false;
     const { view } = fileEntry.state;
-    const content2 = await fetchFileContents(contentDir, filename);
+    const content2 = await fetchFileContents(projectName2, fileName2);
     fileEntry.setState({ content: content2 });
     view.dispatch({
       changes: {
@@ -31074,8 +31084,7 @@ function addTabScrollHandling() {
 // src/client/classes/browser-editor-test.js
 var BrowserEditorTest = class {
   constructor() {
-    this.project = document.querySelector(`.projectname`)?.textContent;
-    this.contentDir = `content/${this.project ?? `default`}`;
+    this.projectName = document.querySelector(`.projectname`)?.textContent;
     this.init();
   }
   async init() {
@@ -31090,8 +31099,7 @@ var CodeMirror6Test = class extends BrowserEditorTest {
   }
   async init() {
     await setupFileTree(this);
-    const { contentDir } = this;
-    addEventHandling(contentDir);
+    addEventHandling(this.projectName);
     super.init();
   }
 };

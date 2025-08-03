@@ -1,0 +1,1 @@
+This dir houses the default content that is used before a project has started up.

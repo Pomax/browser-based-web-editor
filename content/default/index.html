@@ -1,0 +1,82 @@
+<style>
+  main {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 2em;
+    opacity: 0;
+    transition: opacity;
+    animation: fade-in 2s ease-in-out forwards;
+  }
+
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  h1 span {
+    &:nth-child(1) {
+      animation: dot-1 2s linear infinite;
+    }
+    &:nth-child(2) {
+      animation: dot-2 2s linear infinite;
+    }
+    &:nth-child(3) {
+      animation: dot-3 2s linear infinite;
+    }
+  }
+  @keyframes dot-1 {
+    0% {
+      opacity: 0;
+    }
+    25% {
+      opacity: 0;
+    }
+    35% {
+      opacity: 1;
+    }
+  }
+  @keyframes dot-2 {
+    0% {
+      opacity: 0;
+    }
+    50% {
+      opacity: 0;
+    }
+    60% {
+      opacity: 1;
+    }
+  }
+  @keyframes dot-3 {
+    0% {
+      opacity: 0;
+    }
+    75% {
+      opacity: 0;
+    }
+    85% {
+      opacity: 1;
+    }
+  }
+</style>
+
+<main>
+  <h1>Loading<span>.</span><span>.</span><span>.</span> hang tight!</h1>
+
+  <p>
+    This project wasn't already running, so it can take a few seconds for it to
+    fully start up (because it's starting up an entire operating system!)
+  </p>
+
+  <p>
+    If after about 10 seconds the project still hasn't loaded, something's
+    probably gone wrong and there might be a problem with the project's
+    bootstrap or startup scripts.
+  </p>
+</main>

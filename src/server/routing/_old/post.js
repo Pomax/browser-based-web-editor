@@ -12,7 +12,7 @@ import {
   deleteContainerAndImage,
 } from "../../docker/docker.js";
 
-import { removeCaddyEntry } from "../../server/caddy.js";
+import { removeCaddyEntry } from "../../caddy/caddy.js";
 
 import {
   parseBodyText,

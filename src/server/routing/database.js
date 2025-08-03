@@ -1,5 +1,15 @@
 import sqlite3 from "better-sqlite3";
-const db = sqlite3(`${import.meta.dirname}/data.sqlite3`);
+
+// not quite a fan of this, so this solution may change in the future:
+
+export const OWNER = 30; // full access, can delete projects
+export const EDITOR = 20; // edit access, cannot delete projects, can edit project settings
+export const MEMBER = 10; // edit access, cannot edit project settings
+
+
+// We're in ./src/server/routing, and we want ./data
+const dbPath = `${import.meta.dirname}/../../../data/data.sqlite3`;
+const db = sqlite3(dbPath);
 
 // we need those foreign keys...
 db.pragma("foreign_keys = ON");
@@ -82,9 +92,16 @@ export function getProjectListForUser(userName) {
 }
 
 export function createProjectForUser(userName, projectName) {
-  const p = Project.create({ name: projectName });
   const u = User.find({ name: userName });
-  const a = Access.create({ project_id: p.id, user_id: u.id });
+  const p = Project.create({ name: projectName });
+  Access.create({ project_id: p.id, user_id: u.id });
+}
+
+export function getAccessFor(userName, projectName) {
+  const u = User.find({ name: userName });
+  const p = Project.find({ name: projectName });
+  const a = Access.find({ project_id: p.id, user_id: u.id });
+  return a ? a.access_level : -1;
 }
 
 export function deleteProjectForUser(userName, projectId) {

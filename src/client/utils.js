@@ -1,3 +1,5 @@
+import { API } from "./api.js";
+
 export const noop = () => {};
 
 /**
@@ -11,27 +13,14 @@ export function create(tag) {
  * helper function for getting file text content:
  */
 export async function fetchFileContents(
-  contentDir,
-  filename,
+  projectName,
+  fileName,
   type = `text/plain`
 ) {
-  const response = await fetchSafe(`./${contentDir}/${filename}`);
+  const response = await API.files.get(projectName, fileName);
   if (type.startsWith(`text`) || type.startsWith(`application`))
     return response.text();
   return response.arrayBuffer();
-}
-
-/**
- * helper function for making sure we automatically reload in case the fetch
- * comes back with a catastrophic "I restarted and you need to reload the page"
- */
-export async function fetchSafe(url, options) {
-  const response = await fetch(url, options);
-  const { status } = response;
-  if (status !== 200) {
-    return new Error(`Page needs reloading (${status})`);
-  }
-  return response;
 }
 
 /**

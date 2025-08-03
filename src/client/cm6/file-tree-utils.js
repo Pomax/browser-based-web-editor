@@ -1,4 +1,4 @@
-import { fetchSafe } from "../utils.js";
+import { API } from "../api.js";
 import { getMimeType } from "../content-types.js";
 import { updatePreview } from "../preview.js";
 import { getOrCreateFileEditTab } from "./editor-components.js";
@@ -10,19 +10,17 @@ const fileTree = document.getElementById(`filetree`);
 /**
  * Make sure we're in sync with the server...
  */
-export async function setupFileTree(test) {
-  const dirData = await fetchSafe(`/dir`).then((r) => r.json());
+export async function setupFileTree({ projectName }) {
+  const dirData = await API.files.dir(projectName);
   if (dirData instanceof Error) return;
   fileTree.setContent(dirData);
-  addFileTreeHandling(test);
+  addFileTreeHandling(projectName);
 }
 
 /**
  * Deal with all the events that might be coming from the file tree
  */
-function addFileTreeHandling(test) {
-  const { contentDir } = test;
-
+function addFileTreeHandling(projectName) {
   function updateEditorBindings(fileTreeEntry, entry, key, oldKey) {
     if (oldKey) {
       fileTreeEntry.state = {};
@@ -45,7 +43,7 @@ function addFileTreeHandling(test) {
     const fileEntry = evt.detail.grant();
     getOrCreateFileEditTab(
       fileEntry,
-      contentDir,
+      projectName,
       fileEntry.getAttribute(`path`)
     );
     // we handle selection in the file tree as part of editor reveals,
@@ -84,15 +82,11 @@ function addFileTreeHandling(test) {
 
     // regular file creation
     else {
-      const response = await fetchSafe(`/new/${path}`, { method: `post` });
+      const response = await API.files.create(projectName, path);
       if (response instanceof Error) return;
       if (response.status === 200) {
         const fileEntry = grant();
-        getOrCreateFileEditTab(
-          fileEntry,
-          contentDir,
-          fileEntry.getAttribute(`path`)
-        );
+        getOrCreateFileEditTab(fileEntry, projectName, path);
       } else {
         console.error(
           `Could not create ${fileName} (status:${response.status})`
@@ -103,9 +97,7 @@ function addFileTreeHandling(test) {
 
   fileTree.addEventListener(`file:rename`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
-    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
-      method: `post`,
-    });
+    const response = await API.files.rename(projectName, oldPath, newPath);
     if (response instanceof Error) return;
     if (response.status === 200) {
       const fileEntry = grant();
@@ -136,10 +128,7 @@ function addFileTreeHandling(test) {
         ? content
         : new Blob([content], { type: getMimeType(fileName) })
     );
-    const response = await fetchSafe(`/upload/${fileName}`, {
-      method: `post`,
-      body: form,
-    });
+    const response = await API.files.upload(projectName, fileName, form);
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant?.();
@@ -150,9 +139,7 @@ function addFileTreeHandling(test) {
 
   fileTree.addEventListener(`file:move`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
-    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
-      method: `post`,
-    });
+    const response = await API.rename(projectName, oldPath, newPath);
     if (response instanceof Error) return;
     if (response.status === 200) {
       const fileEntry = grant();
@@ -174,9 +161,7 @@ function addFileTreeHandling(test) {
     const { path, grant } = evt.detail;
     if (path) {
       try {
-        const response = await fetchSafe(`/delete/${path}`, {
-          method: `delete`,
-        });
+        const response = await API.files.delete(projectName, path);
         if (response instanceof Error) return;
         if (response.status === 200) {
           const [fileEntry] = grant();
@@ -195,7 +180,7 @@ function addFileTreeHandling(test) {
 
   fileTree.addEventListener(`dir:create`, async (evt) => {
     const { path, grant } = evt.detail;
-    const response = await fetchSafe(`/new/${path}`, { method: `post` });
+    const response = await API.files.create(projectName, path);
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
@@ -206,9 +191,7 @@ function addFileTreeHandling(test) {
 
   fileTree.addEventListener(`dir:rename`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
-    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
-      method: `post`,
-    });
+    const response = await API.files.rename(projectName, oldPath, newPath);
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
@@ -222,9 +205,7 @@ function addFileTreeHandling(test) {
 
   fileTree.addEventListener(`dir:move`, async (evt) => {
     const { oldPath, newPath, grant } = evt.detail;
-    const response = await fetchSafe(`/rename/${oldPath}:${newPath}`, {
-      method: `post`,
-    });
+    const response = await API.files.rename(projectName, oldPath, newPath);
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();
@@ -238,9 +219,7 @@ function addFileTreeHandling(test) {
 
   fileTree.addEventListener(`dir:delete`, async (evt) => {
     const { path, grant } = evt.detail;
-    const response = await fetchSafe(`/delete-dir/${path}`, {
-      method: `delete`,
-    });
+    const response = await API.files.delete(projectName, path);
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant();

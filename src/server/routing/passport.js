@@ -1,35 +1,29 @@
-// experimental
-import dotenv from "dotenv";
 import passport from "passport";
 import { Strategy as GitHubStrategy } from "passport-github2";
 
-dotenv.config();
-
-const strategy = new GitHubStrategy(
-  {
-    clientID: process.env.GITHUB_CLIENT_ID,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: process.env.GITHUB_CALLBACK_URL,
-  },
-  (accessToken, refreshToken, profile, done) => {
-    // TODO: we'll want to save this into a secure data store.
-    return done(null, profile);
-  }
-);
-
-// What are these for?
-passport.serializeUser((user, done) => {
-  console.log(`${user.displayName} logged in`);
-  done(null, user);
-});
-
-passport.deserializeUser((user, done) => {
-  done(null, user);
-});
-
-passport.use(strategy);
-
 export function addPassportAuth(app) {
+  const strategy = new GitHubStrategy(
+    {
+      clientID: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackURL: process.env.GITHUB_CALLBACK_URL,
+    },
+    (accessToken, refreshToken, profile, done) => {
+      return done(null, profile);
+    }
+  );
+
+  passport.serializeUser((user, done) => {
+    console.log(`${user.displayName} logged in`);
+    done(null, user);
+  });
+
+  passport.deserializeUser((user, done) => {
+    done(null, user);
+  });
+
+  passport.use(strategy);
+
   app.use(passport.initialize());
   app.use(passport.session());
 

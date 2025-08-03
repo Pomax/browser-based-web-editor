@@ -1,3 +1,3 @@
-- do we need to hold up page load for container start? We can probably just show some temp content instead.
 - is there a way to give caddy its own "this project is not currently running" webpage.
 - we should check to see if caddy's already running by checking the running process list... cross-platform
+- we should be doing most project related lookups based on url properties, not session. A user might have multiple projects open at the same time.

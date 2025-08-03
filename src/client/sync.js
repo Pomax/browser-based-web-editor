@@ -1,6 +1,7 @@
-import { fetchFileContents, fetchSafe, getFileSum } from "./utils.js";
+import { fetchFileContents, getFileSum } from "./utils.js";
 import { createPatch } from "../../public/vendor/diff.js";
 import { updatePreview } from "../client/preview.js";
+import { API } from "./api.js";
 
 /**
  * Sync the content of a file with the server by calculating
@@ -10,8 +11,8 @@ import { updatePreview } from "../client/preview.js";
  * the same value based on the current editor content.
  */
 export async function syncContent(
+  projectName,
   entry,
-  contentDir,
   filename = entry.filename
 ) {
   if (entry.noSync) return;
@@ -19,12 +20,7 @@ export async function syncContent(
   const currentContent = entry.content;
   const newContent = entry.view.state.doc.toString();
   const changes = createPatch(filename, currentContent, newContent);
-  const response = await fetchSafe(`/sync/${filename}`, {
-    headers: { "Content-Type": `text/plain` },
-    method: `post`,
-    body: changes,
-  });
-
+  const response = await API.files.sync(projectName, filename, changes);
   const responseHash = parseFloat(await response.text());
 
   if (responseHash === getFileSum(newContent)) {
@@ -38,7 +34,7 @@ export async function syncContent(
     console.error(`POST:`, newContent);
     console.error(`HASH:`, getFileSum(newContent), responseHash);
     console.log(`forced sync: fetching file content from server`);
-    entry.content = await fetchFileContents(contentDir, entry.filename);
+    entry.content = await fetchFileContents(projectName, entry.filename);
     entry.view.dispatch({
       changes: {
         from: 0,

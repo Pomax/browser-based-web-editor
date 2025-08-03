@@ -6,28 +6,20 @@ export {
   getFileSum,
   readContentDir,
   setupGit,
-  switchProject,
+  loadProject,
 };
 
-import {
-  copyFileSync,
-  cpSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-} from "fs";
-
-import { isWindows } from "./utils.js";
+import { cpSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { join, sep, posix } from "node:path";
+import { exec, execSync } from "node:child_process";
 import { runContainer } from "../docker/docker.js";
-
-// Are we on Windows, or something unixy?
-import { sep, posix } from "path";
-import { exec, execSync } from "child_process";
+import { isWindows } from "./utils.js";
+import { createProjectForUser } from "./routing/database.js";
 
 // Set up the vars we need for pointing to the right dirs
 export const CONTENT_BASE = process.env.CONTENT_BASE ?? `content`;
 process.env.CONTENT_BASE = CONTENT_BASE;
+
 export const CONTENT_DIR = isWindows ? CONTENT_BASE : `./${CONTENT_BASE}`;
 process.env.CONTENT_DIR = CONTENT_DIR;
 
@@ -38,14 +30,27 @@ const COMMIT_TIMEOUT_MS = 5_000;
 // We can't save timeouts to req.session so we need a separate tracker
 const COMMIT_TIMEOUTS = {};
 
-function createRewindPoint(req, reason = `Autosave`) {
-  const { name, dir } = req.session;
-
+/**
+ * Schedule a git commit to capture all changes since the last time we did that.
+ * @param {*} projectName
+ * @param {*} reason
+ */
+function createRewindPoint(projectName, reason) {
   console.log(`scheduling rewind point`);
-  const debounce = COMMIT_TIMEOUTS[name];
+
+  const now = new Date()
+    .toISOString()
+    .replace(`T`, ` `)
+    .replace(`Z`, ``)
+    .replace(/\.\d+/, ``);
+  reason = reason || `Autosave (${now})`;
+
+  const dir = `${CONTENT_DIR}/${projectName}`;
+  const debounce = COMMIT_TIMEOUTS[projectName];
+
   if (debounce) clearTimeout(debounce);
 
-  COMMIT_TIMEOUTS[name] = setTimeout(async () => {
+  COMMIT_TIMEOUTS[projectName] = setTimeout(async () => {
     console.log(`creating rewind point`);
     const cmd = `cd ${dir} && git add . && git commit --allow-empty -m "${reason}"`;
     console.log(`running:`, cmd);
@@ -54,7 +59,7 @@ function createRewindPoint(req, reason = `Autosave`) {
     } catch (e) {
       console.error(e);
     }
-    COMMIT_TIMEOUTS[name] = undefined;
+    COMMIT_TIMEOUTS[projectName] = undefined;
   }, COMMIT_TIMEOUT_MS);
 }
 
@@ -106,40 +111,45 @@ async function readContentDir(dir) {
 }
 
 /**
- * Switch a user's current project.
+ * Create a new project directory
+ *
+ * TODO: this is middleware, rehouse it
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
  */
-async function switchProject(req, name = req.params.name) {
-  const oldName = req.session.name;
-  const oldDir = req.session.dir;
-  const dir = `${CONTENT_DIR}/${name}`;
+export async function createProject(req, res, next) {
+  const user = req.session.passport?.user;
+  if (!user) return next(new Error(`Not logged in`));
 
-  console.log(`switching project from ${oldName} to ${name}`);
+  const projectName = res.locals.projectName || res.params.project;
+  const dir = join(CONTENT_DIR, projectName);
+  const starter = `__starter_projects/${req.params.starter || `web-graphics`}`;
 
-  req.session.name = name;
-  req.session.dir = dir;
-  req.session.save();
-
-  let newProject = false;
   if (!existsSync(dir)) {
-    newProject = true;
     mkdirSync(dir);
-    // New, temporary anonymous dir?
-    if (name.startsWith(`anonymous-`)) {
-      const index = `${CONTENT_DIR}/default/index.html`;
-      const target = `${dir}/index.html`;
-      console.log(`${index} => ${target}`);
-      copyFileSync(index, target);
-    }
-    // "regular" project, give them the test project content
-    else {
-      cpSync(dir.replace(name, `testproject`), dir, { recursive: true });
-    }
-  } else if (oldName.startsWith(`anonymous-`)) {
-    // If we switch from anonymous to a real project,
-    // we delete the anonymous dir because that content
-    // was mostly a signal for someone to log in.
-    rmSync(oldDir, { recursive: true, force: true });
+    cpSync(dir.replace(projectName, starter), dir, { recursive: true });
   }
+
+  createProjectForUser(user.displayName, projectName);
+
+  next();
+}
+
+/**
+ * Switch a user's current project. This can build a project if it doesn't
+ * exist if the "create" parameters is pass via the request (e.g. "create
+ * new project" button requests).
+ *
+ * TODO: this is middleware, rehouse it
+ *
+ */
+async function loadProject(req, res, next) {
+  const projectName = res.locals.projectName || res.params.project;
+  const dir = join(CONTENT_DIR, projectName);
+
+  if (!existsSync(dir)) throw new Error(`No such project`);
 
   // ensure there's a git dir
   if (!existsSync(`${dir}/.git`)) {
@@ -147,31 +157,22 @@ async function switchProject(req, name = req.params.name) {
     execSync(`cd ${dir} && git init && cd ..`);
   }
 
-  // If not, is this a switch from an anonymous "account" to a new, real "account"?
-  else if (oldName.startsWith(`anonymous-`) && oldDir && newProject) {
-    // TODO: Copy the anonymous project's files to their new, real
-    //       dir, and then delete the anonymous-12345 directory.
-  }
-
   // ensure git knows who we are.
-  setupGit(req);
+  setupGit(dir, projectName);
 
   // Then get a container running
-  if (!name.startsWith(`anonymous`)) {
-    await runContainer(req);
-  }
+  await runContainer(projectName);
 
-  return dir;
+  next();
 }
 
 /**
  * Make git not guess at the name and email for commits.
  */
-async function setupGit(req) {
-  const { name, dir } = req.session;
+async function setupGit(dir, projectName) {
   for (let cfg of [
     `init.defaultBranch main`,
-    `user.name "${name}"`,
+    `user.name "${projectName}"`,
     `user.email "actions@browsertests.local"`,
   ]) {
     await execPromise(`git config --local ${cfg}`, { cwd: dir });

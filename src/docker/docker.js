@@ -1,7 +1,7 @@
 import { sep } from "node:path";
 import { getFreePort } from "../server/utils.js";
 import { exec, execSync } from "child_process";
-import { updateCaddyFile } from "../server/caddy.js";
+import { updateCaddyFile } from "../caddy/caddy.js";
 
 const commands = {
   exists: () => `docker image list`,
@@ -14,38 +14,36 @@ const commands = {
 
 const { exists, build, running, run, restart } = commands;
 
-export async function runContainer(req, name = req.session.name, port) {
-  port ??= await getFreePort();
-  req.session.port = port;
-  req.session.save();
+export async function runContainer(projectName) {
+  let port = await getFreePort();
 
   console.log(`- Checking for image`);
 
   // Do we have a container? If not, build one.
   let result = execSync(exists()).toString().trim();
-  if (!result.match(new RegExp(`\\b${name}\\b`, `gm`))) {
+
+  if (!result.match(new RegExp(`\\b${projectName}\\b`, `gm`))) {
     console.log(`- Building image`);
-    execSync(build(name));
+    execSync(build(projectName));
   }
 
   console.log(`- Checking for running container`);
 
   // FIXME: TODO: check if `docker ps -a` has a dead container that we need to cleanup
 
-  result = execSync(running(name)).toString().trim();
-  if (!result.match(new RegExp(`\\b${name}\\b`, `gm`))) {
+  result = execSync(running(projectName)).toString().trim();
+
+  if (!result.match(new RegExp(`\\b${projectName}\\b`, `gm`))) {
     console.log(`- Starting container on port ${port}`);
-    const container = run(name, port);
+    const container = run(projectName, port);
     console.log(container);
     exec(container);
   } else {
     port = result.match(/0.0.0.0:(\d+)->/m)[1];
     console.log(`- found a running container on port ${port}`);
-    req.session.port = port;
-    req.session.save();
-    console.log(`- updated session port`);
   }
-  updateCaddyFile(name, port);
+
+  updateCaddyFile(projectName, port);
 }
 
 export function checkContainerHealth(name) {

@@ -89,7 +89,7 @@ export function addEditorEventHandling(fileEntry, panel, tab, close, view) {
  * Create the collection of page UI elements and associated editor
  * component for a given file.
  */
-export async function getOrCreateFileEditTab(fileEntry, contentDir, filename) {
+export async function getOrCreateFileEditTab(fileEntry, projectName, filename) {
   const entry = fileEntry.state;
 
   if (entry?.view) {
@@ -109,7 +109,7 @@ export async function getOrCreateFileEditTab(fileEntry, contentDir, filename) {
 
   // Is this text or viewable media?
   const viewType = getViewType(filename);
-  const data = await fetchFileContents(contentDir, filename, viewType.type);
+  const data = await fetchFileContents(projectName, filename, viewType.type);
   const verified = verifyViewType(viewType.type, data);
 
   if (!verified) return alert(`File contents does not match extension.`);
@@ -127,7 +127,7 @@ export async function getOrCreateFileEditTab(fileEntry, contentDir, filename) {
     } else if (type.startsWith(`video`)) {
       view = create(`video`);
     }
-    view.src = `${contentDir}/${filename}`;
+    view.src = `/v1/files/${projectName}/${filename}`;
     panel.appendChild(view);
   }
 
@@ -149,8 +149,7 @@ export async function getOrCreateFileEditTab(fileEntry, contentDir, filename) {
     content: viewType.editable ? view.state.doc.toString() : data,
     sync: () => {
       if (viewType.editable) {
-        const entry = fileEntry.state;
-        syncContent(entry, contentDir);
+        syncContent(projectName, fileEntry.state);
       }
     },
     noSync: !viewType.editable,

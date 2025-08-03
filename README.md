@@ -8,7 +8,7 @@ This is an attempt at implementing a friend browser-based web content editor, us
 1. You'll also need docker installed, which has different instructions depending on the OS you're using.
 1. And you'll want `caddy` installed, for reverse-proxying container ports so you can just load https://projectname.localhost
 
-With those installed:
+With those prerequisites met:
 
 - clone this repo (or fork it and then clone that),
 - run `git checkout with-filetree` in the repo folder,
@@ -16,19 +16,21 @@ With those installed:
 
 Things should be cross-platform enough to work on Windows, Mac, and Linux by running `npm start` and then opening the URL that tells you things are running on.
 
-The initial view is the "anonymous" view but you can click the "Switch" button and pick any project name that isn't `anonymous` or `testproject`. Doing so will either load the content associated with that project's content folder, or will build a new folder with a copy of the content found in the testproject folder, then build a docker container for that content, then run that container.
+The main page has a login link that uses github authentication (for now). After authenticating, you're dropped into what is basically a "profile-ish" view (which I'm sure will change in the future, but we're still in the PoC phase) where you can create new projects, load up projects you've made, and delete projects you no longer care about.
+
+New projects currently start on a copy of the `testproject` dir, but that should of course eventually a "new, empty project" plus a list of "starters" that you can remix.
 
 ## Docker?
 
-While project _content_ lives in the content directory, you don't want it to _run_ in that context. That would give it access to.. well... everything. Including other project's content, the editor code, etc. etc. So instead, the runtime is handled by creating a Docker image running Ubuntu with Node and Python installed, with the project content as a "bind mount" (meaning the files live on the host OS, but the docker container has read/write access to them), with the container running whatever is in `run.sh` as its startup instruction.
+While project _content_ lives in the content directory on your computer (or your server, etc), you don't want it to _run_ in that context. That would give it access to.. well... everything, including other project's content, the editor's code, routing configs, etc. etc. So, instead, the runtime is handled by creating a Docker container (think virtual machine) running Ubuntu 24 with Node.js and Python preinstalled, with a project's content added in as a "bind mount" (meaning the files live on the host OS, but the docker container has read/write access to them).
 
-(NOTE: updating `run.sh` does nothing on its own right now, because there's no `fs.watch` instruction to see if containers need to be restarted because the run file got updated yet. That's not overly complicated to add in, but also something for "soon" rather than "now")
+Projects have a special `run.sh` file that is currently used as "what happens when your project container starts up". Also, restarting a project doesn't actually "restart" it so much as "rebuild and run it", so be aware that any data you write outside of the project's home directory (`~/app`) is, at best, temporary. The moment the project container has to restart for whatever reason, any of those changes will be lost.
 
 ### How do I install Docker?
 
 On MacOS, install `docker` and `colima` using your favourite package manager (I use `brew` but people have opinions about this so use whatever works for you). Just remember that you'll need to run `colima start` any time you start up your mac, because otherwise anything docker-related will crash out with super fun error messages.
 
-On Linux, you already know how to install Docker. And if you don't, you know how to look it up. And you know it's either going to be two commands, or half a day of work, depending on your chosen flavour of Linux.
+On Linux, you already know how to install Docker. You're using Linux. And even if you don't, you know how to look it up (...and you know it's either going to be two commands and you're done, or half a day of work, depending on your chosen flavour of Linux >_>;;)
 
 On Windows... &lt;sigh&gt; on Windows it's both "easy" and "truly ridiculous", so here's what I had to do:
 
@@ -43,9 +45,9 @@ This is about to get stupid. We're not going to do _anything_ with WSL, we just 
 - Once that's done, close the command prompt, WSL, and quit (really quit, not close-and-minimize) Docker Desktop.
 - Reopen Docker Desktop. Check the builders. F'ing magic, it worked, it'll now use linux containers just like every other OS, which is what it should have been using in the first place.
 
-## Caddy?
+## What's caddy?
 
-Caddy's a general purpose server (similar to Nginx) that automatically handles HTTPS, and lets us set up bindings for things like https://yourproject.localhost rather than having to guess at which port number a project is running on. Installing it on Linux or Mac is relatively easy (tell your package manager to install it. Done), but Windows is (of course) a bit more work:
+Caddy is a general purpose server (similar to Nginx) that automatically handles HTTPS, and lets us set up bindings for things like https://yourproject.app.localhost rather than having to use completely useless http://localhost:someport URLs (where the port number will change any time you restart the server). Installing it on Linux or Mac is relatively easy (tell your package manager to install it. Done), but Windows is (of course) a bit more work:
 
 - Go to https://caddyserver.com/download, pick your windows platform, the click the blue download button.
 - Rename the resulting .exe to `caddy.exe`
@@ -61,20 +63,18 @@ You can now run `caddy` anywhere.
 
 ## So then what?
 
-When you switch projects, the server runs through the following four steps:
+Open the URL that `npm start` gives you, log in, and then start making projects. Project load, and project creation, runs through the following steps:
 
 1. Check if there is a docker image for this project
 1. If not, build one
 1. Check if there is a container running, based on that image
 1. If not, run a container
 
-(this also means that on first-time switching, it'll take a while before the server finally loads up the editor for your new project because building the image takes time).
-
-The run command includes a PORT variable that allows the preview to work: each docker container exposes its port 8000, which gets bound to "whichever free port is available on the host OS", save alongside the project's name and dir in their server session, and the editor the makes sure that that port gets used for the preview iframe.
+The run command includes a PORT variable that allows the preview to work: each docker container exposes its port 8000, which gets bound to "whichever free port is available on the host OS", saved alongside the project's name and dir in their server session, and the editor then makes sure that that port gets used by caddy for https://yourproject.app.localhost
 
 ### One-time Caddy permissions
 
-Caddy will set up a name binding when you switch projects, but the first time you do that after having installed it, it will need your permission to add a new certificate authority to your OS's list of certificate authorities. You'll want to allow that, because otherwise HTTPS won't work =)
+Caddy will set up a name binding when you switch projects, but the first time you do that after having installed it, it will need your permission to add a new certificate authority to your OS's list of certificate authorities. You'll want to allow that, because otherwise localhost HTTPS won't work =)
 
 ## Edit syncing
 
@@ -82,7 +82,7 @@ File operations are persisted to the file system by sending diffs, with content 
 
 This is currently one-way, using POST operations, rather than two-way using websockets. There's nothing preventing websockets from being used, but (a) make it work first, and (b) websocket security doesn't exist, so we'd have to write a bunch of code to make all of that work well. We can do that later.
 
-## This looks... spartan
+## This website looks... Spartan
 
 There's a decades old recipe for doing software development:
 
@@ -92,7 +92,7 @@ There's a decades old recipe for doing software development:
 
 We're still in phase 1.
 
-## I want more
+## I want more / I have ideas
 
 I know. [Get in touch](https://github.com/Pomax/browser-editor-tests/issues). We can do more.
 

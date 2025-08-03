@@ -1,10 +1,6 @@
 export { addGetRoutes };
 
-import {
-  deleteExpiredAnonymousContent,
-  loadProject,
-  loadProjectList,
-} from "../middleware/middleware.js";
+import { loadProjectData, loadProjectList } from "../middleware/middleware.js";
 import { checkContainerHealth } from "../../docker/docker.js";
 import { execPromise, readContentDir } from "../helpers.js";
 import { posix } from "path";
@@ -26,20 +22,12 @@ function addGetRoutes(app) {
     res.json(dir);
   });
 
-  // Add an extra job when loading the editor that destroys old
-  // anonymous content, cleaning up the dirs based on the timestamp.
-  app.get(
-    `/editor.html`,
-    deleteExpiredAnonymousContent,
-    loadProjectList,
-    loadProject,
-    (req, res) => {
-      if (!req.session.passport?.user) {
-        return res.redirect(`/`);
-      }
-      res.render(`editor.html`, req.session);
+  app.get(`/editor.html`, loadProjectList, loadProjectData, (req, res) => {
+    if (!req.query.project) {
+      return res.redirect(`/`);
     }
-  );
+    res.render(`editor.html`, req.session);
+  });
 
   app.get(`/project/health/:name`, (req, res) => {
     res.send(checkContainerHealth(req.params.name));

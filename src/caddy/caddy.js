@@ -1,7 +1,7 @@
-import { existsSync, readFileSync, writeFile, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { execSync, spawn } from "node:child_process";
 
-const caddyFile = `./Caddyfile`;
+const caddyFile = `${import.meta.dirname}/Caddyfile`;
 
 /**
  * Ensure a local Caddyfile exists for us to work with
@@ -14,7 +14,10 @@ export function startCaddy() {
     );
   }
   stopCaddy();
-  spawn(`caddy`, [`start`], { shell: true, stdio: `inherit` });
+  spawn(`caddy`, [`start`, `--config`, caddyFile], {
+    shell: true,
+    stdio: `inherit`,
+  });
 }
 
 /**
@@ -32,6 +35,12 @@ export function stopCaddy() {
     execSync(`caddy stop`, { shell: true, stdio: `inherit` });
   } catch (e) {}
 }
+
+// When someone ctrl-c's a running instance, stop caddy (a few times) first.
+process.on("SIGINT", () => {
+  stopCaddy();
+  process.exit();
+});
 
 /**
  * Set  up a binding for a named project
@@ -56,12 +65,22 @@ export function updateCaddyFile(name, port) {
     const entry = `\n${host} {\n\treverse_proxy localhost:${port}\n}\n`;
     writeFileSync(caddyFile, data + entry);
   }
-  spawn(`caddy`, [`reload`], { shell: true, stdio: `inherit` });
+  spawn(`caddy`, [`reload`, `--config`, caddyFile], {
+    shell: true,
+    stdio: `inherit`,
+  });
 }
 
+/**
+ * Remove an entry from the Caddyfile
+ * @param {*} name
+ */
 export function removeCaddyEntry(name) {
   const re = new RegExp(`${name}\\.app\\.localhost \\{[^}]+\\}\n\n?`, `gm`);
   const data = readFileSync(caddyFile).toString().replace(re, ``);
   writeFileSync(caddyFile, data);
-  spawn(`caddy`, [`reload`], { shell: true, stdio: `inherit` });
+  spawn(`caddy`, [`reload`, `--config`, caddyFile], {
+    shell: true,
+    stdio: `inherit`,
+  });
 }

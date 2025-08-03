@@ -1,9 +1,10 @@
-content/*
-!content/anonymous
-!content/testproject
-node_modules
-.DS_Store
-Caddyfile
-.env
 *.sqlite3
 *.db
+.DS_Store
+.env
+Caddyfile
+node_modules
+content/*
+!content/__starter_projects
+!content/default
+

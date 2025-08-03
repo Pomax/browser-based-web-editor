@@ -1,4 +1,5 @@
-import { fetchFileContents, fetchSafe } from "../utils.js";
+import { fetchFileContents } from "../utils.js";
+import { API } from "../api.js";
 
 const changeProject = document.getElementById(`switch`);
 const all = document.getElementById(`all`);
@@ -9,7 +10,7 @@ const right = document.getElementById(`right`);
 /**
  * Hook up the "Add new file" and "Format this file" buttons
  */
-export function addEventHandling(contentDir) {
+export function addEventHandling(projectName) {
   changeProject.addEventListener(`click`, async () => {
     const name = prompt(`Project name?`).trim();
     if (name) {
@@ -29,13 +30,13 @@ export function addEventHandling(contentDir) {
     if (fileEntry.state?.tab !== tab) {
       throw new Error(`active tab has no associated selected file? O_o`);
     }
-    const filename = fileEntry.path;
+    const fileName = fileEntry.path;
     format.hidden = true;
-    const result = await fetchSafe(`/format/${filename}`, { method: `post` });
+    const result = await API.files.format(projectName, fileName);
     if (result instanceof Error) return;
     format.hidden = false;
     const { view } = fileEntry.state;
-    const content = await fetchFileContents(contentDir, filename);
+    const content = await fetchFileContents(projectName, fileName);
     fileEntry.setState({ content });
     view.dispatch({
       changes: {
