@@ -1,5 +1,7 @@
 # CodeMirror 6 based editor with filetree component
 
+<img width="100%" src="https://github.com/user-attachments/assets/fae319b0-e39b-4369-a81e-df8cca233b57" style="border:1px solid black"/>
+
 This is an attempt at implementing a friend browser-based web content editor, using [codemirror 6](https://codemirror.net), a [custom-file-tree](https://github.com/pomax/custom-file-tree) as file tree component (as codemirror itself only models single editing panels), and a sprinkling of docker for runtime isolation and a reverse proxy because we like opening https URLs, and we don't like having to remember port numbers.
 
 ## How do I use this?
