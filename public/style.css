@@ -169,6 +169,7 @@ html {
         audio,
         video {
           margin: 2em;
+          max-width: calc(100% - 4em);
         }
       }
 

@@ -36,18 +36,18 @@
       {% for project in projectList %}
       <li>
         <a
-          href="https://editor.com.localhost/v1/projects/edit/{{project.name}}"
+          href="https://editor.com.localhost/v1/projects/edit/{{ project.name }}"
           >{{ project.name }}</a
         >
         ({{ project.created_at }})
-        <button data-project-id="{{ project.id }}" class="delete-project">
+        <button data-project-name="{{ project.name }}" class="delete-project">
           delete
         </button>
         <br />
         <iframe
           width="400"
           height="300"
-          src="https://{{project.name}}.app.localhost"
+          src="https://{{ project.name }}.app.localhost"
         ></iframe>
         <!--
       TODO: download button
@@ -56,10 +56,10 @@
       --></li>
       {% endfor %}
     </ul>
-    <form action="/project/create" method="POST">
-      <input name="name" type="text" placeholder="project name" />
-      <button>create new project</button>
-    </form>
+    <div id="create-project-form">
+      <input disabled name="name" type="text" placeholder="project name" />
+      <button disabled>create new project</button>
+    </div>
     {% endif %}
   </body>
 </html>

@@ -373,7 +373,13 @@ var R = class extends f {
     r && this.setContent(r);
   }
   setContent(t2 = []) {
-    return this.clear(), t2.forEach((e2) => {
+    this.clear(), t2.sort();
+    for (let e2 = 0, r; e2 < t2.length; e2++) {
+      let i = false, n = t2[e2];
+      for (r = e2 + 1; r < t2.length && t2[r].startsWith(n); r++) i = true;
+      i && (t2.splice(e2--, 1), e2 = r - 2);
+    }
+    return t2.forEach((e2) => {
       let r = p(e2) ? "file" : "dir";
       this.#t(e2, void 0, `tree:add:${r}`, true);
     }), this.ready = true, this.emit("tree:ready");
@@ -415,7 +421,7 @@ var R = class extends f {
   #e(t2, e2, r, i) {
     let { entries: n } = this;
     if (e2 !== r) {
-      if (r.startsWith(e2)) return this.emit(`${i}:error`, { oldPath: e2, newPath: r, error: o.PATH_INSIDE_ITSELF(e2) });
+      if (r.startsWith(e2) && r.replace(e2, "").includes("/")) return this.emit(`${i}:error`, { oldPath: e2, newPath: r, error: o.PATH_INSIDE_ITSELF(e2) });
       if (n[r]) return this.emit(`${i}:error`, { oldPath: e2, newPath: r, error: o.PATH_EXISTS(r) });
       this.emit(i, { oldPath: e2, newPath: r }, () => {
         Object.keys(n).forEach((l) => {
@@ -489,24 +495,24 @@ var API = {
   // (create/read/update/delete) operations.
   files: {
     dir: async (projectName2) => fetch2(`files/dir/${projectName2}`).then((r) => r.json()),
-    create: async (projectName2, fileName2) => fetch2(`files/create/${projectName2}/${fileName2}`, { method: `post` }),
-    upload: async (projectName2, fileName2, form) => fetch2(`files/upload/${projectName2}/${fileName2}`, {
+    create: async (projectName2, fileName) => fetch2(`files/create/${projectName2}/${fileName}`, { method: `post` }),
+    upload: async (projectName2, fileName, form) => fetch2(`files/upload/${projectName2}/${fileName}`, {
       method: `post`,
       body: form
     }),
-    get: async (projectName2, fileName2) => fetch2(`files/${projectName2}/${fileName2}`),
+    get: async (projectName2, fileName) => fetch2(`files/${projectName2}/${fileName}`),
     rename: async (projectName2, oldPath, newPath) => fetch2(`files/rename/${projectName2}/${oldPath}:${newPath}`, {
       method: `post`
     }),
-    format: async (projectName2, fileName2) => fetch2(`files/format/${projectName2}/${fileName2}`, {
+    format: async (projectName2, fileName) => fetch2(`files/format/${projectName2}/${fileName}`, {
       method: `post`
     }),
-    sync: async (projectName2, fileName2, changes) => fetch2(`files/sync/${projectName2}/${fileName2}`, {
+    sync: async (projectName2, fileName, changes) => fetch2(`files/sync/${projectName2}/${fileName}`, {
       headers: { "Content-Type": `text/plain` },
       method: `post`,
       body: changes
     }),
-    delete: async (projectName2, fileName2) => fetch2(`files/delete/${projectName2}/${fileName2}`, {
+    delete: async (projectName2, fileName) => fetch2(`files/delete/${projectName2}/${fileName}`, {
       method: `delete`
     })
     // NOTE: there is no separate delete-dir, the delete route should just "do what needs to be done".
@@ -517,8 +523,8 @@ var API = {
 function create(tag) {
   return document.createElement(tag);
 }
-async function fetchFileContents(projectName2, fileName2, type = `text/plain`) {
-  const response = await API.files.get(projectName2, fileName2);
+async function fetchFileContents(projectName2, fileName, type = `text/plain`) {
+  const response = await API.files.get(projectName2, fileName);
   if (type.startsWith(`text`) || type.startsWith(`application`))
     return response.text();
   return response.arrayBuffer();
@@ -533,8 +539,8 @@ function listEquals(a1, a2) {
 }
 
 // src/client/content-types.js
-function getMimeType(fileName2) {
-  return getViewType(fileName2).type;
+function getMimeType(fileName) {
+  return getViewType(fileName).type;
 }
 function getViewType(filename) {
   const ext = filename.substring(filename.lastIndexOf(`.`) + 1);
@@ -567,6 +573,7 @@ function getViewType(filename) {
     jpg: `image/jpg`,
     jpeg: `image/jpg`,
     png: `image/png`,
+    mov: `video/quicktime`,
     mp3: `audio/mpeg`,
     mp4: `video/mp4`,
     wav: `audio/wav`
@@ -588,6 +595,7 @@ function verifyViewType(type, data3) {
   if (type === `image/png`) return verifyPNG(bytes);
   if (type === `audio/mpeg`) return verifyMP3(bytes);
   if (type === `audio/wav`) return verifyWave(bytes);
+  if (type === `video/quicktime`) return verifyMov(bytes);
   if (type === `video/mp4`) return verifyMP4(bytes);
   return false;
 }
@@ -602,6 +610,10 @@ function verifyPNG(bytes) {
 }
 function verifyMP3(bytes) {
   return listEquals(bytes.slice(0, 3), [73, 68, 51]);
+}
+function verifyMov(bytes) {
+  console.log(`mov`, bytes.slice(0, 8));
+  return listEquals(bytes.slice(0, 8), [0, 0, 0, 20, 102, 116, 121, 112]);
 }
 function verifyMP4(bytes) {
   return listEquals(bytes.slice(0, 4), [102, 116, 121, 112]);
@@ -29224,10 +29236,14 @@ function getInitialState(fileEntry, filename, data3) {
       const tab = e2.view.tabElement;
       if (tab && e2.docChanged) {
         const entry = fileEntry.state;
-        if (entry.debounce) {
+        const reset = entry.contentReset;
+        if (entry.debounce || reset) {
           clearTimeout(entry.debounce);
         }
-        entry.debounce = setTimeout(entry.sync, 1e3);
+        if (!reset) {
+          entry.debounce = setTimeout(entry.sync, 1e3);
+        }
+        entry.contentReset = false;
       }
     })
   );
@@ -29816,10 +29832,10 @@ function createTwoFilesPatch(oldFileName, newFileName, oldStr, newStr, oldHeader
     )
   );
 }
-function createPatch(fileName2, oldStr, newStr, oldHeader, newHeader, options) {
+function createPatch(fileName, oldStr, newStr, oldHeader, newHeader, options) {
   return createTwoFilesPatch(
-    fileName2,
-    fileName2,
+    fileName,
+    fileName,
     oldStr,
     newStr,
     oldHeader,
@@ -29840,11 +29856,7 @@ async function syncContent(projectName2, entry, filename = entry.filename) {
     entry.content = newContent;
     updatePreview();
   } else {
-    console.error(`PRE:`, currentContent);
-    console.error(`POST:`, newContent);
-    console.error(`HASH:`, getFileSum(newContent), responseHash);
-    console.log(`forced sync: fetching file content from server`);
-    entry.content = await fetchFileContents(projectName2, entry.filename);
+    entry.contentReset = true;
     entry.view.dispatch({
       changes: {
         from: 0,
@@ -29934,8 +29946,10 @@ async function getOrCreateFileEditTab(fileEntry, projectName2, filename) {
       view = create(`img`);
     } else if (type.startsWith(`audio`)) {
       view = create(`audio`);
+      view.controls = true;
     } else if (type.startsWith(`video`)) {
       view = create(`video`);
+      view.controls = true;
     }
     view.src = `/v1/files/${projectName2}/${filename}`;
     panel.appendChild(view);
@@ -30836,13 +30850,17 @@ function addFileTreeHandling(projectName2) {
     fileTreeEntry.setState(entry);
     const { tab, panel } = entry;
     entry.filename = key;
-    tab.title = key;
-    tab.childNodes.forEach((n) => {
-      if (n.nodeName === `#text`) {
-        n.textContent = key;
-      }
-    });
-    panel.title = panel.id = key;
+    if (tab) {
+      tab.title = key;
+      tab.childNodes.forEach((n) => {
+        if (n.nodeName === `#text`) {
+          n.textContent = key;
+        }
+      });
+    }
+    if (panel) {
+      panel.title = panel.id = key;
+    }
   }
   fileTree2.addEventListener(`file:click`, async (evt) => {
     const fileEntry = evt.detail.grant();
@@ -30883,9 +30901,7 @@ function addFileTreeHandling(projectName2) {
         const fileEntry = grant();
         getOrCreateFileEditTab(fileEntry, projectName2, path);
       } else {
-        console.error(
-          `Could not create ${fileName} (status:${response.status})`
-        );
+        console.error(`Could not create ${path} (status:${response.status})`);
       }
     }
   });
@@ -30895,10 +30911,12 @@ function addFileTreeHandling(projectName2) {
     if (response instanceof Error) return;
     if (response.status === 200) {
       const fileEntry = grant();
-      let key = oldPath.replace(contentDir, ``);
+      let key = oldPath.replace(projectName2, ``);
+      console.log({ key });
       const entry = fileEntry.state;
       if (entry) {
-        const newKey = newPath.replace(contentDir, ``);
+        const newKey = newPath.replace(projectName2, ``);
+        console.log({ newKey });
         updateEditorBindings(fileEntry, entry, newKey, key);
       }
     } else {
@@ -30908,23 +30926,23 @@ function addFileTreeHandling(projectName2) {
     }
     updatePreview();
   });
-  async function uploadFile(fileName2, content2, grant) {
+  async function uploadFile(fileName, content2, grant) {
     const fileSize = content2.byteLength;
-    if (fileSize > 1e6) {
+    if (fileSize > 1e7) {
       return alert(`File uploads are limited to 1MB`);
     }
     const form = new FormData();
-    form.append(`filename`, fileName2);
+    form.append(`filename`, fileName);
     form.append(
       `content`,
-      typeof content2 === "string" ? content2 : new Blob([content2], { type: getMimeType(fileName2) })
+      typeof content2 === "string" ? content2 : new Blob([content2], { type: getMimeType(fileName) })
     );
-    const response = await API.files.upload(projectName2, fileName2, form);
+    const response = await API.files.upload(projectName2, fileName, form);
     if (response instanceof Error) return;
     if (response.status === 200) {
       grant?.();
     } else {
-      console.error(`Could not upload ${fileName2} (status:${response.status})`);
+      console.error(`Could not upload ${fileName} (status:${response.status})`);
     }
   }
   fileTree2.addEventListener(`file:move`, async (evt) => {
@@ -31016,18 +31034,11 @@ function addFileTreeHandling(projectName2) {
 }
 
 // src/client/cm6/event-handling.js
-var changeProject = document.getElementById(`switch`);
 var all = document.getElementById(`all`);
 var format = document.getElementById(`format`);
 var left = document.getElementById(`left`);
 var right = document.getElementById(`right`);
 function addEventHandling(projectName2) {
-  changeProject.addEventListener(`click`, async () => {
-    const name2 = prompt(`Project name?`).trim();
-    if (name2) {
-      location = `${location.toString().replace(location.search, ``)}?project=${name2}`;
-    }
-  });
   all.addEventListener(`click`, async () => {
     document.querySelectorAll(`file-entry`).forEach((e2) => e2.click());
   });
@@ -31038,13 +31049,13 @@ function addEventHandling(projectName2) {
     if (fileEntry.state?.tab !== tab) {
       throw new Error(`active tab has no associated selected file? O_o`);
     }
-    const fileName2 = fileEntry.path;
+    const fileName = fileEntry.path;
     format.hidden = true;
-    const result = await API.files.format(projectName2, fileName2);
+    const result = await API.files.format(projectName2, fileName);
     if (result instanceof Error) return;
     format.hidden = false;
     const { view } = fileEntry.state;
-    const content2 = await fetchFileContents(projectName2, fileName2);
+    const content2 = await fetchFileContents(projectName2, fileName);
     fileEntry.setState({ content: content2 });
     view.dispatch({
       changes: {

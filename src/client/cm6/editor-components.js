@@ -124,8 +124,10 @@ export async function getOrCreateFileEditTab(fileEntry, projectName, filename) {
       view = create(`img`);
     } else if (type.startsWith(`audio`)) {
       view = create(`audio`);
+      view.controls = true;
     } else if (type.startsWith(`video`)) {
       view = create(`video`);
+      view.controls = true;
     }
     view.src = `/v1/files/${projectName}/${filename}`;
     panel.appendChild(view);

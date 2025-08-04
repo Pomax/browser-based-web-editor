@@ -1,24 +1,32 @@
 import mime from "mime";
-import { readFileSync, writeFileSync } from "node:fs";
-import { getAccessFor, OWNER, EDITOR, MEMBER } from "../../database.js";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { lstat } from "node:fs/promises";
+import { join, resolve } from "node:path";
+import { getAccessFor, MEMBER } from "../../database.js";
 import {
   CONTENT_DIR,
   createRewindPoint,
+  execPromise,
   getFileSum,
+  npm,
+  readContentDir,
 } from "../../../helpers.js";
 import { applyPatch } from "../../../../../public/vendor/diff.js";
 
-import { loadProjectData } from "../../middleware.js";
-export { loadProjectData }; // TODO: move file related middleware here
-
-export function verifyEditRights(req, res, next) {
-  const userName = res.locals.user.displayName;
-  const projectName = res.locals.projectName;
-  const accessLevel = getAccessFor(userName, projectName);
-  if (accessLevel < MEMBER) return next(new Error(`Incorrect access level`));
-  next();
-}
-
+/**
+ * ...docs go here...
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
 export function getMimeType(req, res, next) {
   const { fileName } = res.locals;
   const mimeType = mime.getType(fileName);
@@ -29,6 +37,81 @@ export function getMimeType(req, res, next) {
   next();
 }
 
+/**
+ * ...docs go here...
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
+export async function getDirListing(req, res, next) {
+  const { userName, projectName } = res.locals;
+  if (projectName) {
+    const __dirname = join(CONTENT_DIR, projectName);
+
+    let dir = await readContentDir(__dirname);
+    if (dir === false) {
+      return next(new Error(`read dir didn't work??`));
+    }
+
+    // Remove any "private" data from the dir listing if
+    // the user has no access rights to them.
+    const accessLevel = getAccessFor(userName, projectName);
+    if (accessLevel < MEMBER) {
+      // TODO: this should become a per-project setting so that
+      // //    folks can mark any dir or file as private.
+      dir = dir.filter((v) => !v.match(/^\.data\b/));
+    }
+
+    res.locals.dir = dir;
+  }
+  next();
+}
+
+/**
+ * ...docs go gere,,,
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+export function createFile(req, res, next) {
+  const { projectName, fileName } = res.locals;
+  console.log({ projectName, fileName });
+  const slug = fileName.substring(fileName.lastIndexOf(`/`) + 1);
+  const dirs = fileName.replace(`/${slug}`, ``);
+  mkdirSync(dirs, { recursive: true });
+  if (!existsSync(fileName)) {
+    if (slug.includes(`.`)) {
+      writeFileSync(fileName, ``);
+    } else {
+      mkdirSync(join(dirs, slug));
+    }
+  }
+  createRewindPoint(projectName);
+  next();
+}
+
+export function handleUpload(req, res, next) {
+  const { projectName, fileName } = res.locals;
+  const slug = fileName.substring(fileName.lastIndexOf(`/`) + 1);
+  const dirs = fileName.replace(`/${slug}`, ``);
+  const fileData = req.body.content.value;
+  const fileSize = fileData.length;
+  if (fileSize > 10_000_000) {
+    return next(new Error(`Upload size exceeded`));
+  }
+  mkdirSync(dirs, { recursive: true });
+  writeFileSync(fileName, fileData, `ascii`);
+  createRewindPoint(projectName);
+  next();
+}
+
+/**
+ * ...docs go here...
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
 export function patchFile(req, res, next) {
   const { projectName, fileName } = res.locals;
   let data = readFileSync(fileName).toString(`utf8`);
@@ -37,5 +120,72 @@ export function patchFile(req, res, next) {
   if (patched) writeFileSync(fileName, patched);
   res.locals.fileHash = `${getFileSum(projectName, fileName, true)}`;
   createRewindPoint(res.locals.projectName);
+  next();
+}
+
+/**
+ * ...docs go here...
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+export async function moveFile(req, res, next) {
+  const { projectName } = res.locals;
+  const slug = req.params.slug + req.params[0];
+  const parts = slug.split(`:`);
+  const oldPath = join(CONTENT_DIR, projectName, parts[0]);
+  if (oldPath === `.`) {
+    return next(new Error(`Illegal rename`));
+  }
+  const newPath = join(CONTENT_DIR, projectName, parts[1]);
+  try {
+    renameSync(oldPath, newPath);
+    createRewindPoint(projectName);
+    next();
+  } catch (e) {
+    next(new Error(`Rename failed`));
+  }
+}
+
+/**
+ * ...docs go here...
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+export async function deleteFile(req, res, next) {
+  const { projectName, fileName } = res.locals;
+  const fullPath = resolve(fileName);
+  const isDir = (await lstat(fullPath)).isDirectory();
+  try {
+    if (isDir) {
+      rmSync(fullPath, { recursive: true });
+    } else {
+      unlinkSync(fullPath);
+    }
+    createRewindPoint(projectName);
+    next();
+  } catch (e) {
+    console.error(e);
+    next(new Error(`Could not delete ${fullPath}`));
+  }
+}
+
+/**
+ * ...docs go here...
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+export async function formatFile(req, res, next) {
+  let formatted = false;
+  const { projectName, fileName } = res.locals;
+  const ext = fileName.substring(fileName.lastIndexOf(`.`), fileName.length);
+  if ([`.js`, `.css`, `.html`].includes(ext)) {
+    await execPromise(`${npm} run  prettier -- ${fileName}`);
+    formatted = true;
+  }
+  res.locals.formatted = formatted;
+  createRewindPoint(projectName);
   next();
 }

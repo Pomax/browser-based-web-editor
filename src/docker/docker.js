@@ -1,5 +1,5 @@
 import { sep } from "node:path";
-import { getFreePort } from "../server/utils.js";
+import { getFreePort } from "../server/helpers.js";
 import { exec, execSync } from "child_process";
 import { updateCaddyFile } from "../caddy/caddy.js";
 

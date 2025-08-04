@@ -46,6 +46,7 @@ export function getViewType(filename) {
     jpg: `image/jpg`,
     jpeg: `image/jpg`,
     png: `image/png`,
+    mov: `video/quicktime`,
     mp3: `audio/mpeg`,
     mp4: `video/mp4`,
     wav: `audio/wav`,
@@ -74,6 +75,7 @@ export function verifyViewType(type, data) {
   if (type === `image/png`) return verifyPNG(bytes);
   if (type === `audio/mpeg`) return verifyMP3(bytes);
   if (type === `audio/wav`) return verifyWave(bytes);
+  if (type === `video/quicktime`) return verifyMov(bytes);
   if (type === `video/mp4`) return verifyMP4(bytes);
   return false;
 }
@@ -102,6 +104,11 @@ function verifyMP3(bytes) {
   // We assume it's ID3 tagged
   // console.log(`mp3`, bytes.slice(0, 3));
   return equals(bytes.slice(0, 3), [0x49, 0x44, 0x33]);
+}
+
+function verifyMov(bytes) {
+  console.log(`mov`, bytes.slice(0, 8));
+  return equals(bytes.slice(0, 8), [0, 0, 0, 0x14, 0x66, 0x74, 0x79, 0x70]);
 }
 
 function verifyMP4(bytes) {

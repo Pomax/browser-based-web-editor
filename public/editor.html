@@ -14,16 +14,14 @@
   </head>
   <body>
     <main>
-      <li id="buttons">
+      <span id="buttons">
+        <a class="link-back" href="https://editor.com.localhost">home</a>
         {% if passport.user %} {{ passport.user.displayName }} {% if
         projectOwner %} {{ projectOwner }} {% endif %} {% endif %}
         <span class="projectname">{{ projectName }}</span>
-        <button id="switch" title="Switch to a different project">
-          switch
-        </button>
         <button id="all" title="Open all files">!!!</button>
         <button id="format" title="Make my code pretty!">🤩</button>
-      </li>
+      </span>
 
       <file-tree id="filetree"></file-tree>
 

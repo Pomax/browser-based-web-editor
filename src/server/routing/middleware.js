@@ -1,11 +1,18 @@
-import { join, posix, sep } from "node:path";
-import { getProjectListForUser } from "./database.js";
+import { join, resolve } from "node:path";
+import {
+  MEMBER,
+  OWNER,
+  getAccessFor,
+  getProjectListForUser,
+} from "./database.js";
 import { CONTENT_DIR, readContentDir } from "../helpers.js";
-import * as Docker from "../../docker/docker.js";
-import { parseBodyText } from "./body-parsing.js";
+import { parseBodyText, parseMultiPartBody } from "./body-parsing.js";
 
-export { parseBodyText };
+export { parseBodyText, parseMultiPartBody };
 
+/**
+ * Send a 404
+ */
 export function pageNotFound(req, res) {
   if (req.query.preview) {
     res.status(404).send(`Preview not found`);
@@ -14,27 +21,70 @@ export function pageNotFound(req, res) {
   }
 }
 
-export function verifyLogin(req, res, next) {
+export async function bindUser(req, res, next = () => {}) {
+  res.locals.user = req.session.passport?.user;
+  next();
+}
+
+export async function verifyLogin(req, res, next) {
   const user = req.session.passport?.user;
-  if (!user) return next(new Error(`Not logged in`));
-  res.locals.user = user;
+  if (!user) {
+    return next(new Error(`Not logged in`));
+  }
+  bindUser(req, res, next);
+}
+
+/**
+ * A simple bit of middleware that confirms that someone
+ * trying to do things to files (beyond loading them) is
+ * in fact allowed to do that thing
+ */
+export function verifyEditRights(req, res, next) {
+  const userName = res.locals.user.displayName;
+  const projectName = res.locals.projectName;
+  const accessLevel = getAccessFor(userName, projectName);
+  if (accessLevel < MEMBER) return next(new Error(`Incorrect access level`));
+  next();
+}
+
+export function verifyOwner(req, res, next) {
+  const userName = res.locals.user.displayName;
+  const projectName = res.locals.projectName;
+  const accessLevel = getAccessFor(userName, projectName);
+  if (accessLevel < OWNER) return next(new Error(`Incorrect access level`));
   next();
 }
 
 export function bindCommonValues(req, res, next) {
-  const { user } = res.locals;
+  let user = res.locals.user;
+  if (!user) bindUser(req, res);
+  user = res.locals.user;
+
+  let userName, projectName, fileName;
   const { project, filename } = req.params;
 
   if (user) {
-    res.locals.userName = user.displayName;
+    userName = res.locals.userName = user.displayName;
   }
 
   if (project) {
-    res.locals.projectName = project;
+    projectName = res.locals.projectName = project;
   }
 
   if (filename) {
-    res.locals.fileName = join(CONTENT_DIR, project, filename);
+    const suffix = req.params[0] || ``;
+
+    fileName = res.locals.fileName = join(
+      CONTENT_DIR,
+      project,
+      filename + suffix
+    );
+
+    const apath = resolve(join(CONTENT_DIR, projectName));
+    const bpath = resolve(fileName);
+    if (!bpath.startsWith(apath)) {
+      return next(new Error(`Illegal file path`));
+    }
   }
 
   next();
@@ -53,33 +103,5 @@ export function loadProjectList(req, res, next) {
       req.session.save();
     }
   }
-  next();
-}
-
-export async function loadProjectData(req, res, next) {
-  const projectName = req.params.project;
-  if (projectName) {
-    const __dirname = `${CONTENT_DIR}${sep}${projectName}`;
-    const osResponse = await readContentDir(__dirname);
-    if (osResponse === false) {
-      return new Error(`read dir didn't work??`);
-    }
-    res.locals = osResponse
-      // strip out the absolute path prefix
-      .map((v) => v.replace(__dirname + posix.sep, ``))
-      // and filter out the .git directory
-      .filter((v) => !v.startsWith(`.git`));
-  }
-  next();
-}
-
-export function setEditorLocals(req, res, next) {
-  res.locals.projectName = req.params.project;
-  next();
-}
-
-export function checkContainerHealth(req, res, next) {
-  const projectName = req.params.project;
-  res.locals.healthStatus = Docker.checkContainerHealth(projectName);
   next();
 }

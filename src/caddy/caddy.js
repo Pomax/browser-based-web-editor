@@ -16,7 +16,7 @@ export function startCaddy() {
   stopCaddy();
   spawn(`caddy`, [`start`, `--config`, caddyFile], {
     shell: true,
-    stdio: `inherit`,
+    // stdio: `inherit`,
   });
 }
 
@@ -81,6 +81,6 @@ export function removeCaddyEntry(name) {
   writeFileSync(caddyFile, data);
   spawn(`caddy`, [`reload`, `--config`, caddyFile], {
     shell: true,
-    stdio: `inherit`,
+    // stdio: `inherit`,
   });
 }

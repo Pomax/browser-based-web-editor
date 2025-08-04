@@ -4,18 +4,26 @@ import { Router } from "express";
 import {
   bindCommonValues,
   parseBodyText,
+  parseMultiPartBody,
   verifyLogin,
+  verifyEditRights,
 } from "../../middleware.js";
 
 // "file specific" middleware
 import {
   getMimeType,
-  loadProjectData,
+  getDirListing,
+  createFile,
+  handleUpload,
   patchFile,
-  verifyEditRights,
+  moveFile,
+  deleteFile,
+  formatFile,
 } from "./middleware.js";
 
 export const files = Router();
+
+const prechecks = [verifyLogin, bindCommonValues, verifyEditRights];
 
 /**
  *  Get the project files for populating the <file-tree>, making sure to filter
@@ -23,20 +31,42 @@ export const files = Router();
  *  permissions for this project (e.g. don't show the "data" dir to viewers,
  *  don't show the .env file to collaborators, don't filter for owners)
  */
-files.get(
-  `/dir/:project`,
-  //  loadProject,
-  //  loadProjectPermissions,
-  bindCommonValues,
-  loadProjectData,
-  //  filterProjectContent, // remove any protected files so that they only show for the project owner(s)
-  (_req, res) => res.json(res.locals)
+files.get(`/dir/:project`, bindCommonValues, getDirListing, (_req, res) =>
+  res.json(res.locals.dir)
 );
 
-files.get(`/:project/:filename`, bindCommonValues, getMimeType, (req, res) => {
-  res.set(`Content-Type`, res.locals.mimeType);
-  res.send(res.locals.data);
-});
+/**
+ * Create a file
+ */
+files.post(
+  `/create/:project/:filename*`,
+  ...prechecks,
+  createFile,
+  (req, res) => res.send(`ok`)
+);
+
+/**
+ * Get a file's content.
+ * FIXME: this should throw an error if the user is trying to access private files and they don't have the right permissions
+ */
+files.get(
+  `/:project/:filename*`,
+  // anyone can see your (public) files. The web is open source!
+  bindCommonValues,
+  getMimeType,
+  (req, res) => {
+    res.set(`Content-Type`, res.locals.mimeType);
+    res.send(res.locals.data);
+  }
+);
+
+files.post(
+  `/upload/:project/:filename*`,
+  ...prechecks,
+  parseMultiPartBody,
+  handleUpload,
+  (req, res) => res.send(`ok`)
+);
 
 /**
  * Process a file change request: only members and owners should be able to
@@ -44,10 +74,38 @@ files.get(`/:project/:filename`, bindCommonValues, getMimeType, (req, res) => {
  */
 files.post(
   `/sync/:project/:filename*`,
-  verifyLogin,
-  bindCommonValues,
-  verifyEditRights,
+  ...prechecks,
   parseBodyText,
   patchFile,
   (_req, res) => res.send(res.locals.fileHash)
+);
+
+/**
+ * Rename/move a file
+ */
+files.post(`/rename/:project/:slug*`, ...prechecks, moveFile, (req, res) =>
+  res.send(`ok`)
+);
+
+/**
+ * Create a file
+ */
+files.delete(
+  `/delete/:project/:filename*`,
+  ...prechecks,
+  deleteFile,
+  (req, res) => res.send(`ok`)
+);
+
+/**
+ * Format a file
+ */
+files.post(
+  `/format/:project/:filename*`,
+  ...prechecks,
+  formatFile,
+  (req, res) =>
+    res.json({
+      formatted: res.locals.formatted,
+    })
 );

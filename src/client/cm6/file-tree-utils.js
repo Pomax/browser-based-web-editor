@@ -30,13 +30,17 @@ function addFileTreeHandling(projectName) {
 
     const { tab, panel } = entry;
     entry.filename = key;
-    tab.title = key;
-    tab.childNodes.forEach((n) => {
-      if (n.nodeName === `#text`) {
-        n.textContent = key;
-      }
-    });
-    panel.title = panel.id = key;
+    if (tab) {
+      tab.title = key;
+      tab.childNodes.forEach((n) => {
+        if (n.nodeName === `#text`) {
+          n.textContent = key;
+        }
+      });
+    }
+    if (panel) {
+      panel.title = panel.id = key;
+    }
   }
 
   fileTree.addEventListener(`file:click`, async (evt) => {
@@ -88,9 +92,7 @@ function addFileTreeHandling(projectName) {
         const fileEntry = grant();
         getOrCreateFileEditTab(fileEntry, projectName, path);
       } else {
-        console.error(
-          `Could not create ${fileName} (status:${response.status})`
-        );
+        console.error(`Could not create ${path} (status:${response.status})`);
       }
     }
   });
@@ -101,10 +103,12 @@ function addFileTreeHandling(projectName) {
     if (response instanceof Error) return;
     if (response.status === 200) {
       const fileEntry = grant();
-      let key = oldPath.replace(contentDir, ``);
+      let key = oldPath.replace(projectName, ``);
+      console.log({ key });
       const entry = fileEntry.state;
       if (entry) {
-        const newKey = newPath.replace(contentDir, ``);
+        const newKey = newPath.replace(projectName, ``);
+        console.log({ newKey });
         updateEditorBindings(fileEntry, entry, newKey, key);
       }
     } else {
@@ -117,7 +121,7 @@ function addFileTreeHandling(projectName) {
 
   async function uploadFile(fileName, content, grant) {
     const fileSize = content.byteLength;
-    if (fileSize > 1_000_000) {
+    if (fileSize > 10_000_000) {
       return alert(`File uploads are limited to 1MB`);
     }
     const form = new FormData();

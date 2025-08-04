@@ -32,12 +32,16 @@ export function getInitialState(fileEntry, filename, data) {
       const tab = e.view.tabElement;
       if (tab && e.docChanged) {
         const entry = fileEntry.state;
+        const reset = entry.contentReset;
         // If we're already on a debounce schedule clear it
         // before we set the new debounce timeout.
-        if (entry.debounce) {
+        if (entry.debounce || reset) {
           clearTimeout(entry.debounce);
         }
-        entry.debounce = setTimeout(entry.sync, 1000);
+        if (!reset) {
+          entry.debounce = setTimeout(entry.sync, 1000);
+        }
+        entry.contentReset = false;
       }
     })
   );

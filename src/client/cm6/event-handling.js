@@ -1,7 +1,6 @@
 import { fetchFileContents } from "../utils.js";
 import { API } from "../api.js";
 
-const changeProject = document.getElementById(`switch`);
 const all = document.getElementById(`all`);
 const format = document.getElementById(`format`);
 const left = document.getElementById(`left`);
@@ -11,13 +10,6 @@ const right = document.getElementById(`right`);
  * Hook up the "Add new file" and "Format this file" buttons
  */
 export function addEventHandling(projectName) {
-  changeProject.addEventListener(`click`, async () => {
-    const name = prompt(`Project name?`).trim();
-    if (name) {
-      location = `${location.toString().replace(location.search, ``)}?project=${name}`;
-    }
-  });
-
   all.addEventListener(`click`, async () => {
     document.querySelectorAll(`file-entry`).forEach((e) => e.click());
   });

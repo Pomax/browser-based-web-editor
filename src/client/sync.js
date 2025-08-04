@@ -28,13 +28,9 @@ export async function syncContent(
     updatePreview();
   }
 
-  // This should, if I did everything right, never happen.
+  // If a user tries to change a file they don't have rights to, we nix their changes.
   else {
-    console.error(`PRE:`, currentContent);
-    console.error(`POST:`, newContent);
-    console.error(`HASH:`, getFileSum(newContent), responseHash);
-    console.log(`forced sync: fetching file content from server`);
-    entry.content = await fetchFileContents(projectName, entry.filename);
+    entry.contentReset = true;
     entry.view.dispatch({
       changes: {
         from: 0,
