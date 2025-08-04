@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Editor</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+  </head>
+  <body>
+    <h1>Admin interface</h1>
+
+    {% if passport && passport.user %}
+      Currently logged in as {{ passport.user.displayName }}, click here to <a href="/auth/logout">logout</a>.
+
+    <section>
+      <h2>Users</h2>
+
+      ...UI goes here...
+    </section>
+
+    <section>
+      <h2>Projects</h2>
+
+      ...UI goes here...
+    </section>
+    {% else %}
+      You'll probably want to <a href="/auth/github">login</a>
+    {% endif %}
+  </body>
+</html>
