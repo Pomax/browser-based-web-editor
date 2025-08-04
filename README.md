@@ -92,7 +92,7 @@ There's a decades old recipe for doing software development:
 
 We're still in phase 1.
 
-## I want more / I have ideas
+## I want more <sup>and</sup>⧸<sub>or</sub> I have ideas
 
 I know. [Get in touch](https://github.com/Pomax/browser-editor-tests/issues). We can do more.
 
