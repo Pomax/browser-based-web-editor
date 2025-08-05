@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { execSync, spawn } from "node:child_process";
+import { join } from "node:path";
 
-const caddyFile = `${import.meta.dirname}/Caddyfile`;
+const caddyFile = join(import.meta.dirname, `Caddyfile`);
 
 /**
  * Ensure a local Caddyfile exists for us to work with

@@ -9,12 +9,14 @@ This is an attempt at implementing a friend browser-based web content editor, us
 1. It's a node project, so you'll need that installed (I recommend `nvm` or its windows equivalent).
 1. You'll also need docker installed, which has different instructions depending on the OS you're using.
 1. And you'll want `caddy` installed, for reverse-proxying container ports so you can just load https://projectname.localhost
+1. Finally, you need `sqlite3` installed. Rinse and repeat for linux or MacOs, on Windows you'll want to donwnload the `sqlite-tools-win-x64-3500400.zip`, create a `C:\Program Files\Sqlite3`, and unpack the zip file into that, then add that folder to your PATH (The "Docker" section below goes over how you do that for docker, just do the same for sqlite3).
 
 With those prerequisites met:
 
 - clone this repo (or fork it and then clone that),
 - run `git checkout with-filetree` in the repo folder,
 - run `npm install` in the repo folder.
+
 
 Things should be cross-platform enough to work on Windows, Mac, and Linux by running `npm start` and then opening the URL that tells you things are running on.
 
@@ -64,6 +66,11 @@ Caddy is a general purpose server (similar to Nginx) that automatically handles 
 You can now run `caddy` anywhere.
 
 ## So then what?
+
+1. open the `src/docker` directory in a terminal and run `docker build -t local-base-image .`, to create the basic image that all other containers will be using as starting point
+1. open the `data` directory in a terminal and run `sqlite3 data.sqlite3`. Once in the Sqlite repl, type `.read schema.sql`, and when that finishes you can double-ctrl-c back out of sqlite.
+
+With those one-time steps completely, we can run `npm start` whenever we want.
 
 Open the URL that `npm start` gives you, log in, and then start making projects. Project load, and project creation, runs through the following steps:
 

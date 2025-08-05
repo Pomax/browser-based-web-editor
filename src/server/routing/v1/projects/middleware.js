@@ -8,7 +8,7 @@ import {
   checkContainerHealth as dockerHealthCheck,
   restartContainer as restartDockerContainer,
   deleteContainerAndImage,
-} from "../../../../docker/docker.js";
+} from "../../../../docker/docker-helpers.js";
 import { createProjectForUser, deleteProjectForUser } from "../../database.js";
 import { removeCaddyEntry } from "../../../../caddy/caddy.js";
 

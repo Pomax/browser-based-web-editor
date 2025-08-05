@@ -1,6 +1,6 @@
 import net from "node:net";
 import { readFileSync } from "node:fs";
-import { sep, posix } from "node:path";
+import { resolve, sep, posix } from "node:path";
 import { exec } from "node:child_process";
 
 export const isWindows = process.platform === `win32`;
@@ -105,11 +105,20 @@ export async function readContentDir(dir) {
     return false;
   }
 
-  const removal = new RegExp(`.*${dir}\\/`);
-  const filtered = dirListing
-    .split(/\r?\n/)
-    .map((v) => v.split(sep).join(posix.sep).replace(removal, ``))
-    .filter((v) => !!v && !v.startsWith(`.git`) && v !== dir);
+  let filtered = dirListing.split(/\r?\n/);
+
+  if (isWindows) {
+    const prefix = resolve(dir) + `\\`;
+    filtered = filtered.map((v) =>
+      v.replace(prefix, ``).split(sep).join(posix.sep)
+    );
+  } else {
+    const prefix = new RegExp(`.*${dir}\\/`);
+    filtered = filtered.map((v) => v.replace(prefix, ``));
+  }
+
+  // Never expose the git directory.
+  filtered = filtered.filter((v) => !!v && !v.startsWith(`.git`) && v !== dir);
 
   return filtered;
 }
