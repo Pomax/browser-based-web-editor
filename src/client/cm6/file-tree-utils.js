@@ -2,25 +2,42 @@ import { API } from "../api.js";
 import { getMimeType } from "../content-types.js";
 import { updatePreview } from "../preview.js";
 import { getOrCreateFileEditTab } from "./editor-components.js";
-
+import { DEFAULT_FILES } from "../default-files.js";
 import { unzip } from "../../../public/vendor/unzipit.module.js";
 
+const projectName = document.querySelector(`.projectname`).textContent;
 const fileTree = document.getElementById(`filetree`);
+
+fileTree.addEventListener(`tree:ready`, async () => {
+  console.log(`TREE READY`);
+  let fileEntry;
+  for (const d of DEFAULT_FILES) {
+    fileEntry = fileTree.querySelector(`file-entry[path="${d}"]`);
+    if (fileEntry) {
+      getOrCreateFileEditTab(
+        fileEntry,
+        projectName,
+        fileEntry.getAttribute(`path`)
+      );
+      break;
+    }
+  }
+});
 
 /**
  * Make sure we're in sync with the server...
  */
-export async function setupFileTree({ projectName }) {
+export async function setupFileTree() {
   const dirData = await API.files.dir(projectName);
   if (dirData instanceof Error) return;
   fileTree.setContent(dirData);
-  addFileTreeHandling(projectName);
+  addFileTreeHandling();
 }
 
 /**
  * Deal with all the events that might be coming from the file tree
  */
-function addFileTreeHandling(projectName) {
+function addFileTreeHandling() {
   function updateEditorBindings(fileTreeEntry, entry, key, oldKey) {
     if (oldKey) {
       fileTreeEntry.state = {};

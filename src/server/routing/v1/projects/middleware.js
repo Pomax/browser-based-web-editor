@@ -6,6 +6,7 @@ import { CONTENT_DIR, execPromise, setupGit } from "../../../helpers.js";
 import {
   runContainer,
   checkContainerHealth as dockerHealthCheck,
+  restartContainer as restartDockerContainer,
   deleteContainerAndImage,
 } from "../../../../docker/docker.js";
 import { createProjectForUser, deleteProjectForUser } from "../../database.js";
@@ -46,6 +47,11 @@ export async function loadProject(req, res, next) {
  */
 export function checkContainerHealth(req, res, next) {
   res.locals.healthStatus = dockerHealthCheck(req.locals.projectName);
+  next();
+}
+
+export function restartContainer(req, res, next) {
+  restartDockerContainer(res.locals.projectName);
   next();
 }
 

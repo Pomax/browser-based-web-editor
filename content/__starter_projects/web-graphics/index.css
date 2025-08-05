@@ -1,6 +1,35 @@
-body {
-  background: #44ffd8;
-}
-graphics-element {
-  background: white;
+html {
+  width: 100%;
+  background: #ff44d8;
+  display: flex;
+  align-content: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+
+  body {
+    margin: 0;
+    padding: 1em;
+    background: #44ffd8;
+    max-width: 960px;
+    min-height: 100vh;
+    box-shadow: 0 0 3em 0 blue;
+
+    h1 {
+      font-size: 2em;
+      background: white;
+      color: #333;
+      border: 1px solid black;
+      border-width: 1px 0;     
+      position: relative;
+      left: -0.5em;
+      top: -0.5em;
+      width: calc(100% + 0.5em - 2px);
+      padding: 0.3em;
+    }
+
+    graphics-element {
+      background: white;
+    }
+  }
 }

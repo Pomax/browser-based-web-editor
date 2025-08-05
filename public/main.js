@@ -29,8 +29,8 @@ button.addEventListener(`click`, createProject);
 Array.from(document.querySelectorAll(`button.delete-project`)).forEach((e) => {
   const { projectName } = e.dataset;
   e.addEventListener(`click`, async () => {
-    if (confirm(`Are you sure you want to delete this project?`)) {
-      if (confirm(`No really: there is NO undelete. Are you SURE?`)) {
+    if (confirm(`Are you sure you want to delete "${projectName}"?`)) {
+      if (confirm(`No really: there is NO undelete. ARE YOU SURE?`)) {
         await fetch(`/v1/projects/delete/${projectName}`, { method: `POST` });
         location.reload();
       }

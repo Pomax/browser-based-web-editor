@@ -7,6 +7,7 @@ import {
 
 import {
   checkContainerHealth,
+  restartContainer,
   createProject,
   deleteProject,
   loadProject,
@@ -60,6 +61,18 @@ projects.get(
   (_req, res) => {
     res.send(res.locals.healthStatus);
   }
+);
+
+/**
+ * restart a project container
+ */
+projects.post(
+  `/restart/:project`,
+  verifyLogin,
+  bindCommonValues,
+  verifyOwner,
+  restartContainer,
+  (_req, res) => res.send(`ok`)
 );
 
 /**

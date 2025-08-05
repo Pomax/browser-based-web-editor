@@ -1,5 +1,4 @@
 // Load our server dependencies...
-import { execSync } from "node:child_process";
 import express from "express";
 import nocache from "nocache";
 import helmet from "helmet";
@@ -13,7 +12,7 @@ dotenv.config({ quiet: true });
 
 // Quick check: does docker work?
 try {
-  execSync(`docker ps`, { shell: true }).toString(`utf8`);
+  await execPromise(`docker ps`);
 } catch (e) {
   console.error(e, `\nERROR: no Docker service is running!\n\n`);
   process.exit(1);
@@ -21,7 +20,7 @@ try {
 
 // Second quick check: does caddy work?
 try {
-  execSync(`caddy --version`, { shell: true }).toString(`utf8`);
+  await execPromise(`caddy --version`);
 } catch (e) {
   console.error(`\nERROR: Caddy does not appear to be installed!\n\n`);
   process.exit(1);
@@ -32,6 +31,7 @@ const app = express();
 
 // Set up the render engine:
 import nunjucks from "nunjucks";
+import { execPromise } from "./helpers.js";
 nunjucks.configure("public", { autoescape: true, noCache: true, express: app });
 
 // Set the various general aspects
