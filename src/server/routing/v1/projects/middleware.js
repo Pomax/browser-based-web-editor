@@ -79,7 +79,7 @@ export async function loadProjectHistory(req, res, next) {
 export async function createProject(req, res, next) {
   const { userName, projectName } = res.locals;
   const dir = join(CONTENT_DIR, projectName);
-  const starter = `__starter_projects/${req.params.starter || `web-graphics`}`;
+  const starter = `__starter_projects/${res.locals.starter || `empty`}`;
   if (!existsSync(dir)) {
     mkdirSync(dir);
     cpSync(dir.replace(projectName, starter), dir, { recursive: true });

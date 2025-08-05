@@ -1,3 +1,5 @@
+// I stole this code from Stackoverflow, but I can't say it's particularly well written. It works, but it's also pretty terrible.
+
 function print(path, layer) {
   if (layer.route) {
     layer.route.stack.forEach(

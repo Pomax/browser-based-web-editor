@@ -57,6 +57,7 @@ export async function getDirListing(req, res, next) {
     // Remove any "private" data from the dir listing if
     // the user has no access rights to them.
     const accessLevel = getAccessFor(userName, projectName);
+
     if (accessLevel < MEMBER) {
       // TODO: this should become a per-project setting so that
       // //    folks can mark any dir or file as private.

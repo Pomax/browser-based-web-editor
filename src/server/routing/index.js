@@ -5,6 +5,7 @@ import betterSQLite3Store from "better-sqlite3-session-store";
 import {
   bindCommonValues,
   loadProjectList,
+  loadStarters,
   pageNotFound,
 } from "./middleware.js";
 import { addPassportAuth } from "./v1/auth/passport.js";
@@ -55,8 +56,8 @@ export function setupRoutes(app) {
   setupRoutesV1(app);
 
   // ...except for the main page
-  app.get(`/`, bindCommonValues, loadProjectList, (req, res) =>
-    res.render(`main.html`, req.session)
+  app.get(`/`, bindCommonValues, loadProjectList, loadStarters, (req, res) =>
+    res.render(`main.html`, { ...res.locals, ...req.session })
   );
 
   // static routes for the website itself

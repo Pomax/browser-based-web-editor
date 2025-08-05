@@ -6,6 +6,9 @@ export const OWNER = 30; // full access, can delete projects
 export const EDITOR = 20; // edit access, cannot delete projects, can edit project settings
 export const MEMBER = 10; // edit access, cannot edit project settings
 
+export const UNKNOWN_USER = -1;
+export const NOT_ACTIVATED = -2;
+
 // We're in ./src/server/routing, and we want ./data
 const dbPath = `${import.meta.dirname}/../../../data/data.sqlite3`;
 const db = sqlite3(dbPath);
@@ -97,11 +100,12 @@ export function createProjectForUser(userName, projectName) {
 }
 
 export function getAccessFor(userName, projectName) {
-  if (!userName) return -1;
+  if (!userName) return UNKNOWN_USER;
   const u = User.find({ name: userName });
+  if (!u.enabled_at) return NOT_ACTIVATED;
   const p = Project.find({ name: projectName });
   const a = Access.find({ project_id: p.id, user_id: u.id });
-  return a ? a.access_level : -1;
+  return a ? a.access_level : UNKNOWN_USER;
 }
 
 export function deleteProjectForUser(userName, projectName) {

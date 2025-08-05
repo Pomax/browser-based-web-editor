@@ -20,7 +20,7 @@ export const projects = Router();
  * Create a project by name (using res.params.project)
  */
 projects.post(
-  `/create/:project`,
+  `/create/:project/:starter`,
   verifyLogin,
   bindCommonValues,
   createProject,

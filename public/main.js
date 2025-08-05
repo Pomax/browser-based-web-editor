@@ -3,18 +3,23 @@
  */
 const create = document.getElementById(`create-project-form`);
 const input = create.querySelector(`input`);
+const starter = create.querySelector(`select`);
 const button = create.querySelector(`button`);
+
 create.querySelectorAll(`[disabled]`).forEach((e) => (e.disabled = false));
 const createProject = async (evt) => {
   const projectName = input.value;
-  if (confirm(`Create project "${projectName}"?`)) {
-    await fetch(`/v1/projects/create/${projectName}`, { method: `POST` });
+  const type = starter.value || `empty`;
+  if (confirm(`Create ${type} project "${projectName}"?`)) {
+    await fetch(`/v1/projects/create/${projectName}/${type}`, {
+      method: `POST`,
+    });
     location.reload();
   }
 };
 input.addEventListener(
   `keydown`,
-  ({ key }) => key === `Enter` && createProject()
+  ({ key }) => key === `Enter` && button.click()
 );
 button.addEventListener(`click`, createProject);
 

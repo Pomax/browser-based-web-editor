@@ -1,6 +1,8 @@
 import { join, resolve } from "node:path";
+import { readdirSync } from "node:fs";
 import {
   MEMBER,
+  NOT_ACTIVATED,
   OWNER,
   getAccessFor,
   getProjectListForUser,
@@ -43,6 +45,8 @@ export function verifyEditRights(req, res, next) {
   const userName = res.locals.user.displayName;
   const projectName = res.locals.projectName;
   const accessLevel = getAccessFor(userName, projectName);
+  if (accessLevel === NOT_ACTIVATED)
+    return next(new Error(`Your account has not been activated yet`));
   if (accessLevel < MEMBER) return next(new Error(`Incorrect access level`));
   next();
 }
@@ -51,6 +55,8 @@ export function verifyOwner(req, res, next) {
   const userName = res.locals.user.displayName;
   const projectName = res.locals.projectName;
   const accessLevel = getAccessFor(userName, projectName);
+  if (accessLevel === NOT_ACTIVATED)
+    return next(new Error(`Your account has not been activated yet`));
   if (accessLevel < OWNER) return next(new Error(`Incorrect access level`));
   next();
 }
@@ -61,7 +67,7 @@ export function bindCommonValues(req, res, next) {
   user = res.locals.user;
 
   let userName, projectName, fileName;
-  const { project, filename } = req.params;
+  const { project, filename, starter } = req.params;
 
   if (user) {
     userName = res.locals.userName = user.displayName;
@@ -69,6 +75,10 @@ export function bindCommonValues(req, res, next) {
 
   if (project) {
     projectName = res.locals.projectName = project;
+  }
+
+  if (starter) {
+    res.locals.starter = starter;
   }
 
   if (filename) {
@@ -103,5 +113,12 @@ export function loadProjectList(req, res, next) {
       req.session.save();
     }
   }
+  next();
+}
+
+export function loadStarters(req, res, next) {
+  res.locals.starters = readdirSync(
+    join(CONTENT_DIR, `__starter_projects`)
+  ).filter((v) => !v.includes(`.`));
   next();
 }
