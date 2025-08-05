@@ -1,0 +1,16 @@
+{
+  "name": "test-code",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "A project for testing node.js runners",
+  "main": "",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "you?",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "nunjucks": "^3.2.4"
+  }
+}
