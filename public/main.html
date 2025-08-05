@@ -60,7 +60,10 @@
       <input disabled name="name" type="text" placeholder="project name" />
       <select name="starter">
         {% for s in starters %}
-        <option name="{{s}}" value="{{s}}">{{s}}</option>
+        <option
+          name="{{s}}"
+          value="{{s}}"
+          {% if s === "empty" %} selected {% endif %}>{{s}}</option>
         {% endfor %}
       </select>
       <button disabled>create new project</button>
