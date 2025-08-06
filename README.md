@@ -14,9 +14,7 @@ This is an attempt at implementing a friendly browser-based web content editor, 
 With those prerequisites met:
 
 - clone this repo (or fork it and then clone that),
-- run `git checkout with-filetree` in the repo folder,
 - run `npm install` in the repo folder.
-
 
 Things should be cross-platform enough to work on Windows, Mac, and Linux by running `npm start` and then opening the URL that tells you things are running on.
 
