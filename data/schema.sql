@@ -80,9 +80,3 @@ CREATE INDEX env_vars ON project_env_vars(project_id);
 
 INSERT INTO project_access_levels (name, access_level) VALUES ('owner', 30);
 INSERT INTO project_access_levels (name, access_level) VALUES ('member', 20);
-
--- initial seed data
-
-INSERT INTO users (name, enabled_at) values ('Pomax', CURRENT_TIMESTAMP);
-INSERT INTO projects (name, description) VALUES ('lame', 'superellipse testing sketch');
-INSERT INTO project_access (project_id, user_id) VALUES (1, 1);

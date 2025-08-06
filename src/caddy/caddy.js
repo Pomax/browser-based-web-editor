@@ -4,15 +4,25 @@ import { join } from "node:path";
 
 const caddyFile = join(import.meta.dirname, `Caddyfile`);
 
+const defaultCaddyContent = `editor.com.localhost {
+\treverse_proxy localhost:8000
+}
+
+*.app.localhost {
+\thandle_errors {
+\t\trewrite * /{err.status_code}.html 
+\t\troot * ./src/caddy/
+\t\tfile_server
+\t}
+}
+`;
+
 /**
  * Ensure a local Caddyfile exists for us to work with
  */
 export function startCaddy() {
   if (!existsSync(caddyFile)) {
-    writeFileSync(
-      caddyFile,
-      `editor.com.localhost {\n  reverse_proxy localhost:8000\n}\n`
-    );
+    writeFileSync(caddyFile, defaultCaddyContent);
   }
   stopCaddy();
   spawn(`caddy`, [`start`, `--config`, caddyFile], {
