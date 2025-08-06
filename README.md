@@ -1,4 +1,4 @@
-# CodeMirror 6 based editor with filetree component
+# Use the web to build the web
 
 <table border="1" cellpadding="0" cellspacing="0"><tr><td><img width="100%" src="https://github.com/user-attachments/assets/fae319b0-e39b-4369-a81e-df8cca233b57"></td><tr></table>
 
