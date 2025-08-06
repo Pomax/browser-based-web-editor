@@ -1,22 +1,20 @@
-# CodeMirror 6 based editor with filetree component
+# Use the web to build the web
 
 <table border="1" cellpadding="0" cellspacing="0"><tr><td><img width="100%" src="https://github.com/user-attachments/assets/fae319b0-e39b-4369-a81e-df8cca233b57"></td><tr></table>
 
-This is an attempt at implementing a friend browser-based web content editor, using [codemirror 6](https://codemirror.net), a [custom-file-tree](https://github.com/pomax/custom-file-tree) as file tree component (as codemirror itself only models single editing panels), and a sprinkling of docker for runtime isolation and a reverse proxy because we like opening https URLs, and we don't like having to remember port numbers.
+This is an attempt at implementing a friendly browser-based web content editor, using [codemirror 6](https://codemirror.net), a [custom-file-tree](https://github.com/pomax/custom-file-tree) as file tree component (as codemirror itself only models single editing panels), and a sprinkling of docker for runtime isolation and a reverse proxy because we like opening https URLs, and we don't like having to remember port numbers.
 
 ## How do I use this?
 
 1. It's a node project, so you'll need that installed (I recommend `nvm` or its windows equivalent).
 1. You'll also need docker installed, which has different instructions depending on the OS you're using.
 1. And you'll want `caddy` installed, for reverse-proxying container ports so you can just load https://projectname.localhost
-1. Finally, you need `sqlite3` installed. Rinse and repeat for linux or MacOs, on Windows you'll want to donwnload the `sqlite-tools-win-x64-3500400.zip`, create a `C:\Program Files\Sqlite3`, and unpack the zip file into that, then add that folder to your PATH (The "Docker" section below goes over how you do that for docker, just do the same for sqlite3).
+1. Finally, you need `sqlite3` installed. Rinse and repeat for linux or MacOs, on Windows you'll want to donwnload the `sqlite-tools-win-x64-3500400.zip` from https://www.sqlite.org/download.html, create a `C:\Program Files\Sqlite3`, and unpack the zip file into that, then add that folder to your PATH (The "Docker" section below goes over how you do that for docker, just do the same for sqlite3).
 
 With those prerequisites met:
 
 - clone this repo (or fork it and then clone that),
-- run `git checkout with-filetree` in the repo folder,
 - run `npm install` in the repo folder.
-
 
 Things should be cross-platform enough to work on Windows, Mac, and Linux by running `npm start` and then opening the URL that tells you things are running on.
 
