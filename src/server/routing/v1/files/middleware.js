@@ -92,6 +92,13 @@ export function createFile(req, res, next) {
   next();
 }
 
+/**
+ * ...docs go here...
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
 export function handleUpload(req, res, next) {
   const { projectName, fileName } = res.locals;
   const slug = fileName.substring(fileName.lastIndexOf(`/`) + 1);

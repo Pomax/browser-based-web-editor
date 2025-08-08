@@ -47,7 +47,8 @@ files.post(
 
 /**
  * Get a file's content.
- * FIXME: this should throw an error if the user is trying to access private files and they don't have the right permissions
+ * FIXME: this should throw an error if the user is trying to access
+ *        private files and they don't have the right permissions.
  */
 files.get(
   `/:project/:filename*`,
@@ -60,6 +61,9 @@ files.get(
   }
 );
 
+/**
+ * Upload a file into a specific project
+ */
 files.post(
   `/upload/:project/:filename*`,
   ...prechecks,

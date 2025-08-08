@@ -5,7 +5,7 @@ import { getOrCreateFileEditTab } from "./editor-components.js";
 import { DEFAULT_FILES } from "../default-files.js";
 import { unzip } from "../../../public/vendor/unzipit.module.js";
 
-const projectName = document.querySelector(`.projectname`).textContent;
+const { projectId, projectName } = document.body.dataset;
 const fileTree = document.getElementById(`filetree`);
 
 fileTree.addEventListener(`tree:ready`, async () => {

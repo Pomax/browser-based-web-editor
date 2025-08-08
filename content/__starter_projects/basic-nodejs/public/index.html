@@ -3,10 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Template Page</title>
+    <title>Basic Node.js example</title>
   </head>
   <body>
     <h1>This is a basic Node.js server.</h1>
     <p>You can do a lot with this!</p>
+
+    <p>
+      The base image gives you both Node and Python (because some Node
+      dependencies require Python for compilation...), so you get Node {{ node
+      }} and {{ python }} to work with.
+    </p>
+
+    <p>
+      You may be a little scared of that giant "node_modules" folder on the
+      left: those are all the things this Node project relies on, and we
+      basically don't care about what's in that folder: simply click the folder
+      icon to the left of "node_modules" to collapse the folder, and suddenly
+      the project will look a lot more manageable =)
+    </p>
+
+    <p>
+      (Although if you want to browse the dependency content, or even change
+      what they do, you can: it's your project, dig in!)
+    </p>
   </body>
 </html>

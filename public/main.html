@@ -7,71 +7,12 @@
     <link rel="icon" type="image/png" href="favicon.png" />
     <link rel="stylesheet" href="./layout.css" />
     <link rel="stylesheet" href="./style.css" />
-    <style>
-      html {
-        body {
-          overflow: auto !important;
-          padding: 1em;
-          ul {
-            list-style: none;
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            gap: 0.5em;
-            li {
-              position: relative;
-              background: #cfffed45;
-              border: 1px solid black;
-              padding: 1em;
-              margin-top: 0.5em;
-              border-radius: 0.5em;
-              h3 {
-                width: 100%;
-                background: white;
-                font-size: 2em;
-                margin: 0;
-                text-align: center;
-                border: 1px solid #666;
-              }
-              iframe {
-                display: block;
-                background: white;
-                border: 3px solid grey;
-                transform: scale(calc(400 / 1000));
-                width: 1000px;
-                height: 600px;
-                margin: calc(-150px - 1.5em) -300px calc(-150px - 1.5em) -300px;
-                & + a {
-                  display: inline-block;
-                  width: 100%;
-                  text-align: right;
-                  font-size: 0.8em;
-                }
-              }
-              .delete-project {
-                position: absolute;
-                top: -1em;
-                right: 0;
-                background: red;
-                color: white;
-                cursor: pointer;
-              }
-              p {
-                margin: 0;
-                margin-top: 0.5em;
-                &:last-of-type {
-                  text-align: right;
-                }
-              }
-            }
-          }
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="./main.css" />
     <script src="main.js" async defer></script>
   </head>
   <body>
     <h1>Welcome</h1>
+
     {% if passport.user %} Currently logged in as {{ passport.user.displayName
     }}, click here to <a href="/auth/logout">logout</a>. {% else %} You'll
     probably want to <a href="/auth/github">login</a>
@@ -97,35 +38,11 @@
     <h2>Your projects:</h2>
     <ul>
       {% for project in projectList %}
-      <li>
-        <h3>
-          <a
-            href="https://editor.com.localhost/v1/projects/edit/{{ project.name }}"
-            >{{ project.name }}</a
-          >
-        </h3>
-        {% if project.description %}
-        <p>
-          {{ project.description }}
-        </p>
-        {% endif %}
-        <p>Created {{ project.created_at }}</p>
-        <button data-project-name="{{ project.name }}" class="delete-project">
-          delete
-        </button>
-        <iframe
-          width="1000"
-          height="600"
-          src="https://{{ project.name }}.app.localhost"
-        ></iframe>
-        <a href="https://{{ project.name }}.app.localhost" target="_blank">Open in new tab</a>
-        <!--
-      TODO: download button
-      TODO: export to github button
-      TODO: embed?
-      --></li>
+      {% include "fragments/project-card.html" %}
       {% endfor %}
     </ul>
     {% endif %}
+
+    {% include "fragments/edit.html" %}
   </body>
 </html>

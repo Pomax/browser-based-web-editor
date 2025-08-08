@@ -6,6 +6,8 @@ import {
   OWNER,
   getAccessFor,
   getProjectListForUser,
+  getNameForProjectId,
+  getIdForProjectName,
 } from "./database.js";
 import { CONTENT_DIR, readContentDir } from "../helpers.js";
 import { parseBodyText, parseMultiPartBody } from "./body-parsing.js";
@@ -66,15 +68,29 @@ export function bindCommonValues(req, res, next) {
   if (!user) bindUser(req, res);
   user = res.locals.user;
 
-  let userName, projectName, fileName;
-  const { project, filename, starter } = req.params;
+  let userName, projectName, projectId, fileName;
+  const { project, pid, filename, starter } = req.params;
 
   if (user) {
     userName = res.locals.userName = user.displayName;
   }
 
+  if (pid) {
+    projectId = res.locals.projectId = parseInt(pid, 10);
+  }
+
   if (project) {
     projectName = res.locals.projectName = project;
+  } else if (projectId) {
+    try {
+      projectName = res.locals.projectName = getNameForProjectId(projectId);
+    } catch (e) {}
+  }
+
+  if (!projectId && projectName) {
+    try {
+      projectId = res.locals.projectId = getIdForProjectName(projectName);
+    } catch (e) {}
   }
 
   if (starter) {

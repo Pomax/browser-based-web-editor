@@ -3,7 +3,7 @@ import { API } from "./api.js";
 const restart = document.querySelector(`#preview-buttons .restart`);
 const newtab = document.querySelector(`#preview-buttons .newtab`);
 const preview = document.getElementById(`preview`);
-const projectName = document.querySelector(`.projectname`)?.textContent;
+const { projectId, projectName } = document.body.dataset;
 
 let first_time_load = 0;
 

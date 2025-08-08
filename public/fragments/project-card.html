@@ -1,0 +1,30 @@
+<li>
+  <h3>
+    <a href="https://editor.com.localhost/v1/projects/edit/{{ project.name }}"
+      >{{ project.name }}</a
+    >
+  </h3>
+  {% if project.description %}
+  <p>{{ project.description }}</p>
+  {% endif %}
+  <p>Created {{ project.created_at }}</p>
+  <button data-project-id="{{ project.id }}" class="edit-project">edit</button>
+  <button data-project-name="{{ project.name }}" class="delete-project">
+    delete
+  </button>
+  <iframe
+    width="1000"
+    height="600"
+    src="https://{{ project.name }}.app.localhost"
+  ></iframe>
+  <a href="https://{{ project.name }}.app.localhost" target="_blank"
+    >Open in new tab</a
+  >
+</li>
+
+<!--
+  TODO: download button
+  TODO: export to github button
+  TODO: embed?
+-->
+  

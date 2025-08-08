@@ -3,13 +3,16 @@ import { getViewType, verifyViewType } from "../content-types.js";
 import { fetchFileContents, create } from "../utils.js";
 import { syncContent } from "../sync.js";
 
+const { projectId, projectName } = document.body.dataset;
+
 const fileTree = document.querySelector(`file-tree`);
 const tabs = document.getElementById(`tabs`);
 const editors = document.getElementById(`editors`);
 
-const projectButton = document.querySelector(`.projectname`);
-projectButton.addEventListener(`click`, () => {
-  confirm(`this will open a project settings dialog eventually`);
+// "edit" button for editing project settings
+const settingsIcon = document.querySelector(`.project-settings`);
+settingsIcon.addEventListener(`click`, () => {
+  showEditDialog(projectId);
 });
 
 /**

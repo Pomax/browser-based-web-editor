@@ -1,14 +1,13 @@
 {
-  "name": "test-code",
-  "version": "0.0.1",
+  "name": "you-should-probably-change-this",
+  "version": "0.0.0",
   "type": "module",
-  "description": "A project for testing node.js runners",
-  "main": "",
+  "description": "A starter project for running an express server using Node.js",
   "scripts": {
     "start": "node index.js"
   },
-  "author": "you?",
-  "license": "ISC",
+  "author": "You?",
+  "license": "PD",
   "dependencies": {
     "express": "^5.1.0",
     "nunjucks": "^3.2.4"

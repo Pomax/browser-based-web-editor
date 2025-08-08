@@ -1,0 +1,76 @@
+<link rel="stylesheet" href="/fragments/edit.css" />
+
+<template id="project-edit-template">
+  <dialog>
+    <h1>Project settings for "<span class="projectname"></span>"</h1>
+    <form
+      class="project-edit-form"
+      action="/v1/projects/settings/"
+      method="POST"
+    >
+      <fieldset class="project">
+        <div>
+          <label>Project name:</label>
+          <input type="text" value="" name="name" />
+        </div>
+        <div>
+          <label>Project description:</label>
+          <textarea rows="4" name="description"></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset class="container">
+        <div>
+          <label>build script</label>
+          <textarea rows="4" name="build_script"></textarea>
+        </div>
+
+        <div>
+          <label>run script:</label>
+          <textarea rows="4" name="run_script"></textarea>
+        </div>
+
+        <div>
+          <label>environment variables:</label>
+          <textarea rows="4" name="env_vars"></textarea>
+        </div>
+      </fieldset>
+
+      <input type="reset" value="cancel" />
+      <input type="submit" value="save" />
+    </form>
+  </dialog>
+</template>
+
+<script>
+  async function showEditDialog(projectId) {
+    const t = document.getElementById(`project-edit-template`);
+    const d = t.content.cloneNode(true).querySelector(`dialog`);
+    const url = `/v1/projects/settings/${projectId}`;
+
+    const project = await fetch(url, { method: `GET` }).then((r) => r.json());
+    console.log(project);
+    const template = (name) => {
+      d.querySelector(`[name="${name}"]`).value = project[name];
+    };
+
+    d.querySelector(`.projectname`).textContent = project.name;
+    Object.keys(project).forEach(template);
+
+    d.querySelector(`[type="reset"]`).addEventListener(`click`, () => {
+      d.close();
+      d.parentNode.removeChild(d);
+    });
+
+    const form = d.querySelector(`form`);
+    form.addEventListener(`submit`, async (evt) => {
+      evt.preventDefault();
+      await fetch(url, { method: `POST`, body: new FormData(form) });
+      location.reload();
+    });
+
+    document.body.appendChild(d);
+    d.showModal();
+    d.querySelector(`[name="description"]`).focus();
+  }
+</script>

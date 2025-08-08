@@ -76,9 +76,10 @@ export function updateCaddyFile(name, port) {
     const entry = `\n${host} {\n\treverse_proxy localhost:${port}\n}\n`;
     writeFileSync(caddyFile, data + entry);
   }
+
   spawn(`caddy`, [`reload`, `--config`, caddyFile], {
     shell: true,
-    stdio: `inherit`,
+    stdio: `ignore`,
   });
 }
 
@@ -87,7 +88,7 @@ export function updateCaddyFile(name, port) {
  * @param {*} name
  */
 export function removeCaddyEntry(name) {
-  const re = new RegExp(`${name}\\.app\\.localhost \\{[^}]+\\}\n\n?`, `gm`);
+  const re = new RegExp(`\n${name}\\.app\\.localhost \\{[^}]+\\}\n`, `gm`);
   const data = readFileSync(caddyFile).toString().replace(re, ``);
   writeFileSync(caddyFile, data);
   spawn(`caddy`, [`reload`, `--config`, caddyFile], {

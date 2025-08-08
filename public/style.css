@@ -63,11 +63,11 @@ html {
           padding: 1px 5px 3px;
           border-radius: 4px;
           margin-left: 0.25em;
-          cursor: pointer;
         }
-
+       
         button {
           height: 1.75em;
+          cursor: pointer;
         }
       }
 

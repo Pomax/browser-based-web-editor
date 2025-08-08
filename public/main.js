@@ -11,7 +11,7 @@ const createProject = async (evt) => {
   const projectName = input.value;
   const type = starter.value || `empty`;
   if (confirm(`Create ${type} project "${projectName}"?`)) {
-    await fetch(`/v1/projects/create/${projectName}/${type}`, {
+    await fetch(`/v1/projects/create/${type}/${projectName}`, {
       method: `POST`,
     });
     location.reload();
@@ -35,5 +35,15 @@ Array.from(document.querySelectorAll(`button.delete-project`)).forEach((e) => {
         location.reload();
       }
     }
+  });
+});
+
+/**
+ * Hook up the "edit project" buttons
+ */
+Array.from(document.querySelectorAll(`button.edit-project`)).forEach((e) => {
+  const { projectId } = e.dataset;
+  e.addEventListener(`click`, async () => {
+    showEditDialog(projectId);
   });
 });

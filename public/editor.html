@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -12,13 +12,14 @@
     <link rel="stylesheet" href="/file-tree.css" />
     <link rel="stylesheet" href="/cm6.css" />
   </head>
-  <body>
+  <body data-project-id="{{ projectId }}" data-project-name="{{ projectName }}">
     <main>
       <span id="buttons">
         <a class="link-back" href="https://editor.com.localhost">home</a>
         {% if passport.user %} {{ passport.user.displayName }} {% if
         projectOwner %} {{ projectOwner }} {% endif %} {% endif %}
         <span class="projectname">{{ projectName }}</span>
+        <button class="project-settings">settings</button>
         <button id="all" title="Open all files">!!!</button>
         <button id="format" title="Make my code pretty!">🤩</button>
       </span>
@@ -58,5 +59,7 @@
         its editor panels, and &lt;file-tree&gt; for its file browser.
       </div>
     </main>
+
+    {% include "fragments/edit.html" %}
   </body>
 </html>

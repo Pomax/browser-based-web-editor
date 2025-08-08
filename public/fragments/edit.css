@@ -1,0 +1,19 @@
+dialog {
+  &::backdrop {
+    background: rgba(0, 179, 128, 0.399);
+  }
+  form {
+    fieldset {
+      border: none;
+      label {
+        display: block;
+        font-weight: bold;
+      }
+      input,
+      textarea {
+        margin: 1em;
+        width: calc(100% - 2em);
+      }
+    }
+  }
+}

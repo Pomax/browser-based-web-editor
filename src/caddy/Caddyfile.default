@@ -1,0 +1,11 @@
+editor.com.localhost {
+	reverse_proxy localhost:8000
+}
+
+*.app.localhost {
+	handle_errors {
+		rewrite * /{err.status_code}.html 
+		root * ./src/caddy/
+		file_server
+	}
+}

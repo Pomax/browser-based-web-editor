@@ -1,16 +1,40 @@
 import { execSync } from "node:child_process";
 import { join } from "node:path";
-import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, renameSync, rmSync } from "node:fs";
 
 import { CONTENT_DIR, execPromise, setupGit } from "../../../helpers.js";
 import {
   runContainer,
   checkContainerHealth as dockerHealthCheck,
+  renameContainer,
   restartContainer as restartDockerContainer,
   deleteContainerAndImage,
 } from "../../../../docker/docker-helpers.js";
-import { createProjectForUser, deleteProjectForUser } from "../../database.js";
+import {
+  createProjectForUser,
+  loadSettingsForProject,
+  updateSettingsForProject,
+  deleteProjectForUser,
+} from "../../database.js";
 import { removeCaddyEntry } from "../../../../caddy/caddy.js";
+
+/**
+ * ...docs go here...
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+export async function createProject(req, res, next) {
+  const { userName, projectName } = res.locals;
+  const dir = join(CONTENT_DIR, projectName);
+  const starter = `__starter_projects/${res.locals.starter || `empty`}`;
+  if (!existsSync(dir)) {
+    mkdirSync(dir);
+    cpSync(dir.replace(projectName, starter), dir, { recursive: true });
+  }
+  createProjectForUser(userName, projectName);
+  next();
+}
 
 /**
  * ...docs go here...
@@ -50,6 +74,73 @@ export function checkContainerHealth(req, res, next) {
   next();
 }
 
+/**
+ * ...docs go here...
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
+export function getProjectSettings(req, res, next) {
+  const { projectId } = res.locals;
+  res.locals.settings = loadSettingsForProject(projectId);
+  next();
+}
+
+/**
+ * ...docs go here...
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
+export function updateProjectSettings(req, res, next) {
+  const { projectId, projectName, settings } = res.locals;
+  const { build_script, run_script, env_vars } = settings;
+
+  const newSettings = Object.fromEntries(
+    Object.entries(req.body).map(([k, v]) => [k, v.value.trim()])
+  );
+
+  const newName = newSettings.name;
+  const newDir = join(CONTENT_DIR, newSettings.name);
+
+  if (projectName !== newName) {
+    if (existsSync(newDir)) {
+      return next(new Error("Cannot rename project"));
+    }
+  }
+
+  try {
+    updateSettingsForProject(projectId, newSettings);
+
+    if (projectName !== newName) {
+      renameSync(join(CONTENT_DIR, projectName), newDir);
+      renameContainer(projectName, newName);
+    }
+
+    if (build_script !== newSettings.build_script) {
+      // TODO: see console log
+      console.log(`TODO: WE NEED TO BUILD A NEW PROJECT IMAGE!`);
+    } else if (run_script !== newSettings.run_script) {
+      // TODO: see console log
+      console.log(`TODO: WE NEED TO BUILD A NEW PROJECT IMAGE!`);
+    } else if (env_vars !== newSettings.build_script) {
+      // TODO: see console log
+      console.log(`TODO: WE NEED TO RESTART THE CONTAINER WITH NEW ENV VARS!`);
+    }
+
+    next();
+  } catch (e) {
+    next(e);
+  }
+}
+
+/**
+ * ...docs go here...
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ */
 export function restartContainer(req, res, next) {
   restartDockerContainer(res.locals.projectName);
   next();
@@ -73,24 +164,6 @@ export async function loadProjectHistory(req, res, next) {
     return { hash, timestamp, reason };
   });
   res.locals.history = parsed;
-  next();
-}
-
-/**
- * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
- */
-export async function createProject(req, res, next) {
-  const { userName, projectName } = res.locals;
-  const dir = join(CONTENT_DIR, projectName);
-  const starter = `__starter_projects/${res.locals.starter || `empty`}`;
-  if (!existsSync(dir)) {
-    mkdirSync(dir);
-    cpSync(dir.replace(projectName, starter), dir, { recursive: true });
-  }
-  createProjectForUser(userName, projectName);
   next();
 }
 

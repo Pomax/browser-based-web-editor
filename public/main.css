@@ -1,0 +1,67 @@
+html {
+  body {
+    overflow: auto !important;
+    padding: 1em;
+    ul {
+      list-style: none;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.5em;
+      li {
+        position: relative;
+        background: #cfffed45;
+        border: 1px solid black;
+        padding: 1em;
+        margin-top: 0.5em;
+        border-radius: 0.5em;
+        h3 {
+          width: 100%;
+          background: white;
+          font-size: 2em;
+          margin: 0;
+          text-align: center;
+          border: 1px solid #666;
+        }
+        iframe {
+          display: block;
+          background: white;
+          border: 3px solid grey;
+          transform: scale(calc(400 / 1000));
+          width: 1000px;
+          height: 600px;
+          margin: calc(-150px - 1.5em) -300px calc(-150px - 1.5em) -300px;
+          & + a {
+            display: inline-block;
+            width: 100%;
+            text-align: right;
+            font-size: 0.8em;
+          }
+        }
+        .edit-project,
+        .delete-project {
+          position: absolute;
+          top: -1em;
+          cursor: pointer;
+        }
+        .edit-project {
+          left: 0;
+          background: blue;
+          color: white;
+        }
+        .delete-project {
+          right: 0;
+          background: red;
+          color: white;
+        }
+        p {
+          margin: 0;
+          margin-top: 0.5em;
+          &:last-of-type {
+            text-align: right;
+          }
+        }
+      }
+    }
+  }
+}

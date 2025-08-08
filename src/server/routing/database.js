@@ -36,6 +36,18 @@ function composeWhere(where, suffix = []) {
 class Model {
   constructor(table) {
     this.table = table;
+    // TODO: figure out which columns this table has for save() operation
+  }
+  save(record, primaryKey = `id`) {
+    const pval = record[primaryKey];
+    delete record[primaryKey];
+    const update = Object.keys(record)
+      .map((k) => `${k} = ?`)
+      .join(`, `);
+    const values = Object.values(record);
+    const sql = `UPDATE ${this.table} SET ${update} WHERE ${primaryKey} = ?`;
+    // console.log(sql, values);
+    db.prepare(sql).run(...values, pval);
   }
   find(where) {
     return this.findAll(where)[0];
@@ -75,14 +87,12 @@ class Model {
 
 // And then let's create some models!
 const User = new Model(`users`);
-const Auth = new Model(`auth`);
 const Project = new Model(`projects`);
-const AccessLevels = new Model(`project_access_levels`);
+const ProjectSettings = new Model(`project_container_settings`);
+// const AccessLevels = new Model(`project_access_levels`);
 const Access = new Model(`project_access`);
-const EnvVars = new Model(`project_env_vars`);
 
 // Good enough, let's move on with our lives:
-export { User, Auth, Project, AccessLevels, Access, EnvVars };
 
 export function getProjectListForUser(userName) {
   const record = User.findOrCreate({ name: userName });
@@ -97,6 +107,8 @@ export function createProjectForUser(userName, projectName) {
   const u = User.find({ name: userName });
   const p = Project.create({ name: projectName });
   Access.create({ project_id: p.id, user_id: u.id });
+  ProjectSettings.create({ project_id: p.id });
+  // TODO: we need to get some default script values in here...
 }
 
 export function getAccessFor(userName, projectName) {
@@ -127,4 +139,57 @@ export function deleteProjectForUser(userName, projectName) {
 
   console.log(`Deletion complete.`);
   return name;
+}
+
+export function loadSettingsForProject(projectId) {
+  const p = Project.find({ id: projectId });
+  const s = ProjectSettings.find({ project_id: p.id });
+  if (!s) return false;
+  const { name, description } = p;
+  const { build_script, run_script, env_vars } = s;
+  return {
+    name,
+    description,
+    build_script,
+    run_script,
+    env_vars,
+  };
+}
+
+export function updateSettingsForProject(projectId, settings) {
+  console.log(projectId, settings);
+
+  const p = Project.find({ id: projectId });
+  const s = ProjectSettings.find({ project_id: p.id });
+
+  const { name, description } = settings;
+
+  if (p.name !== name) {
+    if (!name.trim()) throw new Error(`Invalid project name`);
+    p.name = name;
+  }
+
+  p.description = description;
+  Project.save(p);
+
+  const { build_script, run_script, env_vars } = settings;
+
+  // TODO: make this "update if changed" because each
+  //       results in needing to do some Docker work...
+  s.build_script = build_script;
+  s.run_script = run_script;
+  s.env_vars = env_vars;
+  ProjectSettings.save(s, `project_id`);
+}
+
+export function getNameForProjectId(projectId) {
+  const p = Project.find({ id: projectId });
+  if (!p) throw new Error("Project not found");
+  return p.name;
+}
+
+export function getIdForProjectName(projectName) {
+  const p = Project.find({ name: projectName });
+  if (!p) throw new Error("Project not found");
+  return p.id;
 }
