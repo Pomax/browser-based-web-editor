@@ -14,8 +14,8 @@
     <h1>Welcome</h1>
 
     {% if passport.user %} Currently logged in as {{ passport.user.displayName
-    }}, click here to <a href="/auth/logout">logout</a>. {% else %} You'll
-    probably want to <a href="/auth/github">login</a>
+    }}, click here to <a href="/auth/logout">log out</a>. {% else %} You'll
+    probably want to <a href="/auth/github">log in</a>, or <button class="signup">sign up</button>
     {% endif %} {% if projectList %}
 
     <h2>Start a new project</h2>

@@ -14,9 +14,9 @@ This is an attempt at implementing a friendly browser-based web content editor, 
 With those prerequisites met:
 
 - clone this repo (or fork it and then clone that),
-- run `npm install` in the repo folder.
+- run `node setup` in the repo folder.
 
-Things should be cross-platform enough to work on Windows, Mac, and Linux by running `npm start` and then opening the URL that tells you things are running on.
+Once that finishes, things should be cross-platform enough to work on Windows, Mac, and Linux by running `npm start` and then opening the URL that tells you things are running on.
 
 The main page has a login link that uses github authentication (for now). After authenticating, you're dropped into what is basically a "profile-ish" view (which I'm sure will change in the future, but we're still in the PoC phase) where you can create new projects, load up projects you've made, and delete projects you no longer care about.
 
@@ -26,7 +26,7 @@ New projects currently start on a copy of the `testproject` dir, but that should
 
 While project _content_ lives in the content directory on your computer (or your server, etc), you don't want it to _run_ in that context. That would give it access to.. well... everything, including other project's content, the editor's code, routing configs, etc. etc. So, instead, the runtime is handled by creating a Docker container (think virtual machine) running Ubuntu 24 with Node.js and Python preinstalled, with a project's content added in as a "bind mount" (meaning the files live on the host OS, but the docker container has read/write access to them).
 
-Projects have a special `run.sh` file that is currently used as "what happens when your project container starts up". Also, restarting a project doesn't actually "restart" it so much as "rebuild and run it", so be aware that any data you write outside of the project's home directory (`~/app`) is, at best, temporary. The moment the project container has to restart for whatever reason, any of those changes will be lost.
+Projects have a special `.container` dir that houses a `run.sh` file that acts as your "what happens when your project container starts up" instruction. Also, restarting a project doesn't actually "restart" it so much as stops the container, which removes the container, then it builds a new container with the new name (which is just a fast copy of the local-base-image) and then run that. So be aware that any data you write outside of the project's home directory (i.e. `~/app`) is, at best, temporary. The moment the project container has to restart for whatever reason, any changes outside your project directly will be lost.
 
 ### How do I install Docker?
 
@@ -65,23 +65,38 @@ You can now run `caddy` anywhere.
 
 ## So then what?
 
-1. open the `src/docker` directory in a terminal and run `docker build -t local-base-image .`, to create the basic image that all other containers will be using as starting point
-1. open the `data` directory in a terminal and run `sqlite3 data.sqlite3`. Once in the Sqlite repl, type `.read schema.sql`, and when that finishes you can double-ctrl-c back out of sqlite.
+Run `node setup`. Once that's done, you're good to go and you can simply run `npm start` any time you want to run the system.
 
-With those one-time steps completely, we can run `npm start` whenever we want.
+### Manually setting everything up.
 
-Open the URL that `npm start` gives you, log in, and then start making projects. Project load, and project creation, runs through the following steps:
+Don't do this. Unless you _absolutely_ have to. E.g. you're doing dev work on the codebase itself and you need to test parts of it.
 
-1. Check if there is a docker image for this project
-1. If not, build one
-1. Check if there is a container running, based on that image
-1. If not, run a container
+#### building  the docker base image 
 
-The run command includes a PORT variable that allows the preview to work: each docker container exposes its port 8000, which gets bound to "whichever free port is available on the host OS", saved alongside the project's name and dir in their server session, and the editor then makes sure that that port gets used by caddy for https://yourproject.app.localhost
+open the `src/docker` directory in a terminal and run `docker build -t local-base-image .`, to create the basic image that all other containers will be using as starting point
 
-### One-time Caddy permissions
+#### building the initial database
 
-Caddy will set up a name binding when you switch projects, but the first time you do that after having installed it, it will need your permission to add a new certificate authority to your OS's list of certificate authorities. You'll want to allow that, because otherwise localhost HTTPS won't work =)
+open the `data` directory in a terminal and run `sqlite3 data.sqlite3`. Once in the Sqlite repl, type `.read schema.sql`, and when that finishes you can double-ctrl-c back out of sqlite.
+
+Then create a `seed.sql` file and fill it with a tailored bit of SQL:
+
+```sql
+-- initial seed data
+INSERT INTO users (id, name, enabled_at) values (1, 'YourNameHere', CURRENT_TIMESTAMP);
+INSERT INTO admin_table (user_id) VALUES (1);
+INSERT INTO projects (name, description) VALUES ('temp', 'First project');
+INSERT INTO project_access (project_id, user_id) VALUES (1, 1);
+INSERT INTO project_container_settings (project_id, build_script, run_script, env_vars) VALUES (1, '', 'npm install && npm start', '');
+```
+
+#### creating the initial project
+
+Copy the `content/__starter_projects/basic-nodejs` project to `content/temp`
+
+## One-time Caddy permissions
+
+When you run the system, Caddy will set up a name binding when you switch projectsl. However, the first time you do that after having installed it, it will need your permission to add a new certificate authority to your OS's list of certificate authorities. You'll want to allow that, because otherwise localhost HTTPS won't work =)
 
 ## Edit syncing
 

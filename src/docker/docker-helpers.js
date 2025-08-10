@@ -30,6 +30,7 @@ export async function runContainer(projectName) {
     const runFlags = `--rm --stop-timeout 0 --name ${projectName}`;
     const bindMount = `--mount type=bind,src=.${sep}content${sep}${projectName},dst=/app`;
     const runCommand = `docker run ${runFlags} ${bindMount} -p ${port}:8000 -t ${projectName}`;
+    console.log(runCommand);
     exec(runCommand);
   } else {
     port = result.match(/0.0.0.0:(\d+)->/m)[1];
@@ -64,9 +65,15 @@ export function checkContainerHealth(name) {
  * ...docs go here...
  * @param {*} name
  */
-export function restartContainer(name) {
-  console.log(`restarting container for ${name}...`);
-  execSync(`docker container restart -t 0 ${name}`);
+export async function restartContainer(name, rebuild = false) {
+  if (rebuild) {
+    console.log(`rebuiling container for ${name}...`);
+    deleteContainerAndImage(name);
+    await runContainer(name);
+  } else {
+    console.log(`restarting container for ${name}...`);
+    execSync(`docker container restart -t 0 ${name}`);
+  }
   console.log(`...done!`);
 }
 

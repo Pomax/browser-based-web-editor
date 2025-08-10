@@ -8,7 +8,7 @@ import {
   getProjectListForUser,
   getNameForProjectId,
   getIdForProjectName,
-} from "./database.js";
+} from "../database.js";
 import { CONTENT_DIR, readContentDir } from "../helpers.js";
 import { parseBodyText, parseMultiPartBody } from "./body-parsing.js";
 

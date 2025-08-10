@@ -10,7 +10,7 @@ export const UNKNOWN_USER = -1;
 export const NOT_ACTIVATED = -2;
 
 // We're in ./src/server/routing, and we want ./data
-const dbPath = `${import.meta.dirname}/../../../data/data.sqlite3`;
+const dbPath = `${import.meta.dirname}/../../data/data.sqlite3`;
 const db = sqlite3(dbPath);
 
 // we need those foreign keys...

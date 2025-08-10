@@ -1,6 +1,13 @@
 import { execSync } from "node:child_process";
 import { join } from "node:path";
-import { cpSync, existsSync, mkdirSync, renameSync, rmSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 
 import { CONTENT_DIR, execPromise, setupGit } from "../../../helpers.js";
 import {
@@ -15,7 +22,7 @@ import {
   loadSettingsForProject,
   updateSettingsForProject,
   deleteProjectForUser,
-} from "../../database.js";
+} from "../../../database.js";
 import { removeCaddyEntry } from "../../../../caddy/caddy.js";
 
 /**
@@ -93,7 +100,7 @@ export function getProjectSettings(req, res, next) {
  * @param {*} next
  * @returns
  */
-export function updateProjectSettings(req, res, next) {
+export async function updateProjectSettings(req, res, next) {
   const { projectId, projectName, settings } = res.locals;
   const { build_script, run_script, env_vars } = settings;
 
@@ -118,15 +125,22 @@ export function updateProjectSettings(req, res, next) {
       renameContainer(projectName, newName);
     }
 
+    // Do we need to update our container files?
+    let containerChange = false;
+    const containerDir = join(CONTENT_DIR, projectName, `.container`);
     if (build_script !== newSettings.build_script) {
-      // TODO: see console log
-      console.log(`TODO: WE NEED TO BUILD A NEW PROJECT IMAGE!`);
+      containerChange = true;
+      writeFileSync(join(containerDir, `build.sh`), newSettings.build_script);
     } else if (run_script !== newSettings.run_script) {
-      // TODO: see console log
-      console.log(`TODO: WE NEED TO BUILD A NEW PROJECT IMAGE!`);
-    } else if (env_vars !== newSettings.build_script) {
-      // TODO: see console log
-      console.log(`TODO: WE NEED TO RESTART THE CONTAINER WITH NEW ENV VARS!`);
+      containerChange = true;
+      writeFileSync(join(containerDir, `run.sh`), newSettings.run_script);
+    } else if (env_vars !== newSettings.env_vars) {
+      containerChange = true;
+      writeFileSync(join(containerDir, `.env`), newSettings.env_vars);
+    }
+
+    if (containerChange) {
+      await restartDockerContainer(projectName, true);
     }
 
     next();

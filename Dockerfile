@@ -1,3 +1,4 @@
 FROM local-base-image:latest
-
-CMD ["sh", "./run.sh"]
+RUN sh -c source .container/.env || true
+RUN sh .container/build.sh || true
+CMD sh .container/run.sh
