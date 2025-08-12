@@ -7,13 +7,11 @@
  * - If you do, it'll set up the docker base image that is used for projects,
  * - set up a Caddyfile for this project that gets used for host routing, and
  * - set up the database that the code relies on for housing user/project/etc data.
- * - and finally, sets up the first user and project so you get started.
  */
 
 import readline from "node:readline";
 import { execSync } from "node:child_process";
 import { cpSync, existsSync, writeFileSync } from "node:fs";
-import { runContainer } from "./src/docker/docker-helpers.js";
 
 const stdin = readline.createInterface({
   input: process.stdin,
@@ -51,8 +49,17 @@ async function setup(...handlers) {
     while (handlers.length) {
       await handlers.shift()();
     }
-    console.log(`\nSetup complete. Run "npm start" to get going!\n`);
-    process.exit(0);
+    const token = `${Math.random()}`.substring(2)
+    writeFileSync(`./.finish-setup`, token);
+    console.log(`
+Setup complete.
+
+Run "npm start", and log in using GitHub. This will create
+the initial (enabled and admin) user account with which to
+do everything else.
+`);
+
+process.exit(0);
   } catch (e) {
     console.log(e);
     console.log(`\nSetup incomplete. Please review the errors.\n`);
@@ -162,34 +169,6 @@ async function setupSqlite() {
     // We explicitly make it fail by using a bad SQL intruction
     // as exit hack. Otherwise the REPL run and we never exit =_=
   }
-
-  const firstUser = (await question(`First user? `)).trim();
-  const firstProject = (await question(`First project? `)).toLowerCase().trim();
-  cpSync(
-    `./content/__starter_projects/basic-nodejs/`,
-    `./content/${firstProject}`,
-    {
-      recursive: true,
-    }
-  );
-
-  const seed = `-- initial seed data
-INSERT INTO users (id, name, enabled_at) values (1, '${firstUser}', CURRENT_TIMESTAMP);
-INSERT INTO admin_table (user_id) VALUES (1);
-INSERT INTO projects (name, description) VALUES ('${firstProject}', 'First project');
-INSERT INTO project_access (project_id, user_id) VALUES (1, 1);
-INSERT INTO project_container_settings (project_id, build_script, run_script, env_vars) VALUES (1, '', 'npm install && npm start', 'EXAMPLE_VAR=example value\\n');
-`;
-
-  writeFileSync(`./data/seed.sql`, seed);
-
-  try {
-    execSync(`sqlite3 ./data/data.sqlite3 ".read ./data/seed.sql"`);
-  } catch (e) {
-    // irrelevant
-  }
-
-  await runContainer(firstProject);
 }
 
 /**
@@ -200,7 +179,9 @@ async function setupEnv() {
 
   let randomSecret = ``;
   while (randomSecret.length < 40) {
-    randomSecret += String.fromCharCode(0x29 + (((0x7e - 0x29) * Math.random()) | 0));
+    randomSecret += String.fromCharCode(
+      0x29 + (((0x7e - 0x29) * Math.random()) | 0)
+    );
   }
 
   console.log(`
@@ -214,7 +195,7 @@ callback url, give it "https://editor.com.localhost/auth/github/callback".
 Once saved, generate a client secret, and then fill in the client id
 and secrets here: they'll get saved to an untracked .env file that the
 codebase will read in every time it starts up.
-`)
+`);
 
   const GITHUB_CLIENT_ID = (await question(`Github client id? `)).trim();
   const GITHUB_CLIENT_SECRET = (

@@ -1,4 +1,5 @@
 import sqlite3 from "better-sqlite3";
+import { existsSync, unlinkSync } from "node:fs";
 
 // not quite a fan of this, so this solution may change in the future:
 
@@ -36,7 +37,6 @@ function composeWhere(where, suffix = []) {
 class Model {
   constructor(table) {
     this.table = table;
-    // TODO: figure out which columns this table has for save() operation
   }
   save(record, primaryKey = `id`) {
     const pval = record[primaryKey];
@@ -57,6 +57,10 @@ class Model {
     const sql = `SELECT * FROM ${this.table} WHERE ${filter}`;
     // console.log(sql, values);
     return db.prepare(sql).all(values).filter(Boolean);
+  }
+  all(sortKey, sortDir = `ASC`) {
+    const sql = `SELECT * FROM ${this.table} ORDER BY ${sortKey} ${sortDir}`;
+    return db.prepare(sql).all();
   }
   insert(colVals) {
     const keys = Object.keys(colVals);
@@ -86,13 +90,91 @@ class Model {
 }
 
 // And then let's create some models!
+
 const User = new Model(`users`);
 const Project = new Model(`projects`);
 const ProjectSettings = new Model(`project_container_settings`);
-// const AccessLevels = new Model(`project_access_levels`);
 const Access = new Model(`project_access`);
+const Admin = new Model(`admin_table`);
+const UserSuspension = new Model(`suspended_users`);
+const Login = new Model(`user_logins`);
 
 // Good enough, let's move on with our lives:
+
+export function processUserLogin(profile) {
+  return __processUserLogin(profile);
+}
+
+let __processUserLogin = existsSync(`.finish-setup`)
+  ? __processFirstTimeUserLogin
+  : processUserLoginNormally;
+
+function processUserLoginNormally(profile) {
+  const { id, displayName, provider } = profile;
+  const l = Login.find({ service: provider, service_id: id });
+  if (l) {
+    const u = User.find({ id: l.user_id });
+    if (!u) {
+      // This shouldn't be possible, so...
+      throw new Error(`User not found`);
+    }
+    const a = Admin.find({ user_id: u.id });
+    return { ...u, admin: a ? true : undefined };
+  }
+
+  // No login binding: new user or username conflict?
+  const u = User.find({ name: displayName });
+  if (!u) {
+    const u = User.create({ name: displayName });
+    Login.create({ user_id: u.id, service: provider, service_id: id });
+    return u;
+  }
+
+  throw new Error(`User ${displayName} already exists`);
+}
+
+// One-time function that only exists for as long as .finish-setup does
+function __processFirstTimeUserLogin(profile) {
+  __processUserLogin = processUserLoginNormally;
+  const { id, displayName, provider } = profile;
+  const u = User.create({ name: displayName });
+  Login.create({ user_id: u.id, service: provider, service_id: id });
+  Admin.create({ user_id: u.id });
+  u.enabled_at = u.created_at;
+  User.save(u);
+  unlinkSync(`.finish-setup`);
+  return u;
+}
+
+export function enableUser(userName) {
+  const u = User.find({ name: userName });
+  if (!u) throw new Error(`User not found`);
+  u.enabled_at = new Date().toISOString();
+  User.save(u);
+}
+
+export function disableUser(userName) {
+  const u = User.find({ name: userName });
+  if (!u) throw new Error(`User not found`);
+  u.enabled_at = null;
+  User.save(u);
+}
+
+export function suspendUser(userName, reason, notes = ``) {
+  if (!reason) throw new Error(`Cannot suspend without a reason`);
+  const u = User.find({ name: userName });
+  if (!u) throw new Error(`User not found`);
+  UserSuspension.create({ user_id: u.id, reason, notes });
+}
+
+export function unsuspendUser(userName) {
+  const u = User.find({ name: userName });
+  if (!u) throw new Error(`User not found`);
+  const s = UserSuspension.find({ user_id: u.id });
+  if (!s) throw new Error(`User not suspended`);
+  s.invalidated_at = new Date().toISOString();
+  UserSuspension.save(s);
+}
 
 export function getProjectListForUser(userName) {
   const record = User.findOrCreate({ name: userName });
@@ -108,7 +190,6 @@ export function createProjectForUser(userName, projectName) {
   const p = Project.create({ name: projectName });
   Access.create({ project_id: p.id, user_id: u.id });
   ProjectSettings.create({ project_id: p.id });
-  // TODO: we need to get some default script values in here...
 }
 
 export function getAccessFor(userName, projectName) {
@@ -192,4 +273,46 @@ export function getIdForProjectName(projectName) {
   const p = Project.find({ name: projectName });
   if (!p) throw new Error("Project not found");
   return p.id;
+}
+
+export function getUserId(userName) {
+  const u = User.find({ name: userName });
+  if (!u) throw new Error(`User not found`);
+  return u.id;
+}
+
+export function getUserAdminFlag(userName) {
+  const u = User.find({ name: userName });
+  if (!u) throw new Error(`User not found`);
+  const a = Admin.find({ user_id: u.id });
+  if (!a) return false;
+  return true;
+}
+
+export function hasAccessToUserRecords(sessionUserId, lookupUserId) {
+  if (sessionUserId === lookupUserId) return true;
+  const u = User.find({ id: sessionUserId });
+  if (!u) throw new Error(`User not found`);
+  const a = Admin.find({ user_id: u.id });
+  if (!a) return false;
+  return true;
+}
+
+export function getUserSettings(userId) {
+  const u = User.find({ id: userId });
+  if (!u) throw new Error(`User not found`);
+  const s = UserSuspension.find({ user_id: u.id });
+  return {
+    name: u.name,
+    enabled: u.enabled_at ? true : undefined,
+    suspended: s ? true : undefined,
+  };
+}
+
+export function getAllUsers() {
+  return User.all(`name`);
+}
+
+export function getAllProjects() {
+  return Project.all(`name`);
 }

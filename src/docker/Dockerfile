@@ -9,6 +9,9 @@ RUN apk add --update --no-cache \
     nodejs-lts \
     npm
 
+# just in case
+RUN rm -rf /var/cache/apk/*
+
 # link up python3
 RUN ln -sf python3 /usr/bin/python
 

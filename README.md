@@ -20,7 +20,7 @@ Once that finishes, things should be cross-platform enough to work on Windows, M
 
 The main page has a login link that uses github authentication (for now). After authenticating, you're dropped into what is basically a "profile-ish" view (which I'm sure will change in the future, but we're still in the PoC phase) where you can create new projects, load up projects you've made, and delete projects you no longer care about.
 
-New projects currently start on a copy of the `testproject` dir, but that should of course eventually a "new, empty project" plus a list of "starters" that you can remix.
+Note that the first user to log in after the initial setup becomes the default admin user. Any admin user will have a link to the admin page available - that page does very little right now, but will eventually allow for tasks like enabling and (un)suspending users, (un)suspending projects, and performing container maintenance.
 
 ## Docker?
 

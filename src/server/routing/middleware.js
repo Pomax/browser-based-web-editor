@@ -8,11 +8,28 @@ import {
   getProjectListForUser,
   getNameForProjectId,
   getIdForProjectName,
+  processUserLogin,
+  getUserAdminFlag,
+  hasAccessToUserRecords,
+  getAllUsers,
+  getAllProjects,
 } from "../database.js";
-import { CONTENT_DIR, readContentDir } from "../helpers.js";
+import { getAllRunningContainers } from "../../docker/docker-helpers.js";
+import { CONTENT_DIR } from "../helpers.js";
 import { parseBodyText, parseMultiPartBody } from "./body-parsing.js";
 
 export { parseBodyText, parseMultiPartBody };
+
+// For when you really don't want response caching.
+export function nocache(req, res, next) {
+  res.setHeader("Surrogate-Control", "no-store");
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
+  res.setHeader("Expires", "0");
+  next();
+}
 
 /**
  * Send a 404
@@ -26,7 +43,10 @@ export function pageNotFound(req, res) {
 }
 
 export async function bindUser(req, res, next = () => {}) {
-  res.locals.user = req.session.passport?.user;
+  const { user } = req.session.passport ?? {};
+  if (user) {
+    res.locals.user = processUserLogin(user);
+  }
   next();
 }
 
@@ -38,14 +58,28 @@ export async function verifyLogin(req, res, next) {
   bindUser(req, res, next);
 }
 
-/**
- * A simple bit of middleware that confirms that someone
- * trying to do things to files (beyond loading them) is
- * in fact allowed to do that thing
- */
+export function verifyAdmin(req, res, next) {
+  const { userName } = res.locals;
+  if (getUserAdminFlag(userName)) {
+    next();
+  } else {
+    next(new Error(`You're not an admin`));
+  }
+}
+
+export function verifyAccesToUser(req, res, next) {
+  const { userId: sessionUserId } = res.locals;
+  const { userId: lookupUserId } = res.locals.lookups ?? {};
+  if (!lookupUserId) return next(new Error(`No such user`));
+  if (hasAccessToUserRecords(sessionUserId, lookupUserId)) {
+    next();
+  } else {
+    next(new Error(`Access denied`));
+  }
+}
+
 export function verifyEditRights(req, res, next) {
-  const userName = res.locals.user.displayName;
-  const projectName = res.locals.projectName;
+  const { userName, projectName } = res.locals;
   const accessLevel = getAccessFor(userName, projectName);
   if (accessLevel === NOT_ACTIVATED)
     return next(new Error(`Your account has not been activated yet`));
@@ -54,8 +88,7 @@ export function verifyEditRights(req, res, next) {
 }
 
 export function verifyOwner(req, res, next) {
-  const userName = res.locals.user.displayName;
-  const projectName = res.locals.projectName;
+  const { userName, projectName } = res.locals;
   const accessLevel = getAccessFor(userName, projectName);
   if (accessLevel === NOT_ACTIVATED)
     return next(new Error(`Your account has not been activated yet`));
@@ -64,15 +97,20 @@ export function verifyOwner(req, res, next) {
 }
 
 export function bindCommonValues(req, res, next) {
-  let user = res.locals.user;
-  if (!user) bindUser(req, res);
-  user = res.locals.user;
+  bindUser(req, res);
+  const { user } = res.locals;
 
-  let userName, projectName, projectId, fileName;
-  const { project, pid, filename, starter } = req.params;
+  let userName, userId, projectName, projectId, fileName;
+  const { uid, project, pid, filename, starter } = req.params;
 
   if (user) {
-    userName = res.locals.userName = user.displayName;
+    userName = res.locals.userName = user.name;
+    userId = res.locals.userId = user.id;
+  }
+
+  if (uid) {
+    res.locals.lookups ??= {};
+    res.locals.lookups.userId = parseInt(uid, 10);
   }
 
   if (pid) {
@@ -122,8 +160,7 @@ export function loadProjectList(req, res, next) {
   //        list but otherwise we should reuse what's there.
   const { user } = res.locals;
   if (user) {
-    const { displayName } = user;
-    const list = getProjectListForUser(displayName);
+    const list = getProjectListForUser(user.name);
     if (list) {
       req.session.projectList = list;
       req.session.save();
@@ -136,5 +173,18 @@ export function loadStarters(req, res, next) {
   res.locals.starters = readdirSync(
     join(CONTENT_DIR, `__starter_projects`)
   ).filter((v) => !v.includes(`.`));
+  next();
+}
+
+export function loadAdminData(req, res, next) {
+  // TODO: obviously this does not scale to thousands of users and projects,
+  //       but this codebase is not designed for that scale. For large scale
+  //       this would have to be an API call for the various "streams" with
+  //       the admin interface simply building UI with search and pagination.
+  res.locals.admin = {
+    userList: getAllUsers(),
+    projectList: getAllProjects(),
+    containerList: getAllRunningContainers(),
+  };
   next();
 }

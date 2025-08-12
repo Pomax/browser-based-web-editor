@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -9,22 +9,44 @@
   <body>
     <h1>Admin interface</h1>
 
-    {% if passport && passport.user %}
-      Currently logged in as {{ passport.user.displayName }}, click here to <a href="/auth/logout">logout</a>.
+    {% if userName %} Currently logged in as admin {{ userName }}, click here to
+    <a href="/auth/github/logout">logout</a> or click here to go back to
+    <a href="/">the main page</a>.
 
     <section>
       <h2>Users</h2>
 
-      ...UI goes here...
+      <ul>
+        {% for user in admin.userList %}
+        <li>{{ user.name }} (id: {{ user.id }}) {{ user.created_at }}, activated: {{ user.enabled_at }}</li>
+        {% endfor %}
+      </ul>
     </section>
 
     <section>
       <h2>Projects</h2>
 
-      ...UI goes here...
+      <ul>
+        {% for project in admin.projectList %}
+        <li>{{ project.name }} (id: {{ project.id }}) {{ project.created_at }}</li>
+        {% endfor %}
+      </ul>
     </section>
-    {% else %}
-      You'll probably want to <a href="/auth/github">login</a>
+
+    <section>
+      <h2>Containers</h2>
+
+      <ul>
+        {% for container in admin.containerList %}
+        <li>{{ container }}
+          <button>stop</button>
+          <button>remove</button>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    {% else %} You'll probably want to <a href="/auth/github">login</a>
     {% endif %}
   </body>
 </html>

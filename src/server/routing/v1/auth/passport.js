@@ -1,59 +1,21 @@
 import passport from "passport";
-import { Strategy as GitHubStrategy } from "passport-github2";
+import { processUserLogin } from "../../../database.js";
 
-export function addPassportAuth(app) {
-  const strategy = new GitHubStrategy(
-    {
-      clientID: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: process.env.GITHUB_CALLBACK_URL,
-    },
-    (accessToken, refreshToken, profile, done) => {
-      return done(null, profile);
-    }
-  );
+// When a user succesfully signs in:
+passport.serializeUser((user, done) => {
+  // Run a database check for this user: if they already exist,
+  // cool. If they don't, build a user account. If there's a 
+  // user account but no separate login binding that ties
+  // the github id to the user record, that's an error.
+  if (user) processUserLogin(user);
 
-  passport.serializeUser((user, done) => {
-    console.log(`${user.displayName} logged in`);
-    done(null, user);
-  });
+  // And then let passport do whatever it does.
+  done(null, user);
+});
 
-  passport.deserializeUser((user, done) => {
-    done(null, user);
-  });
+// When a user logs out:
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
 
-  passport.use(strategy);
-
-  app.use(passport.initialize());
-  app.use(passport.session());
-
-  app.get(`/auth/error`, (req, res) => {
-    res.send(`Unknown Error`);
-  });
-
-  app.get(
-    `/auth/github`,
-    passport.authenticate(`github`, { scope: [`user:email`] })
-  );
-
-  app.get(
-    `/auth/github/callback`,
-    passport.authenticate(`github`, { failureRedirect: `/auth/error` }),
-    (req, res) => res.redirect(`/`)
-  );
-
-  app.get(`/auth/logout`, (req, res, next) => {
-    const { user } = req.session.passport ?? {};
-    if (!user) return res.redirect(`/`);
-    req.logout((err) => {
-      if (err) {
-        console.log(`error logging ${user.displayName} out`);
-        return next(err);
-      }
-      console.log(`${user.displayName} logged out`);
-      res.redirect(`/`);
-    });
-  });
-}
-
-export const authenticate = passport.authenticate(`github`);
+export { passport };

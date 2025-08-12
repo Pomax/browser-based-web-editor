@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Test Editor</title>
-    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="stylesheet" href="./layout.css" />
     <link rel="stylesheet" href="./style.css" />
     <link rel="stylesheet" href="./main.css" />
@@ -13,9 +13,13 @@
   <body>
     <h1>Welcome</h1>
 
-    {% if passport.user %} Currently logged in as {{ passport.user.displayName
-    }}, click here to <a href="/auth/logout">log out</a>. {% else %} You'll
-    probably want to <a href="/auth/github">log in</a>, or <button class="signup">sign up</button>
+    {% if passport.user %} Currently logged in as {{ user.name }}, click here
+    to <a href="/auth/github/logout">log out</a>{% if user.admin %} or click here
+    for the <a href="/admin">admin interface</a>{% endif %}. {% else %} You'll
+    probably want to <a href="/auth/github">log in</a>. And instead of a cookie
+    banner, you get an opt-in agreement: obviously logins require storing
+    login information in a database, and use cookies for session management,
+    so by logging in you're equally obviously okay with that.
     {% endif %} {% if projectList %}
 
     <h2>Start a new project</h2>

@@ -130,3 +130,9 @@ export function deleteContainerAndImage(name) {
   stopContainer(name);
   deleteContainer(name);
 }
+
+
+export function getAllRunningContainers() {
+  const output = execSync(`docker ps -a`);
+  return output.toString().split(`\n`).slice(1).filter(Boolean);
+}

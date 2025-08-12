@@ -1,3 +1,2 @@
-- is there a way to give caddy its own "this project is not currently running" webpage.
-- we should check to see if caddy's already running by checking the running process list... cross-platform
-- we should be doing most project related lookups based on url properties, not session. A user might have multiple projects open at the same time.
+- setup should create an admin user, which should be password based, and one first logon should immediately be told to log in with oauth so that the local password can be deleted again.
+- Add an admin-locked API for all the admin route... things...
