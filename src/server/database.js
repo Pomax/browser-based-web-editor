@@ -59,7 +59,10 @@ class Model {
     return db.prepare(sql).all(values).filter(Boolean);
   }
   all(sortKey, sortDir = `ASC`) {
-    const sql = `SELECT * FROM ${this.table} ORDER BY ${sortKey} ${sortDir}`;
+    let sql = `SELECT * FROM ${this.table}`;
+    if (sortKey) {
+      sql = `${sql} ORDER BY ${sortKey} ${sortDir}`;
+    }
     return db.prepare(sql).all();
   }
   insert(colVals) {
@@ -97,6 +100,7 @@ const ProjectSettings = new Model(`project_container_settings`);
 const Access = new Model(`project_access`);
 const Admin = new Model(`admin_table`);
 const UserSuspension = new Model(`suspended_users`);
+const ProjectSuspension = new Model(`suspended_projects`);
 const Login = new Model(`user_logins`);
 
 // Good enough, let's move on with our lives:
@@ -310,9 +314,45 @@ export function getUserSettings(userId) {
 }
 
 export function getAllUsers() {
-  return User.all(`name`);
+  const userList = {};
+
+  const users = User.all(`name`);
+  users.forEach((u) => {
+    if (!u) return;
+    u.suspensions = [];
+    userList[u.id] = u;
+  });
+
+  const admins = Admin.all();
+  admins.forEach((a) => {
+    if (!a) return;
+    userList[a.user_id].admin = true;
+  });
+
+  const suspensions = UserSuspension.all(`user_id`);
+  suspensions.forEach((s) => {
+    if (!s) return;
+    userList[s.user_id].suspensions.push(s);
+  });
+
+  return Object.values(userList);
 }
 
 export function getAllProjects() {
-  return Project.all(`name`);
+  const projectList = {};
+
+  const projects = Project.all(`name`);
+  projects.forEach((p) => {
+    if (!p) return;
+    p.suspensions = [];
+    projectList[p.id] = p;
+  });
+
+  const suspensions = ProjectSuspension.all(`project_id`);
+  suspensions.forEach((s) => {
+    if (!s) return;
+    projectList[s.project_id].suspensions.push(s);
+  });
+
+  return Object.values(projectList);
 }

@@ -1,6 +1,8 @@
 import { fetchFileContents } from "../utils.js";
 import { API } from "../api.js";
 
+const mac = navigator.userAgent.includes(`Mac OS`);
+
 const all = document.getElementById(`all`);
 const format = document.getElementById(`format`);
 const left = document.getElementById(`left`);
@@ -10,6 +12,17 @@ const right = document.getElementById(`right`);
  * Hook up the "Add new file" and "Format this file" buttons
  */
 export function addEventHandling(projectName) {
+  // disable the "Save page" shortcut because it's meaningless in this context.
+  document.addEventListener(`keydown`, (evt) => {
+    const { key, ctrlKey, metaKey } = evt;
+    if (key === `s`) {
+      if ((mac && metaKey) || ctrlKey) {
+        evt.preventDefault();
+        // TODO: something silly to make the user think they saved?
+      }
+    }
+  });
+
   all.addEventListener(`click`, async () => {
     document.querySelectorAll(`file-entry`).forEach((e) => e.click());
   });

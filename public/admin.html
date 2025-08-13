@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Test Editor</title>
-    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
   </head>
   <body>
     <h1>Admin interface</h1>
@@ -16,33 +16,33 @@
     <section>
       <h2>Users</h2>
 
+      <p>Should have activate/deactivate, (un)suspend, delete</p>
+
       <ul>
-        {% for user in admin.userList %}
-        <li>{{ user.name }} (id: {{ user.id }}) {{ user.created_at }}, activated: {{ user.enabled_at }}</li>
-        {% endfor %}
+        {% for user in admin.userList %} {% include
+        "./fragments/admin/user.html" %} {% endfor %}
       </ul>
     </section>
 
     <section>
       <h2>Projects</h2>
 
+      <p>Should have activate/deactivate, (un)suspend, delete</p>
+
       <ul>
-        {% for project in admin.projectList %}
-        <li>{{ project.name }} (id: {{ project.id }}) {{ project.created_at }}</li>
-        {% endfor %}
+        {% for project in admin.projectList %} {% include
+        "./fragments/admin/project.html" %} {% endfor %}
       </ul>
     </section>
 
     <section>
       <h2>Containers</h2>
 
+      <p>Should have stop/remove</p>
+
       <ul>
-        {% for container in admin.containerList %}
-        <li>{{ container }}
-          <button>stop</button>
-          <button>remove</button>
-        </li>
-        {% endfor %}
+        {% for container in admin.containerList %} {% include
+        "./fragments/admin/container.html" %} {% endfor %}
       </ul>
     </section>
 

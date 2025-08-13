@@ -7,10 +7,6 @@ import {
   loadProjectList,
   loadStarters,
   pageNotFound,
-  verifyLogin,
-  verifyAdmin,
-  loadAdminData,
-  nocache,
 } from "./middleware.js";
 import { addPassportAuth } from "./v1/auth/index.js";
 import { setupRoutesV1 } from "./v1/index.js";
@@ -58,17 +54,6 @@ export function setupRoutes(app) {
 
   // all our other routes!
   setupRoutesV1(app);
-
-  // ...except for the admin page
-  app.get(
-    `/admin`,
-    verifyLogin,
-    bindCommonValues,
-    verifyAdmin,
-    loadAdminData,
-    nocache,
-    (req, res) => res.render(`admin.html`, { ...res.locals, ...req.session })
-  );
 
   // ...and the main page
   app.get(`/`, bindCommonValues, loadProjectList, loadStarters, (req, res) =>

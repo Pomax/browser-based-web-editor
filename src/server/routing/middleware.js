@@ -11,10 +11,7 @@ import {
   processUserLogin,
   getUserAdminFlag,
   hasAccessToUserRecords,
-  getAllUsers,
-  getAllProjects,
 } from "../database.js";
-import { getAllRunningContainers } from "../../docker/docker-helpers.js";
 import { CONTENT_DIR } from "../helpers.js";
 import { parseBodyText, parseMultiPartBody } from "./body-parsing.js";
 
@@ -173,18 +170,5 @@ export function loadStarters(req, res, next) {
   res.locals.starters = readdirSync(
     join(CONTENT_DIR, `__starter_projects`)
   ).filter((v) => !v.includes(`.`));
-  next();
-}
-
-export function loadAdminData(req, res, next) {
-  // TODO: obviously this does not scale to thousands of users and projects,
-  //       but this codebase is not designed for that scale. For large scale
-  //       this would have to be an API call for the various "streams" with
-  //       the admin interface simply building UI with search and pagination.
-  res.locals.admin = {
-    userList: getAllUsers(),
-    projectList: getAllProjects(),
-    containerList: getAllRunningContainers(),
-  };
   next();
 }

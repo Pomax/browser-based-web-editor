@@ -131,8 +131,21 @@ export function deleteContainerAndImage(name) {
   deleteContainer(name);
 }
 
-
 export function getAllRunningContainers() {
-  const output = execSync(`docker ps -a`);
-  return output.toString().split(`\n`).slice(1).filter(Boolean);
+  const containerData = [];
+  const output = execSync(`docker ps -a --no-trunc --format json`)
+    .toString()
+    .split(`\n`);
+  output.forEach((line) => {
+    if (!line.trim()) return;
+    let obj = JSON.parse(line);
+    obj = Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => {
+        return [k[0].toLowerCase() + k.substring(1), v];
+      })
+    );
+    const { image, command, state, iD:id } = obj;
+    containerData.push({ image, id, command, state });
+  });
+  return containerData;
 }

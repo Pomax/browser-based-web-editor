@@ -31064,11 +31064,20 @@ function addFileTreeHandling() {
 }
 
 // src/client/cm6/event-handling.js
+var mac2 = navigator.userAgent.includes(`Mac OS`);
 var all = document.getElementById(`all`);
 var format = document.getElementById(`format`);
 var left = document.getElementById(`left`);
 var right = document.getElementById(`right`);
 function addEventHandling(projectName5) {
+  document.addEventListener(`keydown`, (evt) => {
+    const { key, ctrlKey, metaKey } = evt;
+    if (key === `s`) {
+      if (mac2 && metaKey || ctrlKey) {
+        evt.preventDefault();
+      }
+    }
+  });
   all.addEventListener(`click`, async () => {
     document.querySelectorAll(`file-entry`).forEach((e2) => e2.click());
   });

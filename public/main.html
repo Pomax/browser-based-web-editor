@@ -15,7 +15,7 @@
 
     {% if passport.user %} Currently logged in as {{ user.name }}, click here
     to <a href="/auth/github/logout">log out</a>{% if user.admin %} or click here
-    for the <a href="/admin">admin interface</a>{% endif %}. {% else %} You'll
+    for the <a href="/v1/admin">admin interface</a>{% endif %}. {% else %} You'll
     probably want to <a href="/auth/github">log in</a>. And instead of a cookie
     banner, you get an opt-in agreement: obviously logins require storing
     login information in a database, and use cookies for session management,
