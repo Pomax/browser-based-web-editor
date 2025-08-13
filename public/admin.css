@@ -1,0 +1,19 @@
+html {
+  body {
+    fieldset {
+      & + fieldset {
+        margin-top: 1em;
+      }
+      table {
+        tr {
+          th:not(:empty) {
+            border-bottom: 1px solid grey;
+          }
+          td {
+            padding: 0 1em;
+          }
+        }
+      }
+    }
+  }
+}

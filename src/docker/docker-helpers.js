@@ -8,6 +8,12 @@ import { removeCaddyEntry, updateCaddyFile } from "../caddy/caddy.js";
  * @param {*} projectName
  */
 export async function runContainer(projectName) {
+  // TODO: Check the database to make sure this project is even
+  //       allowed to start, rather than being suspended.
+  //       This includes confirming that there is at least one
+  //       enabled user associated with the project, because if
+  //       not, this project is implicitly suspended.
+
   console.log(`attempting to run container ${projectName}`);
   let port = await getFreePort();
 
@@ -72,7 +78,12 @@ export async function restartContainer(name, rebuild = false) {
     await runContainer(name);
   } else {
     console.log(`restarting container for ${name}...`);
-    execSync(`docker container restart -t 0 ${name}`);
+    try {
+      execSync(`docker container restart -t 0 ${name}`);
+    } catch (e) {
+      // if an admin force-stops this container, we can't "restart".
+      runContainer(name);
+    }
   }
   console.log(`...done!`);
 }
@@ -144,8 +155,8 @@ export function getAllRunningContainers() {
         return [k[0].toLowerCase() + k.substring(1), v];
       })
     );
-    const { image, command, state, iD:id } = obj;
-    containerData.push({ image, id, command, state });
+    const { image, command, state, iD: id, status, size } = obj;
+    containerData.push({ image, id, command, state, status, size });
   });
   return containerData;
 }

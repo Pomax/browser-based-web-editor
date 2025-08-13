@@ -1,4 +1,14 @@
-<li>
-    {{ user.name }}
-    {{ user | dump }}
-</li>
+<tr>
+  <td>{{ user.id }}</td>
+  <td>{{ user.name }}</td>
+  <td>{{ user.created_at | year }}</td>
+  <td>{{ user.enabled_at | year }}</td> <!-- needs toggle -->
+  <td>{{ user.admin }}</td> <!-- needs toggle -->
+</tr>
+{% for suspension in user.suspensions %}
+<tr>
+  <td colspan="5">{{ s | dump }}</td>
+</tr>
+{% endfor %}
+
+<!-- we probably want a list of services the user has auth set up for, too -->

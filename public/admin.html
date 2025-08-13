@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Test Editor</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="stylesheet" href="/admin.css" async>
+    <script type="module" src="/admin.js" async></script>
   </head>
   <body>
     <h1>Admin interface</h1>
@@ -13,38 +15,57 @@
     <a href="/auth/github/logout">logout</a> or click here to go back to
     <a href="/">the main page</a>.
 
-    <section>
+    <fieldset>
       <h2>Users</h2>
+      <table id="users">
+        <tr>
+          <th>id</th>
+          <th>name</th>
+          <th>registered</th>
+          <th>enabled</th>
+          <th>admin</th>
+        </tr>
+        {% for user in admin.userList %}
+        {% include "./fragments/admin/user.html" %}
+        {% endfor %}
+        </table>
+        <p>Should show access list</p>
+        <p>Should have activate/deactivate, (un)suspend, delete</p>
+      </fieldset>
 
-      <p>Should have activate/deactivate, (un)suspend, delete</p>
-
-      <ul>
-        {% for user in admin.userList %} {% include
-        "./fragments/admin/user.html" %} {% endfor %}
-      </ul>
-    </section>
-
-    <section>
+    <fieldset>
       <h2>Projects</h2>
+      <table id="projects">
+        <tr>
+          <th>id</th>
+          <th>name</th>
+          <th>description</th>
+          <th>created</th>
+        </tr>
+        {% for project in admin.projectList %}
+        {% include "./fragments/admin/project.html" %} 
+        {% endfor %}
+      </table>
+      <p>Should show access list</p>
+      <p>Should have (un)suspend, delete</p>
+    </fieldset>
 
-      <p>Should have activate/deactivate, (un)suspend, delete</p>
-
-      <ul>
-        {% for project in admin.projectList %} {% include
-        "./fragments/admin/project.html" %} {% endfor %}
-      </ul>
-    </section>
-
-    <section>
+    <fieldset>
       <h2>Containers</h2>
-
-      <p>Should have stop/remove</p>
-
-      <ul>
-        {% for container in admin.containerList %} {% include
-        "./fragments/admin/container.html" %} {% endfor %}
-      </ul>
-    </section>
+      <table id="containers">
+        <tr>
+          <th>id</th>
+          <th>image</th>
+          <th>state</th>
+          <th>status</th>
+          <th>size</th>         
+          <th></th> 
+        </tr>
+        {% for container in admin.containerList %}
+        {% include "./fragments/admin/container.html" %}
+        {% endfor %}
+      </table>
+    </fieldset>
 
     {% else %} You'll probably want to <a href="/auth/github">login</a>
     {% endif %}

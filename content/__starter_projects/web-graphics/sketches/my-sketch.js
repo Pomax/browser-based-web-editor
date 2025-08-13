@@ -3,6 +3,7 @@
 // we can see the "playing field edges":
 const walls = [];
 const balls = [];
+const ballCount = 20;
 const inset = 20;
 
 /**
@@ -25,9 +26,14 @@ function setup() {
     new Line(x2, y1, x1, y1),
   );
   // And then we'll put some balls in there:
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < ballCount; i++) {
     balls.push(
-      new Ball(random(x1, x2), random(y1, y2), `rgb(255,${225 - 15*i},${15*i})`, 15 - i),
+      new Ball(
+        random(x1, x2),
+        random(y1, y2),
+        `rgb(255,${225 - 15 * i},${15 * i})`,
+        ballCount + 1 - i,
+      ),
     );
   }
   // Then, once our setup is done, hit play!

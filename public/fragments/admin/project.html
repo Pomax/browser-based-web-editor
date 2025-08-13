@@ -1,3 +1,11 @@
-<li>
-    {{ project | dump }}
-</li>
+<tr>
+  <td>{{ project.id }}</td>
+  <td>{{ project.name }}</td>
+  <td>{{ project.description }}</td>
+  <td>{{ project.created_at | year }}</td>
+</tr>
+{% for suspension in project.suspensions %}
+<tr>
+  <td colspan="4">{{ s | dump }}</td>
+</tr>
+{% endfor %}
