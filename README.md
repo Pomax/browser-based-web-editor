@@ -22,6 +22,8 @@ The main page has a login link that uses github authentication (for now). After 
 
 Note that the first user to log in after the initial setup becomes the default admin user. Any admin user will have a link to the admin page available - that page does very little right now, but will eventually allow for tasks like enabling and (un)suspending users, (un)suspending projects, and performing container maintenance.
 
+Also note that there are, technically, two login options, but the second is a dev-only "magic link" email login form that doesn't actually email anyone. Its only purpose is to let admins create test user accounts for messing around with. Always fun to suspend or delete test users!
+
 ## Docker?
 
 While project _content_ lives in the content directory on your computer (or your server, etc), you don't want it to _run_ in that context. That would give it access to.. well... everything, including other project's content, the editor's code, routing configs, etc. etc. So, instead, the runtime is handled by creating a Docker container (think virtual machine) running "Alpine" Linux with Node.js and Python preinstalled, with a project's content added in as a "bind mount" (meaning the files live on the host OS, but the docker container has read/write access to them).
@@ -44,10 +46,14 @@ This is about to get stupid. We're not going to do _anything_ with WSL, we just 
 
 - Then, we'll need to switch Docker Desktop from using "docker-windows" to using "docker-linux" (i.e. _the thing everyone else uses_), so open Docker Desktop, go to the settings, go to "builders", click the "docker-linux" ⋮ menu and click "use". This will fail with an irrelevant API error.
 - Keep Docker Desktop open, and open a cmd prompt with admin rights, cd to `C:\Program Files\Docker\Docker` and then run `DockerCLI.exe -SwitchDaemon`.
-- Once that's done, close the command prompt, WSL, and quit (really quit, not close-and-minimize) Docker Desktop.
+- Once that's done, close the command prompt, exit WSL, and quit (really quit, not close-and-minimize) Docker Desktop.
 - Reopen Docker Desktop. Check the builders. F'ing magic, it worked, it'll now use linux containers just like every other OS, which is what it should have been using in the first place.
 
-## What's caddy?
+#### I already have Docker on Windows, using windows containers...
+
+I have no advice here. This is probably not going to work for you, but if you want to try it anyway and report back, awesome!
+
+## What's Caddy?
 
 Caddy is a general purpose server (similar to Nginx) that automatically handles HTTPS, and lets us set up bindings for things like https://yourproject.app.localhost rather than having to use completely useless http://localhost:someport URLs (where the port number will change any time you restart the server). Installing it on Linux or Mac is relatively easy (tell your package manager to install it. Done), but Windows is (of course) a bit more work:
 
