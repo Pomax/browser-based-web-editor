@@ -38,11 +38,20 @@ export async function runContainer(projectName) {
     const runCommand = `docker run ${runFlags} ${bindMount} -p ${port}:8000 -t ${projectName}`;
     console.log(runCommand);
     exec(runCommand);
-  } else {
-    port = result.match(/0.0.0.0:(\d+)->/m)[1];
-    console.log(`- found a running container on port ${port}`);
+    // FIXME: TODO: it would be nice if we could just "check until we know" rather than
+    //              using a 2 second timeout to see what the actual port is. Because
+    //              despite all logic, I've seen docker pick a *different* port than
+    //              the one the run command instructs it to use O_o
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        result = execSync(`docker ps -f name=${projectName}`).toString().trim();
+        resolve();
+      }, 2000);
+    });
   }
 
+  port = result.match(/0.0.0.0:(\d+)->/m)[1];
+  console.log(`- found a running container on port ${port}`);
   updateCaddyFile(projectName, port);
 }
 
