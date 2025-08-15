@@ -40,10 +40,8 @@ export function pageNotFound(req, res) {
 }
 
 export async function bindUser(req, res, next = () => {}) {
-  const { user } = req.session.passport ?? {};
-  if (user) {
-    res.locals.user = processUserLogin(user);
-  }
+  const { user } = req.session.passport || {};
+  res.locals.user = user;
   next();
 }
 

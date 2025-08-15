@@ -29,7 +29,9 @@ function composeWhere(where, suffix = []) {
     .filter(Boolean)
     .join(` AND `);
   if (suffix.length) filter += ` AND ${suffix.join(` AND `)}`;
-  const values = Object.values(where).filter(Boolean);
+  const values = Object.values(where).filter(
+    (v) => !(v === undefined || v === null)
+  );
   return { filter, values };
 }
 
@@ -46,7 +48,7 @@ class Model {
       .join(`, `);
     const values = Object.values(record);
     const sql = `UPDATE ${this.table} SET ${update} WHERE ${primaryKey} = ?`;
-    // console.log(sql, values);
+    // console.log(`UPDATE`, sql, values);
     db.prepare(sql).run(...values, pval);
   }
   find(where) {
@@ -55,7 +57,7 @@ class Model {
   findAll(where) {
     const { filter, values } = composeWhere(where);
     const sql = `SELECT * FROM ${this.table} WHERE ${filter}`;
-    // console.log(sql, values);
+    // console.log(`FIND`, sql, values);
     return db.prepare(sql).all(values).filter(Boolean);
   }
   all(sortKey, sortDir = `ASC`) {
@@ -69,7 +71,7 @@ class Model {
     const keys = Object.keys(colVals);
     const values = Object.values(colVals);
     const sql = `INSERT INTO ${this.table} (${keys.join(`,`)}) VALUES (${keys.map((v) => `?`).join(`,`)})`;
-    // console.log(sql, values);
+    // console.log(`INSERT`, sql, values);
     db.prepare(sql).run(...values);
   }
   findOrCreate(where = {}) {
@@ -79,6 +81,7 @@ class Model {
     return this.find(where);
   }
   create(where = {}) {
+    console.log(`CREATE with`, where);
     const record = this.find(where);
     if (record) throw new Error(`record already exists`);
     this.insert(where);
@@ -105,17 +108,17 @@ const Login = new Model(`user_logins`);
 
 // Good enough, let's move on with our lives:
 
-export function processUserLogin(profile) {
-  return __processUserLogin(profile);
+export function processUserLogin(userObject) {
+  return __processUserLogin(userObject);
 }
 
 let __processUserLogin = existsSync(`.finish-setup`)
   ? __processFirstTimeUserLogin
   : processUserLoginNormally;
 
-function processUserLoginNormally(profile) {
-  const { id, displayName, provider } = profile;
-  const l = Login.find({ service: provider, service_id: id });
+function processUserLoginNormally(userObject) {
+  const { userName, service, service_id } = userObject;
+  const l = Login.find({ service, service_id });
   if (l) {
     const u = User.find({ id: l.user_id });
     if (!u) {
@@ -127,22 +130,22 @@ function processUserLoginNormally(profile) {
   }
 
   // No login binding: new user or username conflict?
-  const u = User.find({ name: displayName });
+  const u = User.find({ name: userName });
   if (!u) {
-    const u = User.create({ name: displayName });
-    Login.create({ user_id: u.id, service: provider, service_id: id });
+    const u = User.create({ name: userName });
+    Login.create({ user_id: u.id, service, service_id });
     return u;
   }
 
-  throw new Error(`User ${displayName} already exists`);
+  throw new Error(`User ${userName} already exists`);
 }
 
 // One-time function that only exists for as long as .finish-setup does
-function __processFirstTimeUserLogin(profile) {
+function __processFirstTimeUserLogin(userObject) {
   __processUserLogin = processUserLoginNormally;
-  const { id, displayName, provider } = profile;
-  const u = User.create({ name: displayName });
-  Login.create({ user_id: u.id, service: provider, service_id: id });
+  const { userName, service, service_id } = userObject;
+  const u = User.create({ name: userName });
+  Login.create({ user_id: u.id, service, service_id });
   Admin.create({ user_id: u.id });
   u.enabled_at = u.created_at;
   User.save(u);
@@ -150,32 +153,69 @@ function __processFirstTimeUserLogin(profile) {
   return u;
 }
 
-export function enableUser(userName) {
-  const u = User.find({ name: userName });
+export function enableUser(userNameOrId) {
+  let u;
+  if (typeof userNameOrId === `number`) {
+    u = User.find({ id: userNameOrId });
+  } else {
+    u = User.find({ name: userNameOrId });
+  }
   if (!u) throw new Error(`User not found`);
   u.enabled_at = new Date().toISOString();
   User.save(u);
+  return u;
 }
 
-export function disableUser(userName) {
-  const u = User.find({ name: userName });
+export function disableUser(userNameOrId) {
+  let u;
+  if (typeof userNameOrId === `number`) {
+    u = User.find({ id: userNameOrId });
+  } else {
+    u = User.find({ name: userNameOrId });
+  }
   if (!u) throw new Error(`User not found`);
   u.enabled_at = null;
   User.save(u);
+  return u;
 }
 
-export function suspendUser(userName, reason, notes = ``) {
+export function deleteUser(userId) {
+  const u = User.find({ id: userId });
+  if (!u) throw new Error(`User not found`);
+
+  console.log(`"deleting" user ${u.name} with id ${u.id}`);
+  const access = Access.findAll({ user_id: u.id });
+  Access.delete({ user_id: u.id});
+  access.forEach(({ project_id }) => {
+    const p = Project.find({ id: project_id });
+    if (p && Access.findAll({ project_id}).length === 0) {
+      Project.delete(p);
+    }
+  });
+  User.delete(u);
+  // ON DELETE CASCADE should have taken care of everything else...
+}
+
+export function suspendUser(userNameOrId, reason, notes = ``) {
   if (!reason) throw new Error(`Cannot suspend without a reason`);
-  const u = User.find({ name: userName });
+  let u;
+  if (typeof userNameOrId === `number`) {
+    u = User.find({ id: userNameOrId });
+  } else {
+    u = User.find({ name: userNameOrId });
+  }
   if (!u) throw new Error(`User not found`);
-  UserSuspension.create({ user_id: u.id, reason, notes });
+  try {
+    UserSuspension.create({ user_id: u.id, reason, notes });
+  } catch (e) {
+    console.error(e);
+    console.log(u, reason, notes);
+  }
 }
 
-export function unsuspendUser(userName) {
-  const u = User.find({ name: userName });
-  if (!u) throw new Error(`User not found`);
-  const s = UserSuspension.find({ user_id: u.id });
-  if (!s) throw new Error(`User not suspended`);
+export function unsuspendUser(suspensionId) {
+  const s = UserSuspension.find({ id: suspensionId });
+  if (!s) throw new Error(`Suspension not found`);
   s.invalidated_at = new Date().toISOString();
   UserSuspension.save(s);
 }

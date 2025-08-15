@@ -1,2 +1,1 @@
-- setup should create an admin user, which should be password based, and one first logon should immediately be told to log in with oauth so that the local password can be deleted again.
-- Add an admin-locked API for all the admin route... things...
+- make it possible for a logged in user to add additional login methods

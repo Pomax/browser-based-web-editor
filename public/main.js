@@ -53,10 +53,3 @@ if (input && starter && button) {
     });
   });
 }
-
-const signup = document.querySelector(`button.signup`);
-if (signup) {
-  signup.addEventListener(`click`, () => {
-    // run the login route
-  });
-}

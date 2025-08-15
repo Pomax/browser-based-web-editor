@@ -8,7 +8,7 @@ import {
   loadStarters,
   pageNotFound,
 } from "./middleware.js";
-import { addPassportAuth } from "./v1/auth/index.js";
+import { addPassportAuth } from "./auth/index.js";
 import { setupRoutesV1 } from "./v1/index.js";
 
 const FIFTEEN_MINUTES_IN_MS = 15 * 60 * 1000;

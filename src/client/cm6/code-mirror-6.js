@@ -28,6 +28,7 @@ export function getInitialState(fileEntry, filename, data) {
 
   // Add debounced content change syncing as a CM6 plugin
   extensions.push(
+    EditorView.lineWrapping,
     EditorView.updateListener.of((e) => {
       const tab = e.view.tabElement;
       if (tab && e.docChanged) {
@@ -53,6 +54,10 @@ export function getInitialState(fileEntry, filename, data) {
  * Set up a CodeMirror6 view
  */
 export function setupView(parent, state) {
-  const view = new EditorView({ parent, state });
+  const view = new EditorView({
+    parent,
+    state,
+    lineWrapping: true,
+  });
   return view;
 }

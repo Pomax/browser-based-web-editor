@@ -15,11 +15,28 @@
 
     {% if passport.user %} Currently logged in as {{ user.name }}, click here
     to <a href="/auth/github/logout">log out</a>{% if user.admin %} or click here
-    for the <a href="/v1/admin">admin interface</a>{% endif %}. {% else %} You'll
-    probably want to <a href="/auth/github">log in</a>. And instead of a cookie
-    banner, you get an opt-in agreement: obviously logins require storing
-    login information in a database, and use cookies for session management,
-    so by logging in you're equally obviously okay with that.
+    for the <a href="/v1/admin">admin interface</a>{% endif %}.
+    {% else %}
+    <p>You'll probably want to log in, either by:<p>
+    
+    <ul>
+      <li>using <a href="/auth/github">GitHub</a>, or by</li>
+      <li>
+        <form action="/auth/email" method="post">
+          <button>getting</button>
+          an
+          <input type="email" name="email" placeholder="email (but a fake one)"/> link.
+        </form>
+      </li>
+    </ul>
+    
+    <p>
+      And instead of a cookie banner, you get an opt-in agreement: obviously
+      logins require storing enough information in a database to know enough
+      about you to constitute "personally identifiable information", and 
+      persistent login means cookies need to be set for session management,
+      so by logging in you're equally obviously okay with all of that. 
+    </p>
     {% endif %} {% if projectList %}
 
     <h2>Start a new project</h2>

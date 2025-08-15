@@ -37,7 +37,7 @@ const nenv = nunjucks.configure("public", {
   noCache: true,
   express: app,
 });
-nenv.addFilter(`year`, (str, count) => str.split(` `)[0]);
+nenv.addFilter(`year`, (str, count) => str?.split(/[ T]/)[0]);
 nenv.addFilter(`shorthash`, (str, count) => str.substring(0, 16));
 nenv.addFilter(`dockerimg`, (str, count) => str.startsWith(`sha256`) ? `(hash only)` : str);
 

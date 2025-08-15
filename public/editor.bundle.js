@@ -29232,6 +29232,7 @@ function getInitialState(fileEntry, filename, data3) {
   }[ext];
   if (syntax) extensions.push(syntax());
   extensions.push(
+    EditorView.lineWrapping,
     EditorView.updateListener.of((e2) => {
       const tab = e2.view.tabElement;
       if (tab && e2.docChanged) {
@@ -29250,7 +29251,11 @@ function getInitialState(fileEntry, filename, data3) {
   return EditorState.create({ doc: doc2, extensions });
 }
 function setupView(parent, state) {
-  const view = new EditorView({ parent, state });
+  const view = new EditorView({
+    parent,
+    state,
+    lineWrapping: true
+  });
   return view;
 }
 

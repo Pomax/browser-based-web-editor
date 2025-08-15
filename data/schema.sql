@@ -36,10 +36,10 @@ CREATE TABLE suspended_users (
   suspended_at TEXT DEFAULT CURRENT_TIMESTAMP,
   reason TEXT,
   notes TEXT,
-  invalidated_at TEXT
+  invalidated_at TEXT DEFAULT NULL
 );
 
-CREATE UNIQUE INDEX suspended_user_names ON suspended_users(user_id);
+CREATE INDEX suspended_user_names ON suspended_users(user_id);
 
 -- projects
 
@@ -71,10 +71,10 @@ CREATE TABLE suspended_projects (
   suspended_at TEXT DEFAULT CURRENT_TIMESTAMP,
   reason TEXT,
   notes TEXT,
-  invalidated_at TEXT
+  invalidated_at TEXT DEFAULT NULL
 );
 
-CREATE UNIQUE INDEX suspended_project_names ON suspended_projects(project_id);
+CREATE INDEX suspended_project_names ON suspended_projects(project_id);
 
 -- project access
 

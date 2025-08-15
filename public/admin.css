@@ -11,6 +11,12 @@ html {
           }
           td {
             padding: 0 1em;
+            form {
+              display: inline-block;
+              & + form {
+                margin-left: 1em;
+              }
+            }
           }
         }
       }
