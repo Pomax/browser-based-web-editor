@@ -185,10 +185,10 @@ export function deleteUser(userId) {
 
   console.log(`"deleting" user ${u.name} with id ${u.id}`);
   const access = Access.findAll({ user_id: u.id });
-  Access.delete({ user_id: u.id});
+  Access.delete({ user_id: u.id });
   access.forEach(({ project_id }) => {
     const p = Project.find({ id: project_id });
-    if (p && Access.findAll({ project_id}).length === 0) {
+    if (p && Access.findAll({ project_id }).length === 0) {
       Project.delete(p);
     }
   });

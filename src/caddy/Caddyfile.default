@@ -1,8 +1,8 @@
-editor.com.localhost {
+$WEB_EDITOR_HOSTNAME {
 	reverse_proxy localhost:8000
 }
 
-*.app.localhost {
+$WEB_EDITOR_APPS_HOSTNAME {
 	handle_errors {
 		rewrite * /{err.status_code}.html 
 		root * ./src/caddy/

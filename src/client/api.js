@@ -1,8 +1,7 @@
 // Make sure that "fetch()" automatically prepends the API
 // so that we don't need to include that in ever call:
-const HOST = `https://editor.com.localhost`;
-const VERSION = `v1`;
-const PREFIX = `${HOST}/${VERSION}`;
+const PREFIX = `/v1`;
+
 const fetch = (...args) =>
   globalThis.fetch(`${PREFIX}/${args.shift()}`, ...args);
 

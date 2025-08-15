@@ -1,29 +1,16 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { execSync, spawn } from "node:child_process";
 import { join } from "node:path";
+import dotenv from "@dotenvx/dotenvx";
+dotenv.config({ quiet: true });
 
+const { WEB_EDITOR_APPS_HOSTNAME } = process.env;
 const caddyFile = join(import.meta.dirname, `Caddyfile`);
-
-const defaultCaddyContent = `editor.com.localhost {
-\treverse_proxy localhost:8000
-}
-
-*.app.localhost {
-\thandle_errors {
-\t\trewrite * /{err.status_code}.html 
-\t\troot * ./src/caddy/
-\t\tfile_server
-\t}
-}
-`;
 
 /**
  * Ensure a local Caddyfile exists for us to work with
  */
 export function startCaddy() {
-  if (!existsSync(caddyFile)) {
-    writeFileSync(caddyFile, defaultCaddyContent);
-  }
   stopCaddy();
   spawn(`caddy`, [`start`, `--config`, caddyFile], {
     shell: true,
@@ -60,7 +47,7 @@ process.on("SIGINT", () => {
  */
 export function updateCaddyFile(name, port) {
   const data = readFileSync(caddyFile).toString();
-  const host = `${name}.app.localhost`;
+  const host = `${name}.${WEB_EDITOR_APPS_HOSTNAME}`;
   const index = data.indexOf(host);
   if (index >= 0) {
     // Update the binding

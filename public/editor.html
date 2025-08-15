@@ -15,7 +15,7 @@
   <body data-project-id="{{ projectId }}" data-project-name="{{ projectName }}">
     <main>
       <span id="buttons">
-        <a class="link-back" href="https://editor.com.localhost">home</a>
+        <a class="link-back" href="https://{{ WEB_EDITOR_HOSTNAME }}">home</a>
         <span class="projectname">{{ projectName }}</span>
         <button class="project-settings">settings</button>
         <button id="all" title="Open all files">!!!</button>
@@ -46,8 +46,8 @@
         </span>
         <iframe
           sandbox
-          src="https://editor.com.localhost/default/index.html"
-          data-src="https://{{ projectName }}.app.localhost"
+          src="https://{{ WEB_EDITOR_HOSTNAME }}/default/index.html"
+          data-src="https://{{ projectName }}.{{ WEB_EDITOR_APPS_HOSTNAME }}"
           data-project-name="{{ projectName }}"
         ></iframe>
       </div>

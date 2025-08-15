@@ -30,7 +30,8 @@ projects.get(
   `/edit/:project`,
   bindCommonValues,
   loadProject,
-  (_req, res) => res.render(`editor.html`, res.locals)
+  (req, res) =>
+    res.render(`editor.html`, { ...res.locals, ...req.session, ...process.env })
 );
 
 /**

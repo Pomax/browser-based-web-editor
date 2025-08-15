@@ -11,33 +11,55 @@
 
 import readline from "node:readline";
 import { execSync } from "node:child_process";
-import { cpSync, existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import dotenv from "@dotenvx/dotenvx";
+dotenv.config({ quiet: true });
 
 const stdin = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
-async function question(q) {
-  return new Promise((resolve) => {
-    stdin.question(q, (value) => {
-      value = value.trim();
-      if (!value) return resolve(question(q));
-      resolve(value);
-    });
-  });
-}
+const BYPASS_FINISH = existsSync(`./data/data.sqlite3`);
 
 setup(
   // do we have everything we need?
   runNpmInstall,
   checkDependencies,
-  // Excellent. Let's set up what we need
+  // Excellent. Let's set everything up:
+  setupEnv,
   setupDocker,
   setupCaddy,
-  setupSqlite,
-  setupEnv
+  setupSqlite
 );
+
+// ---------------------------------------------------------------------------
+//  Functions get hoisted at load time, so we can declare them after our call
+// ---------------------------------------------------------------------------
+
+// A little wrapper function so we can ask questions that may,
+// or may not, accept empty answers.
+async function question(q, allowEmpty = false) {
+  return new Promise((resolve) => {
+    stdin.question(`${q}? `, (value) => {
+      value = value.trim();
+      if (value || allowEmpty) return resolve(value);
+      resolve(question(q));
+    });
+  });
+}
+
+// Then, a little helper function for generating
+// random secrets for session and magic link purposes:
+function randomSecret() {
+  let randomSecret = ``;
+  while (randomSecret.length < 40) {
+    randomSecret += String.fromCharCode(
+      0x29 + (((0x7e - 0x29) * Math.random()) | 0)
+    );
+  }
+  return randomSecret;
+}
 
 /**
  * This is a utility function that just runs through a series of functions
@@ -49,17 +71,36 @@ async function setup(...handlers) {
     while (handlers.length) {
       await handlers.shift()();
     }
-    const token = `${Math.random()}`.substring(2)
-    writeFileSync(`./.finish-setup`, token);
-    console.log(`
+
+    // If we run setup after we already have a database set up,
+    // folks probably don't want the first-time-setup,
+    // first-login-becomes-admin functionality, so don't
+    // create the file that triggers that:
+    if (BYPASS_FINISH) {
+      console.log(`
+Setup complete.
+
+Run "npm start", log in, and have fun!
+`);
+    }
+
+    // If there was no database yet, though, make sure that when
+    // the user first logs into the system, their login immediately
+    // enables the user account, and flips the admin switch for it.
+    else {
+      const token = `${Math.random()}`.substring(2);
+      writeFileSync(`./.finish-setup`, token);
+
+      console.log(`
 Setup complete.
 
 Run "npm start", and log in using GitHub. This will create
 the initial (enabled and admin) user account with which to
 do everything else.
 `);
+    }
 
-process.exit(0);
+    process.exit(0);
   } catch (e) {
     console.log(e);
     console.log(`\nSetup incomplete. Please review the errors.\n`);
@@ -129,22 +170,142 @@ function checkForSqlite() {
 }
 
 /**
+ * (Re)generate the .env file that we need.
+ */
+async function setupEnv() {
+  let {
+    WEB_EDITOR_HOSTNAME,
+    WEB_EDITOR_APPS_HOSTNAME,
+    WEB_EDITOR_IMAGE_NAME,
+    GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET,
+    GITHUB_APP_HOST,
+    GITHUB_CALLBACK_URL,
+  } = process.env;
+
+  // Do we need to do any host setup?
+  if (!WEB_EDITOR_HOSTNAME || !WEB_EDITOR_APPS_HOSTNAME) {
+    console.log(`
+The system uses two domains, one for the editor website and one for 
+hosting projects. If you want to run this somewhere "on the web" you'll
+need to provide hostnames so that things can be hooked up properly,
+but even if you just want to run this locally, we'll need some "fake"
+hostnames that Caddy can use to expose both the editor and running
+project containers.
+`);
+
+    if (!WEB_EDITOR_HOSTNAME) {
+      let defaultHost = `editor.com.localhost`;
+      WEB_EDITOR_HOSTNAME =
+        (await question(
+          `Web editor hostname (defaults to ${defaultHost})`,
+          true
+        )) || defaultHost;
+    }
+
+    if (!WEB_EDITOR_APPS_HOSTNAME) {
+      const defaultAppHost = `app.localhost`;
+      WEB_EDITOR_APPS_HOSTNAME =
+        (await question(
+          `Web app hostname (defaults to ${defaultAppHost})`,
+          true
+        )) || defaultAppHost;
+    }
+  }
+
+  // Docker naming setup?
+  if (!WEB_EDITOR_IMAGE_NAME) {
+    console.log(`
+Projects are housed inside docker containers, and to speed up the
+build time, all project containers are built off of single base
+Docker image. But that image needs a name, and while the default
+name "local-base-image" might work for most people, you may already
+have a Docker image by that name, so...
+`);
+    const defaultImage = `local-base-image`;
+    WEB_EDITOR_IMAGE_NAME =
+      (await question(
+        `Base docker image name (defaults to ${defaultImage})`,
+        true
+      )) || defaultImage;
+  }
+
+  // Github login setup?
+  if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+    console.log(`
+For now, we're using GitHub as our oauth mediator, so you'll need to have
+a GitHub application defined over on https://github.com/settings/developers
+
+Create a new OAuth app if you don't have one already set up; for the
+homepage url, give it "https://${WEB_EDITOR_HOSTNAME}", and as authorization
+callback url, give it "https://${WEB_EDITOR_HOSTNAME}/auth/github/callback".
+
+Once saved, generate a client secret, and then fill in the client id
+and secrets here: they'll get saved to an untracked .env file that the
+codebase will read in every time it starts up.
+`);
+
+    GITHUB_CLIENT_ID = await question(`Github client id`);
+    GITHUB_CLIENT_SECRET = await question(`Github client secret`);
+  }
+
+  GITHUB_APP_HOST = `https://${WEB_EDITOR_HOSTNAME}`;
+  GITHUB_CALLBACK_URL = `https://${WEB_EDITOR_HOSTNAME}/auth/github/callback`;
+
+  // (Re)generate the .env file
+  writeFileSync(
+    `.env`,
+    `WEB_EDITOR_HOSTNAME=${WEB_EDITOR_HOSTNAME}
+WEB_EDITOR_APPS_HOSTNAME=${WEB_EDITOR_APPS_HOSTNAME}
+WEB_EDITOR_IMAGE_NAME=${WEB_EDITOR_IMAGE_NAME}
+SESSION_SECRET=${randomSecret()}
+MAGIC_LINK_SECRET=${randomSecret()}
+GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+GITHUB_APP_HOST=${GITHUB_APP_HOST}
+GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}
+`
+  );
+
+  // And make sure to update process.env because subsequent
+  // functions rely on having these variables set:
+  Object.assign(process.env, {
+    WEB_EDITOR_HOSTNAME,
+    WEB_EDITOR_APPS_HOSTNAME,
+    WEB_EDITOR_IMAGE_NAME,
+    GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET,
+    GITHUB_APP_HOST,
+    GITHUB_CALLBACK_URL,
+  });
+}
+
+/**
  * If we have docker available, check to see if the base image that
  * the codebase needs already exists, and if not, build it.
  */
 function setupDocker() {
+  const { WEB_EDITOR_IMAGE_NAME } = process.env;
   try {
-    execSync(`docker image inspect local-base-image`, {
+    execSync(`docker image inspect ${WEB_EDITOR_IMAGE_NAME}`, {
       shell: true,
       stdio: `ignore`,
     });
   } catch (e) {
-    execSync(`docker build -t local-base-image .`, {
+    execSync(`docker build -t ${WEB_EDITOR_IMAGE_NAME} .`, {
       shell: true,
       cwd: `./src/docker`,
       stdio: `ignore`,
     });
   }
+  writeFileSync(
+    `Dockerfile`,
+    `FROM ${WEB_EDITOR_IMAGE_NAME}:latest
+RUN sh -c source .container/.env || true
+RUN sh .container/build.sh || true
+CMD sh .container/run.sh
+`
+  );
 }
 
 /**
@@ -152,8 +313,12 @@ function setupDocker() {
  * in the right place, and if not, create it.
  */
 function setupCaddy() {
-  if (existsSync(`./src/caddy/Caddyfile`)) return;
-  cpSync(`./src/caddy/Caddyfile.default`, `./src/caddy/Caddyfile`);
+  const { WEB_EDITOR_HOSTNAME, WEB_EDITOR_APPS_HOSTNAME } = process.env;
+  const caddyFile = readFileSync(`./src/caddy/Caddyfile.default`)
+    .toString()
+    .replace(`$WEB_EDITOR_HOSTNAME`, WEB_EDITOR_HOSTNAME)
+    .replace(`$WEB_EDITOR_APPS_HOSTNAME`, `*.${WEB_EDITOR_APPS_HOSTNAME}`);
+  writeFileSync(`./src/caddy/Caddyfile`, caddyFile);
 }
 
 /**
@@ -169,46 +334,4 @@ async function setupSqlite() {
     // We explicitly make it fail by using a bad SQL intruction
     // as exit hack. Otherwise the REPL run and we never exit =_=
   }
-}
-
-/**
- * As last step, create an .env file for the user if they don't already have one.
- */
-async function setupEnv() {
-  if (existsSync(`.env`)) return;
-
-  let randomSecret = ``;
-  while (randomSecret.length < 40) {
-    randomSecret += String.fromCharCode(
-      0x29 + (((0x7e - 0x29) * Math.random()) | 0)
-    );
-  }
-
-  console.log(`
-For now, we're using GitHub as our oauth mediator, so you'll need to have
-a GitHub application defined over on https://github.com/settings/developers
-
-Create a new OAuth app if you don't have one already set up; for the
-homepage url, give it "https://editor.com.localhost", and as authorization
-callback url, give it "https://editor.com.localhost/auth/github/callback".
-
-Once saved, generate a client secret, and then fill in the client id
-and secrets here: they'll get saved to an untracked .env file that the
-codebase will read in every time it starts up.
-`);
-
-  const GITHUB_CLIENT_ID = (await question(`Github client id? `)).trim();
-  const GITHUB_CLIENT_SECRET = (
-    await question(`Github client secret? `)
-  ).trim();
-
-  writeFileSync(
-    `.env`,
-    `SESSION_SECRET=${randomSecret}
-GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
-GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
-GITHUB_APP_HOST=https://editor.com.localhost
-GITHUB_CALLBACK_URL=https://editor.com.localhost/auth/github/callback
-`
-  );
 }

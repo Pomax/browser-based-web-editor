@@ -476,9 +476,7 @@ var R = class extends f {
 u.define("file-tree", R);
 
 // src/client/api.js
-var HOST = `https://editor.com.localhost`;
-var VERSION = `v1`;
-var PREFIX = `${HOST}/${VERSION}`;
+var PREFIX = `/v1`;
 var fetch2 = (...args) => globalThis.fetch(`${PREFIX}/${args.shift()}`, ...args);
 var API = {
   // Project related calls, such as getting project health,

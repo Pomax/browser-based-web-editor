@@ -57,7 +57,7 @@ function addEmailAuth(app) {
       verifyUserAfterToken: true,
     },
     function send(user, token) {
-      const url = `https://editor.com.localhost/auth/email/verify?token=${token}`;
+      const url = `https://${process.env.WEB_EDITOR_HOSTNAME}/auth/email/verify?token=${token}`;
       console.log(`send:`, user, url);
       user = {
         userName: user.email,

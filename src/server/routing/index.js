@@ -57,7 +57,7 @@ export function setupRoutes(app) {
 
   // ...and the main page
   app.get(`/`, bindCommonValues, loadProjectList, loadStarters, (req, res) =>
-    res.render(`main.html`, { ...res.locals, ...req.session })
+    res.render(`main.html`, { ...res.locals, ...req.session, ...process.env })
   );
 
   // static routes for the website itself

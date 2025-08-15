@@ -2,7 +2,7 @@
   <td>{{ container.id | shorthash }}</td>
   <td>
     {% if container.image | dockerimg != "(hash only)" %}
-    <a href="https://{{ container.image }}.app.localhost" target="_blank">{{ container.image }}</a>
+    <a href="https://{{ container.image }}.{{ WEB_EDITOR_APPS_HOSTNAME }}" target="_blank">{{ container.image }}</a>
     {% else %}
     {{ container.image | dockerimg }}
     {% endif %}

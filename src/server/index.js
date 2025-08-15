@@ -7,7 +7,7 @@ import { watchForRebuild } from "./watcher.js";
 import { startCaddy } from "../caddy/caddy.js";
 
 // And our environment.
-import dotenv from "dotenv";
+import dotenv from "@dotenvx/dotenvx";
 dotenv.config({ quiet: true });
 
 // Quick check: does docker work?
@@ -67,9 +67,10 @@ setupRoutes(app);
 
 // Finally, run the server, and trigger a client bundle rebuild every time script.js changes.
 const PORT = process.env.PORT ?? 8000;
+const { WEB_EDITOR_HOSTNAME } = process.env;
 app.listen(PORT, () => {
   // Generate the server address notice
-  const msg = `=   Server running on https://editor.com.localhost   =`;
+  const msg = `=   Server running on https://${WEB_EDITOR_HOSTNAME}   =`;
   const line = `=`.repeat(msg.length);
   const mid = `=${` `.repeat(msg.length - 2)}=`;
   console.log([``, line, mid, msg, mid, line, ``].join(`\n`));

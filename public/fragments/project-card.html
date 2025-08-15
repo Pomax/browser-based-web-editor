@@ -1,6 +1,6 @@
 <li>
   <h3>
-    <a href="https://editor.com.localhost/v1/projects/edit/{{ project.name }}"
+    <a href="https://{{ WEB_EDITOR_HOSTNAME }}/v1/projects/edit/{{ project.name }}"
       >{{ project.name }}</a
     >
   </h3>
@@ -15,9 +15,9 @@
   <iframe
     width="1000"
     height="600"
-    src="https://{{ project.name }}.app.localhost"
+    src="https://{{ project.name }}.{{ WEB_EDITOR_APPS_HOSTNAME }}"
   ></iframe>
-  <a href="https://{{ project.name }}.app.localhost" target="_blank"
+  <a href="https://{{ project.name }}.{{ WEB_EDITOR_APPS_HOSTNAME }}" target="_blank"
     >Open in new tab</a
   >
 </li>

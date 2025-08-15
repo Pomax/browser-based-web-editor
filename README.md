@@ -26,7 +26,7 @@ Note that the first user to log in after the initial setup becomes the default a
 
 While project _content_ lives in the content directory on your computer (or your server, etc), you don't want it to _run_ in that context. That would give it access to.. well... everything, including other project's content, the editor's code, routing configs, etc. etc. So, instead, the runtime is handled by creating a Docker container (think virtual machine) running Ubuntu 24 with Node.js and Python preinstalled, with a project's content added in as a "bind mount" (meaning the files live on the host OS, but the docker container has read/write access to them).
 
-Projects have a special `.container` dir that houses a `run.sh` file that acts as your "what happens when your project container starts up" instruction. Also, restarting a project doesn't actually "restart" it so much as stops the container, which removes the container, then it builds a new container with the new name (which is just a fast copy of the local-base-image) and then run that. So be aware that any data you write outside of the project's home directory (i.e. `~/app`) is, at best, temporary. The moment the project container has to restart for whatever reason, any changes outside your project directly will be lost.
+Projects have a special `.container` dir that houses a `run.sh` file that acts as your "what happens when your project container starts up" instruction. Also, restarting a project doesn't actually "restart" it so much as stops the container, which removes the container, then it builds a new container with the new name (which is just a fast copy of the local base image) and then run that. So be aware that any data you write outside of the project's home directory (i.e. `~/app`) is, at best, temporary. The moment the project container has to restart for whatever reason, any changes outside your project directly will be lost.
 
 ### How do I install Docker?
 
@@ -66,33 +66,6 @@ You can now run `caddy` anywhere.
 ## So then what?
 
 Run `node setup`. Once that's done, you're good to go and you can simply run `npm start` any time you want to run the system.
-
-### Manually setting everything up.
-
-Don't do this. Unless you _absolutely_ have to. E.g. you're doing dev work on the codebase itself and you need to test parts of it.
-
-#### building  the docker base image 
-
-open the `src/docker` directory in a terminal and run `docker build -t local-base-image .`, to create the basic image that all other containers will be using as starting point
-
-#### building the initial database
-
-open the `data` directory in a terminal and run `sqlite3 data.sqlite3`. Once in the Sqlite repl, type `.read schema.sql`, and when that finishes you can double-ctrl-c back out of sqlite.
-
-Then create a `seed.sql` file and fill it with a tailored bit of SQL:
-
-```sql
--- initial seed data
-INSERT INTO users (id, name, enabled_at) values (1, 'YourNameHere', CURRENT_TIMESTAMP);
-INSERT INTO admin_table (user_id) VALUES (1);
-INSERT INTO projects (name, description) VALUES ('temp', 'First project');
-INSERT INTO project_access (project_id, user_id) VALUES (1, 1);
-INSERT INTO project_container_settings (project_id, build_script, run_script, env_vars) VALUES (1, '', 'npm install && npm start', '');
-```
-
-#### creating the initial project
-
-Copy the `content/__starter_projects/basic-nodejs` project to `content/temp`
 
 ## One-time Caddy permissions
 
