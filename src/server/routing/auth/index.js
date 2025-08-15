@@ -69,9 +69,11 @@ function addEmailAuth(app) {
     },
     async function verify(user) {
       console.log(`verify:`, user);
-      const u = enableUser(user.email);
-      console.log(`enabled:`, u);
-      return u;
+      return processUserLogin({
+        userName: user.email,
+        service: `magic link`,
+        service_id: user.email,
+      });
     }
   );
 

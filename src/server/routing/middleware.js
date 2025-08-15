@@ -8,7 +8,8 @@ import {
   getProjectListForUser,
   getNameForProjectId,
   getIdForProjectName,
-  processUserLogin,
+  getUser,
+  getUserSuspensions,
   getUserAdminFlag,
   hasAccessToUserRecords,
 } from "../database.js";
@@ -49,6 +50,18 @@ export async function verifyLogin(req, res, next) {
   const user = req.session.passport?.user;
   if (!user) {
     return next(new Error(`Not logged in`));
+  }
+  const u = getUser(user.id);
+  if (!u.enabled_at) {
+    return next(new Error(`This user account has not been actived yet`));
+  }
+  const suspensions = getUserSuspensions(u.id);
+  if (suspensions.length) {
+    return next(
+      new Error(
+        `This user account has been suspended (${suspensions.map((s) => `"${s.reason}"`).join(`, `)})`
+      )
+    );
   }
   bindUser(req, res, next);
 }

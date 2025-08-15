@@ -1,4 +1,4 @@
-// public/file-tree.esm.min.js
+// public/vendor/file-tree.esm.min.js
 var d = (s) => document.createElement(s);
 function p(s) {
   return s.split("/").filter((r) => !!r).at(-1).includes(".") ? true : !!I(s).file;

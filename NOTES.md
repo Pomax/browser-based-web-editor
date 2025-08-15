@@ -1,1 +1,2 @@
 - make it possible for a logged in user to add additional login methods
+- show "logged in" status for users on the admin page?

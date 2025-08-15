@@ -32,14 +32,19 @@ const app = express();
 // Set up the render engine:
 import nunjucks from "nunjucks";
 import { execPromise } from "./helpers.js";
-const nenv = nunjucks.configure("public", {
+const nenv = nunjucks.configure("src/server/pages", {
   autoescape: true,
   noCache: true,
   express: app,
 });
 nenv.addFilter(`year`, (str, count) => str?.split(/[ T]/)[0]);
+nenv.addFilter(`date`, (str, count) =>
+  str?.replace(`T`, ` `).replace(`Z`, ``).replace(/\.\d+/, ``)
+);
 nenv.addFilter(`shorthash`, (str, count) => str.substring(0, 16));
-nenv.addFilter(`dockerimg`, (str, count) => str.startsWith(`sha256`) ? `(hash only)` : str);
+nenv.addFilter(`dockerimg`, (str, count) =>
+  str.startsWith(`sha256`) ? `(hash only)` : str
+);
 
 // Set the various general aspects
 app.set("etag", false);

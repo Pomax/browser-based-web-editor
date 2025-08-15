@@ -81,7 +81,7 @@ class Model {
     return this.find(where);
   }
   create(where = {}) {
-    console.log(`CREATE with`, where);
+    // console.log(`CREATE with`, where);
     const record = this.find(where);
     if (record) throw new Error(`record already exists`);
     this.insert(where);
@@ -125,6 +125,12 @@ function processUserLoginNormally(userObject) {
       // This shouldn't be possible, so...
       throw new Error(`User not found`);
     }
+    const s = getUserSuspensions(u.id);
+    if (s.length) {
+      throw new Error(
+        `This user account has been suspended (${s.map((s) => `"${s.reason}"`).join(`, `)})`
+      );
+    }
     const a = Admin.find({ user_id: u.id });
     return { ...u, admin: a ? true : undefined };
   }
@@ -153,7 +159,7 @@ function __processFirstTimeUserLogin(userObject) {
   return u;
 }
 
-export function enableUser(userNameOrId) {
+export function getUser(userNameOrId) {
   let u;
   if (typeof userNameOrId === `number`) {
     u = User.find({ id: userNameOrId });
@@ -161,19 +167,18 @@ export function enableUser(userNameOrId) {
     u = User.find({ name: userNameOrId });
   }
   if (!u) throw new Error(`User not found`);
+  return u;
+}
+
+export function enableUser(userNameOrId) {
+  const u = getUser(userNameOrId);
   u.enabled_at = new Date().toISOString();
   User.save(u);
   return u;
 }
 
 export function disableUser(userNameOrId) {
-  let u;
-  if (typeof userNameOrId === `number`) {
-    u = User.find({ id: userNameOrId });
-  } else {
-    u = User.find({ name: userNameOrId });
-  }
-  if (!u) throw new Error(`User not found`);
+  const u = getUser(userNameOrId);
   u.enabled_at = null;
   User.save(u);
   return u;
@@ -198,19 +203,24 @@ export function deleteUser(userId) {
 
 export function suspendUser(userNameOrId, reason, notes = ``) {
   if (!reason) throw new Error(`Cannot suspend without a reason`);
-  let u;
-  if (typeof userNameOrId === `number`) {
-    u = User.find({ id: userNameOrId });
-  } else {
-    u = User.find({ name: userNameOrId });
-  }
-  if (!u) throw new Error(`User not found`);
+  const u = getUser(userNameOrId);
   try {
     UserSuspension.create({ user_id: u.id, reason, notes });
   } catch (e) {
     console.error(e);
     console.log(u, reason, notes);
   }
+}
+
+export function getUserSuspensions(userNameOrId, includeOld = false) {
+  let user_id = userNameOrId;
+  if (typeof userNameOrId !== `number`) {
+    const u = User.find({ name: userNameOrId });
+    user_id = u.id;
+  }
+  const s = UserSuspension.findAll({ user_id });
+  if (includeOld) return s;
+  return s.filter((s) => !s.invalidated_at);
 }
 
 export function unsuspendUser(suspensionId) {

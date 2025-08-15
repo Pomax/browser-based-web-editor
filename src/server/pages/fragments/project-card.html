@@ -7,7 +7,7 @@
   {% if project.description %}
   <p>{{ project.description }}</p>
   {% endif %}
-  <p>Created {{ project.created_at }}</p>
+  <p class="date">Created {{ project.created_at }}</p>
   <button data-project-id="{{ project.id }}" class="edit-project">edit</button>
   <button data-project-name="{{ project.name }}" class="delete-project">
     delete

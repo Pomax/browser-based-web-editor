@@ -57,7 +57,7 @@ html {
         p {
           margin: 0;
           margin-top: 0.5em;
-          &:last-of-type {
+          &.date {
             text-align: right;
           }
         }

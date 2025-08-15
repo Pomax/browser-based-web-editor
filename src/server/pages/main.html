@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Test Editor</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="stylesheet" href="./layout.css" />
-    <link rel="stylesheet" href="./style.css" />
-    <link rel="stylesheet" href="./main.css" />
+    <link rel="stylesheet" href="./css/layout.css" />
+    <link rel="stylesheet" href="./css/editor.css" />
+    <link rel="stylesheet" href="./css/main.css" />
     <script src="main.js" async defer></script>
   </head>
   <body>
     <h1>Welcome</h1>
 
-    {% if passport.user %} Currently logged in as {{ user.name }}, click here
-    to <a href="/auth/github/logout">log out</a>{% if user.admin %} or click here
-    for the <a href="/v1/admin">admin interface</a>{% endif %}.
+    {% if user %} Currently logged in as {{ user.name }}, click here to
+    <a href="/auth/github/logout">log out</a>{% if user.admin %} or click
+    here for the <a href="/v1/admin">admin interface</a>{% endif %}.
     {% else %}
     <p>You'll probably want to log in, either by:<p>
     
@@ -23,10 +23,15 @@
       <li>using <a href="/auth/github">GitHub</a>, or by</li>
       <li>
         <form action="/auth/email" method="post">
-          <button>getting</button>
+          <button>faking</button>
           an
-          <input type="email" name="email" placeholder="email (but a fake one)"/> link.
+          <input type="email" name="email" placeholder="email"/> signin.
         </form>
+        <p>
+          This option only exists to do user testing with fake<br>
+          users, and doesn't actually send out any emails.<br>
+          The activation link gets logged to the console.
+        </p>
       </li>
     </ul>
     

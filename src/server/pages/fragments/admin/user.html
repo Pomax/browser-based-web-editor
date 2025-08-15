@@ -39,8 +39,8 @@
     <form action="/v1/admin/user/unsuspend/{{ s.id}}" method="post">
       <button>lift suspension</button>
     </form>
-    {% else %}<em> Past suspension: "{{ s.reason }}" set {{ s.suspended_at }}, set
-    {{ s.suspended_at}} but invalidated on {{ s.invalidated_at }} </em>{% endif %}
+    {% else %}<em> Past suspension: "{{ s.reason }}" set {{ s.suspended_at}}
+    but invalidated on {{ s.invalidated_at | date }} </em>{% endif %}
   </td>
 </tr>
 {% endfor %}

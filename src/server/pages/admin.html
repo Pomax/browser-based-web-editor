@@ -5,15 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Test Editor</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="stylesheet" href="/admin.css" async>
-    <script type="module" src="/admin.js" async></script>
+    <link rel="stylesheet" href="/css/admin.css" async>
+    <script type="module" src="/js/admin.js" async></script>
   </head>
   <body>
     <h1>Admin interface</h1>
 
-    {% if userName %} Currently logged in as admin {{ userName }}, click here to
-    <a href="/auth/github/logout">logout</a> or click here to go back to
-    <a href="/">the main page</a>.
+    <p>
+      Currently logged in as admin {{ userName }}
+    </p>
+    
+    <p>
+      click here to
+      <a href="/auth/github/logout">logout</a> or click here to go back to
+      <a href="/">the main page</a>.
+    </p>
 
     <fieldset>
       <h2>Users</h2>
@@ -67,8 +73,5 @@
         {% endfor %}
       </table>
     </fieldset>
-
-    {% else %} You'll probably want to <a href="/auth/github">login</a>
-    {% endif %}
   </body>
 </html>
