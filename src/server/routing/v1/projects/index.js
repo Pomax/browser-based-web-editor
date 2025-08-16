@@ -1,3 +1,4 @@
+import { unlinkSync } from "node:fs";
 import {
   bindCommonValues,
   verifyLogin,
@@ -15,7 +16,11 @@ import {
   deleteProject,
   loadProject,
   loadProjectHistory,
+  createProjectDownload,
+  remixProject,
 } from "./middleware.js";
+
+import { getDirListing } from "../files/middleware.js";
 
 import { Router } from "express";
 export const projects = Router();
@@ -32,6 +37,29 @@ projects.get(
   loadProject,
   (req, res) =>
     res.render(`editor.html`, { ...res.locals, ...req.session, ...process.env })
+);
+
+/**
+ * Download a project. Doesn't even need to be your own!
+ */
+projects.get(
+  `/download/:project`,
+  verifyLogin,
+  bindCommonValues,
+  getDirListing,
+  createProjectDownload,
+  (req, res) =>
+    res.sendFile(res.locals.zipFile, () => {
+      unlinkSync(res.locals.zipFile);
+    })
+);
+
+projects.get(
+  `/remix/:project`,
+  verifyLogin,
+  bindCommonValues,
+  remixProject,
+  (req, res) => res.redirect(`/v1/projects/edit/${res.locals.newProjectName}`)
 );
 
 /**
@@ -93,7 +121,7 @@ projects.post(
   parseMultiPartBody,
   getProjectSettings,
   updateProjectSettings,
-  (_req, res) => res.send(`ok`)
+  (_req, res) => res.send(`/v1/projects/edit/${res.locals.projectName}`)
 );
 
 /**

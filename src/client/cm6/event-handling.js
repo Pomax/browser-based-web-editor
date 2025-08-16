@@ -3,10 +3,15 @@ import { API } from "../api.js";
 
 const mac = navigator.userAgent.includes(`Mac OS`);
 
+// These always exist
 const all = document.getElementById(`all`);
-const format = document.getElementById(`format`);
 const left = document.getElementById(`left`);
 const right = document.getElementById(`right`);
+
+// These may not always exist:
+const download = document.getElementById(`download`);
+const remix = document.getElementById(`remix`);
+const format = document.getElementById(`format`);
 
 /**
  * Hook up the "Add new file" and "Format this file" buttons
@@ -27,9 +32,15 @@ export function addEventHandling(projectName) {
     document.querySelectorAll(`file-entry`).forEach((e) => e.click());
   });
 
-  addTabScrollHandling();
+  download?.addEventListener(`click`, async () => {
+    API.projects.download(projectName);
+  });
 
-  format.addEventListener(`click`, async () => {
+  remix?.addEventListener(`click`, async () => {
+    API.projects.remix(projectName);
+  });
+
+  format?.addEventListener(`click`, async () => {
     const tab = document.querySelector(`.active`);
     const fileEntry = document.querySelector(`file-entry.selected`);
     if (fileEntry.state?.tab !== tab) {
@@ -51,6 +62,8 @@ export function addEventHandling(projectName) {
       },
     });
   });
+
+  addTabScrollHandling();
 }
 
 /**

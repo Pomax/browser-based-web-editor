@@ -65,8 +65,10 @@
     const form = d.querySelector(`form`);
     form.addEventListener(`submit`, async (evt) => {
       evt.preventDefault();
-      await fetch(url, { method: `POST`, body: new FormData(form) });
-      location.reload();
+      location = await fetch(url, {
+        method: `POST`,
+        body: new FormData(form),
+      }).then((r) => r.text());
     });
 
     document.body.appendChild(d);

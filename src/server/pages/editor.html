@@ -17,9 +17,17 @@
       <span id="buttons">
         <a class="link-back" href="https://{{ WEB_EDITOR_HOSTNAME }}">home</a>
         <span class="projectname">{{ projectName }}</span>
+        {% if user %}
+        <button id="download" title="Download project files">💾</button>
+        {% if not projectMember %}
+        <button id="remix" title="Remix this project!">✨</button>
+        {% endif %}
+        {% endif %}
         <button class="project-settings">settings</button>
         <button id="all" title="Open all files">!!!</button>
+        {% if user and projectMember %}
         <button id="format" title="Make my code pretty!">🤩</button>
+        {% endif %}
       </span>
 
       <file-tree id="filetree"></file-tree>

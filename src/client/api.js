@@ -9,6 +9,14 @@ export const API = {
   // Project related calls, such as getting project health,
   // restarting the container, updating settings, etc.
   projects: {
+    download: async (projectName) => {
+      const a = document.createElement(`a`);
+      a.href = `${PREFIX}/projects/download/${projectName}`;
+      a.click();
+    },
+    remix: async (projectName) => {
+      location = `${PREFIX}/projects/remix/${projectName}`;
+    },
     health: async (projectName) =>
       fetch(`projects/health/${projectName}?v=${Date.now()}`).then((r) =>
         r.text()

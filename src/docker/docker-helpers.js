@@ -29,7 +29,8 @@ export async function runContainer(projectName) {
   // FIXME: TODO: check if `docker ps -a` has a dead container that we need to cleanup
 
   console.log(`- Checking for running container`);
-  result = execSync(`docker ps -f name=${projectName}`).toString().trim();
+  const check = `docker ps --no-trunc -f name=^/${projectName}$`;
+  result = execSync(check).toString().trim();
 
   if (!result.match(new RegExp(`\\b${projectName}\\b`, `gm`))) {
     console.log(`- Starting container on port ${port}`);
@@ -44,7 +45,7 @@ export async function runContainer(projectName) {
     //              the one the run command instructs it to use O_o
     await new Promise((resolve) => {
       setTimeout(() => {
-        result = execSync(`docker ps -f name=${projectName}`).toString().trim();
+        result = execSync(check).toString().trim();
         resolve();
       }, 2000);
     });
@@ -61,7 +62,8 @@ export async function runContainer(projectName) {
  * @returns
  */
 export function checkContainerHealth(name) {
-  const result = execSync(`docker ps -f name=${projectName}`).toString().trim();
+  const check = `docker ps --no-trunc -f name=^/${projectName}$`;
+  const result = execSync(check).toString().trim();
   if (result.includes(`Exited`)) {
     return `failed`;
   }

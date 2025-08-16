@@ -482,6 +482,14 @@ var API = {
   // Project related calls, such as getting project health,
   // restarting the container, updating settings, etc.
   projects: {
+    download: async (projectName5) => {
+      const a = document.createElement(`a`);
+      a.href = `${PREFIX}/projects/download/${projectName5}`;
+      a.click();
+    },
+    remix: async (projectName5) => {
+      location = `${PREFIX}/projects/remix/${projectName5}`;
+    },
     health: async (projectName5) => fetch2(`projects/health/${projectName5}?v=${Date.now()}`).then(
       (r) => r.text()
     ),
@@ -31069,9 +31077,11 @@ function addFileTreeHandling() {
 // src/client/cm6/event-handling.js
 var mac2 = navigator.userAgent.includes(`Mac OS`);
 var all = document.getElementById(`all`);
-var format = document.getElementById(`format`);
 var left = document.getElementById(`left`);
 var right = document.getElementById(`right`);
+var download = document.getElementById(`download`);
+var remix = document.getElementById(`remix`);
+var format = document.getElementById(`format`);
 function addEventHandling(projectName5) {
   document.addEventListener(`keydown`, (evt) => {
     const { key, ctrlKey, metaKey } = evt;
@@ -31084,8 +31094,13 @@ function addEventHandling(projectName5) {
   all.addEventListener(`click`, async () => {
     document.querySelectorAll(`file-entry`).forEach((e2) => e2.click());
   });
-  addTabScrollHandling();
-  format.addEventListener(`click`, async () => {
+  download?.addEventListener(`click`, async () => {
+    API.projects.download(projectName5);
+  });
+  remix?.addEventListener(`click`, async () => {
+    API.projects.remix(projectName5);
+  });
+  format?.addEventListener(`click`, async () => {
     const tab = document.querySelector(`.active`);
     const fileEntry = document.querySelector(`file-entry.selected`);
     if (fileEntry.state?.tab !== tab) {
@@ -31107,6 +31122,7 @@ function addEventHandling(projectName5) {
       }
     });
   });
+  addTabScrollHandling();
 }
 function addTabScrollHandling() {
   let scrolling = false;
