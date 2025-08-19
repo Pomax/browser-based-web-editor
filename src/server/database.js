@@ -1,5 +1,8 @@
 import sqlite3 from "better-sqlite3";
 import { existsSync, unlinkSync } from "node:fs";
+import { stopContainer } from "../docker/docker-helpers.js";
+
+const DEBUG_SQL = false;
 
 // not quite a fan of this, so this solution may change in the future:
 
@@ -48,7 +51,7 @@ class Model {
       .join(`, `);
     const values = Object.values(record);
     const sql = `UPDATE ${this.table} SET ${update} WHERE ${primaryKey} = ?`;
-    // console.log(`UPDATE`, sql, values);
+    if (DEBUG_SQL) console.log(`UPDATE`, sql, values);
     db.prepare(sql).run(...values, pval);
   }
   find(where) {
@@ -57,7 +60,7 @@ class Model {
   findAll(where) {
     const { filter, values } = composeWhere(where);
     const sql = `SELECT * FROM ${this.table} WHERE ${filter}`;
-    // console.log(`FIND`, sql, values);
+    if (DEBUG_SQL) console.log(`FIND`, sql, values);
     return db.prepare(sql).all(values).filter(Boolean);
   }
   all(sortKey, sortDir = `ASC`) {
@@ -71,7 +74,7 @@ class Model {
     const keys = Object.keys(colVals);
     const values = Object.values(colVals);
     const sql = `INSERT INTO ${this.table} (${keys.join(`,`)}) VALUES (${keys.map((v) => `?`).join(`,`)})`;
-    // console.log(`INSERT`, sql, values);
+    if (DEBUG_SQL) console.log(`INSERT`, sql, values);
     db.prepare(sql).run(...values);
   }
   findOrCreate(where = {}) {
@@ -81,7 +84,7 @@ class Model {
     return this.find(where);
   }
   create(where = {}) {
-    // console.log(`CREATE with`, where);
+    if (DEBUG_SQL) console.log(`CREATE with`, where);
     const record = this.find(where);
     if (record) throw new Error(`record already exists`);
     this.insert(where);
@@ -90,7 +93,7 @@ class Model {
   delete(where) {
     const { filter, values } = composeWhere(where);
     const sql = `DELETE FROM ${this.table} WHERE ${filter}`;
-    // console.log(sql, values);
+    if (DEBUG_SQL) console.log(`DELETE`, sql, values);
     return db.prepare(sql).run(values);
   }
 }
@@ -185,10 +188,8 @@ export function disableUser(userNameOrId) {
 }
 
 export function deleteUser(userId) {
-  const u = User.find({ id: userId });
-  if (!u) throw new Error(`User not found`);
-
-  console.log(`"deleting" user ${u.name} with id ${u.id}`);
+  const u = getUser(userId);
+  console.log(`deleting user ${u.name} with id ${u.id}`);
   const access = Access.findAll({ user_id: u.id });
   Access.delete({ user_id: u.id });
   access.forEach(({ project_id }) => {
@@ -202,10 +203,12 @@ export function deleteUser(userId) {
 }
 
 export function suspendUser(userNameOrId, reason, notes = ``) {
-  if (!reason) throw new Error(`Cannot suspend without a reason`);
+  if (!reason) throw new Error(`Cannot suspend user without a reason`);
   const u = getUser(userNameOrId);
   try {
     UserSuspension.create({ user_id: u.id, reason, notes });
+    const projects = getOwnedProjectsForUser(u.id);
+    projects.forEach((p) => stopContainer(p.name));
   } catch (e) {
     console.error(e);
     console.log(u, reason, notes);
@@ -383,6 +386,9 @@ export function getAllUsers() {
   suspensions.forEach((s) => {
     if (!s) return;
     userList[s.user_id].suspensions.push(s);
+    if (!s.invalidated_at) {
+      userList[s.user_id].activeSuspensions = true;
+    }
   });
 
   return Object.values(userList);
@@ -402,7 +408,79 @@ export function getAllProjects() {
   suspensions.forEach((s) => {
     if (!s) return;
     projectList[s.project_id].suspensions.push(s);
+    if (!s.invalidated_at) {
+      projectList[s.project_id].activeSuspensions = true;
+    }
   });
 
   return Object.values(projectList);
+}
+
+export function getProject(projectNameOrId) {
+  let p;
+  if (typeof projectNameOrId === `number`) {
+    p = Project.find({ id: projectNameOrId });
+  } else {
+    p = Project.find({ name: projectNameOrId });
+  }
+  if (!p) throw new Error(`Project not found`);
+  return p;
+}
+
+export function deleteProject(projectId) {
+  const p = getProject(projectId);
+  console.log(`deleting project ${p.name} with id ${p.id}`);
+  Access.delete({ project_id: p.id });
+  Project.delete(p);
+  // ON DELETE CASCADE should have taken care of everything else...
+}
+
+export function suspendProject(projectNameOrId, reason, notes = ``) {
+  if (!reason) throw new Error(`Cannot suspend project without a reason`);
+  const p = getProject(projectNameOrId);
+  try {
+    stopContainer(p.name);
+    ProjectSuspension.create({ project_id: p.id, reason, notes });
+  } catch (e) {
+    console.error(e);
+    console.log(u, reason, notes);
+  }
+}
+
+export function getProjectSuspensions(projectNameOrId, includeOld = false) {
+  let project_id = projectNameOrId;
+  if (typeof projectNameOrId !== `number`) {
+    const p = Project.find({ name: projectNameOrId });
+    project_id = p.id;
+  }
+  const s = ProjectSuspension.findAll({ project_id });
+  if (includeOld) return s;
+  return s.filter((s) => !s.invalidated_at);
+}
+
+export function projectSuspendedThroughOwner(projectNameOrId) {
+  const p = getProject(projectNameOrId);
+  const access = Access.findAll({ project_id: p.id });
+  return access.some((a) => {
+    if (a.access_level < OWNER) return false;
+    const u = getUser(a.user_id);
+    const s = getUserSuspensions(u.id);
+    if (s.length) return true;
+    return false;
+  });
+}
+
+export function unsuspendProject(suspensionId) {
+  const s = ProjectSuspension.find({ id: suspensionId });
+  if (!s) throw new Error(`Suspension not found`);
+  s.invalidated_at = new Date().toISOString();
+  ProjectSuspension.save(s);
+}
+
+export function getOwnedProjectsForUser(userNameOrId) {
+  const u = getUser(userNameOrId);
+  const access = Access.findAll({ user_id: u.id });
+  return access
+    .filter((a) => a.access_level === OWNER)
+    .map((a) => getProject(a.project_id));
 }

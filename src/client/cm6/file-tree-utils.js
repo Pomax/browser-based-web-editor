@@ -121,11 +121,9 @@ function addFileTreeHandling() {
     if (response.status === 200) {
       const fileEntry = grant();
       let key = oldPath.replace(projectName, ``);
-      console.log({ key });
       const entry = fileEntry.state;
       if (entry) {
         const newKey = newPath.replace(projectName, ``);
-        console.log({ newKey });
         updateEditorBindings(fileEntry, entry, newKey, key);
       }
     } else {

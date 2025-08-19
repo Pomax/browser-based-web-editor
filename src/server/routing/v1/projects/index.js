@@ -26,43 +26,6 @@ import { Router } from "express";
 export const projects = Router();
 
 /**
- * Load the editor for a project. This does not necessarily mean the user
- * will be able to *actually* edit the project - that's determined by whether
- * or not they have permission to do so, when handling file operations.
- */
-projects.get(
-  // This is the editor.html route
-  `/edit/:project`,
-  bindCommonValues,
-  loadProject,
-  (req, res) =>
-    res.render(`editor.html`, { ...res.locals, ...req.session, ...process.env })
-);
-
-/**
- * Download a project. Doesn't even need to be your own!
- */
-projects.get(
-  `/download/:project`,
-  verifyLogin,
-  bindCommonValues,
-  getDirListing,
-  createProjectDownload,
-  (req, res) =>
-    res.sendFile(res.locals.zipFile, () => {
-      unlinkSync(res.locals.zipFile);
-    })
-);
-
-projects.get(
-  `/remix/:project`,
-  verifyLogin,
-  bindCommonValues,
-  remixProject,
-  (req, res) => res.redirect(`/v1/projects/edit/${res.locals.newProjectName}`)
-);
-
-/**
  * Create a project by name (using res.params.project)
  */
 projects.post(
@@ -87,6 +50,35 @@ projects.post(
 );
 
 /**
+ * Download a project. Doesn't even need to be your own!
+ */
+projects.get(
+  `/download/:project`,
+  verifyLogin,
+  bindCommonValues,
+  getDirListing,
+  createProjectDownload,
+  (req, res) =>
+    res.sendFile(res.locals.zipFile, () => {
+      unlinkSync(res.locals.zipFile);
+    })
+);
+
+/**
+ * Load the editor for a project. This does not necessarily mean the user
+ * will be able to *actually* edit the project - that's determined by whether
+ * or not they have permission to do so, when handling file operations.
+ */
+projects.get(
+  // This is the editor.html route
+  `/edit/:project`,
+  bindCommonValues,
+  loadProject,
+  (req, res) =>
+    res.render(`editor.html`, { ...res.locals, ...req.session, ...process.env })
+);
+
+/**
  * Allow the client to check what state a container is for, for UI purposes.
  */
 projects.get(
@@ -97,6 +89,18 @@ projects.get(
   (_req, res) => {
     res.send(res.locals.healthStatus);
   }
+);
+
+/**
+ * Get the git log, to show all rewind points.
+ */
+projects.get(
+  `/history/:project`,
+  verifyLogin,
+  bindCommonValues,
+  verifyEditRights,
+  loadProjectHistory,
+  (_req, res) => res.json(res.locals.history)
 );
 
 /**
@@ -125,6 +129,17 @@ projects.post(
 );
 
 /**
+ * Remix someone's
+ */
+projects.get(
+  `/remix/:project`,
+  verifyLogin,
+  bindCommonValues,
+  remixProject,
+  (req, res) => res.redirect(`/v1/projects/edit/${res.locals.newProjectName}`)
+);
+
+/**
  * restart a project container
  */
 projects.post(
@@ -134,16 +149,4 @@ projects.post(
   verifyOwner,
   restartContainer,
   (_req, res) => res.send(`ok`)
-);
-
-/**
- * Get the git log, to show all rewind points.
- */
-projects.get(
-  `/history/:project`,
-  verifyLogin,
-  bindCommonValues,
-  verifyEditRights,
-  loadProjectHistory,
-  (_req, res) => res.json(res.locals.history)
 );

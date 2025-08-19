@@ -4,10 +4,15 @@ FROM alpine:latest
 RUN apk add --update --no-cache \
     alpine-sdk \
     curl \
+    gcc \
+    linux-headers \
+    musl-dev \
     python3 \
+    python3-dev \
     py3-pip \
     nodejs-lts \
     npm
+
 
 # just in case
 RUN rm -rf /var/cache/apk/*
@@ -15,8 +20,14 @@ RUN rm -rf /var/cache/apk/*
 # link up python3
 RUN ln -sf python3 /usr/bin/python
 
+# Python auto-formatting
+RUN pip install black --break-system-packages
+
 # link up Node
 RUN ln -sf node /usr/bin/nodejs
+
+# web content auto-formatting
+RUN npm install -g prettier
 
 # for universal convenience, install "http-server" 
 RUN npm install -g http-server

@@ -20,7 +20,10 @@ const stdin = readline.createInterface({
   output: process.stdout,
 });
 
+const STDIO = process.argv.includes(`--debug`) ? `inherit` : `ignore`;
 const BYPASS_FINISH = existsSync(`./data/data.sqlite3`);
+const DOCKER_MAINTENANCE = process.argv.includes(`--docker-cleanup`);
+const noop = () => {};
 
 setup(
   // do we have everything we need?
@@ -29,8 +32,8 @@ setup(
   // Excellent. Let's set everything up:
   setupEnv,
   setupDocker,
-  setupCaddy,
-  setupSqlite
+  DOCKER_MAINTENANCE ? noop : setupCaddy,
+  DOCKER_MAINTENANCE ? noop : setupSqlite
 );
 
 // ---------------------------------------------------------------------------
@@ -112,7 +115,7 @@ do everything else.
  * Install all npm dependencies for this codebase
  */
 function runNpmInstall() {
-  execSync(`npm i`, { shell: true, stdio: `ignore` });
+  execSync(`npm i`, { shell: true, stdio: STDIO });
 }
 
 /**
@@ -148,7 +151,7 @@ function checkFor(cmd) {
 function checkForDocker() {
   checkFor(`docker`);
   try {
-    execSync(`docker ps`, { shell: true, stdio: `ignore` });
+    execSync(`docker ps`, { shell: true, stdio: STDIO });
     return true;
   } catch (e) {
     console.error(`Docker is avaiable, but docker engine is not running.`);
@@ -249,8 +252,8 @@ codebase will read in every time it starts up.
     GITHUB_CLIENT_SECRET = await question(`Github client secret`);
   }
 
-  GITHUB_APP_HOST = `https://${WEB_EDITOR_HOSTNAME}`;
-  GITHUB_CALLBACK_URL = `https://${WEB_EDITOR_HOSTNAME}/auth/github/callback`;
+  GITHUB_APP_HOST = `https://\${WEB_EDITOR_HOSTNAME}`;
+  GITHUB_CALLBACK_URL = `https://\${WEB_EDITOR_HOSTNAME}/auth/github/callback`;
 
   // (Re)generate the .env file
   writeFileSync(
@@ -286,16 +289,40 @@ GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}
  */
 function setupDocker() {
   const { WEB_EDITOR_IMAGE_NAME } = process.env;
+
+  if (DOCKER_MAINTENANCE) {
+    console.log(`\n- Cleaning up docker images...`);
+
+    // clean up anything unrelated to currently running containers
+    execSync(`docker system prune -a -f`, {
+      shell: true,
+      stdio: STDIO,
+    });
+
+    console.log(`- Generating an updated ${WEB_EDITOR_IMAGE_NAME}...`);
+
+    // generate a new version of the base image
+    execSync(`docker build -t ${WEB_EDITOR_IMAGE_NAME} .`, {
+      shell: true,
+      cwd: `./src/docker`,
+      stdio: STDIO,
+    });
+
+    console.log(`Done.`);
+
+    return;
+  }
+
   try {
     execSync(`docker image inspect ${WEB_EDITOR_IMAGE_NAME}`, {
       shell: true,
-      stdio: `ignore`,
+      stdio: STDIO,
     });
   } catch (e) {
     execSync(`docker build -t ${WEB_EDITOR_IMAGE_NAME} .`, {
       shell: true,
       cwd: `./src/docker`,
-      stdio: `ignore`,
+      stdio: STDIO,
     });
   }
   writeFileSync(

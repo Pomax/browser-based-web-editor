@@ -53,6 +53,16 @@ This is about to get stupid. We're not going to do _anything_ with WSL, we just 
 
 I have no advice here. This is probably not going to work for you, but if you want to try it anyway and report back, awesome!
 
+#### How do I update docker containers if I update the codebase?
+
+To generate a new docker base image after updating the codebase, you can run:
+
+```
+node setup --docker-cleanup
+```
+
+This will leave any running containers alone, but clean up any "dead" containers based on the old image, generates a new local base image, after which any project container build to now use this new image instead.
+
 ## What's Caddy?
 
 Caddy is a general purpose server (similar to Nginx) that automatically handles HTTPS, and lets us set up bindings for things like https://yourproject.app.localhost rather than having to use completely useless http://localhost:someport URLs (where the port number will change any time you restart the server). Installing it on Linux or Mac is relatively easy (tell your package manager to install it. Done), but Windows is (of course) a bit more work:
@@ -92,6 +102,31 @@ There's a decades old recipe for doing software development:
 3. make it nice
 
 We're still in phase 1.
+
+## What can we currently do?
+
+As of August 18, 2025, as a visitor you can:
+
+- load a project's "edit" route and see the code and preview. If you try to edit anything, the site will just undo your edits, because the server will have rejected them. You need to be logged in and have edit rights.
+
+As a user you can:
+
+- Log in with github.
+- Load any project's "edit" route. You can't actually edit unless you have edit rights, but you can't download the project as a .zip file (but note that this will not include a project's private data dir nor .env file, of course).
+- Remix projects, using the sparkle button, which creates a new copy of the public code parts with a new name "yourusername-projectname" (so you'll probably want to rename it!).
+- Create, load, and edit your own projects, including editing project settings (project name, provided the new name isn't taken, description, build script, run script, and environment variables).
+- Auto-format any supported file using the sparkly-eyed emoji
+- Download your full project, including private data directory and .env file.
+- Restart your project's container.
+
+And as an admin you can:
+
+- Do all the above, plus
+- View the admin page, which lets you:
+  - see a list of, and enable/disable, (un)suspend, and delete user accounts
+  - see a list of and (un)suspend, and delete projects
+  - see a list of and stop running, or delete expired containers
+- Load up suspended projects in the editor (without running the project container)
 
 ## I want more <sup>and</sup>⧸<sub>or</sub> I have ideas
 

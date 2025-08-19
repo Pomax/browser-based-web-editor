@@ -9,12 +9,13 @@ const npm = isWindows ? `npm.cmd` : `npm`;
  */
 export function watchForRebuild() {
   [
-    `./src/client/classes/browser-editor-test.js`,
     `./src/client/cm6/code-mirror-6.js`,
     `./src/client/cm6/editor-components.js`,
     `./src/client/cm6/event-handling.js`,
     `./src/client/cm6/file-tree-utils.js`,
+    `./src/client/api.js`,
     `./src/client/content-types.js`,
+    `./src/client/default-files.js`,
     `./src/client/preview.js`,
     `./src/client/script.js`,
     `./src/client/sync.js`,

@@ -16022,10 +16022,10 @@ function tagHighlighter(tags3, options) {
       for (let tag of style.tag)
         map[tag.id] = style.class;
   }
-  let { scope, all: all2 = null } = options || {};
+  let { scope, all = null } = options || {};
   return {
     style: (tags4) => {
-      let cls = all2;
+      let cls = all;
       for (let tag of tags4) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
@@ -17790,14 +17790,14 @@ var HighlightStyle = class _HighlightStyle {
       (modSpec || (modSpec = /* @__PURE__ */ Object.create(null)))["." + cls] = spec;
       return cls;
     }
-    const all2 = typeof options.all == "string" ? options.all : options.all ? def(options.all) : void 0;
+    const all = typeof options.all == "string" ? options.all : options.all ? def(options.all) : void 0;
     const scopeOpt = options.scope;
     this.scope = scopeOpt instanceof Language ? (type) => type.prop(languageDataProp) == scopeOpt.data : scopeOpt ? (type) => type == scopeOpt : void 0;
     this.style = tagHighlighter(specs.map((style) => ({
       tag: style.tag,
       class: style.class || def(Object.assign({}, style, { tag: null }))
     })), {
-      all: all2
+      all
     }).style;
     this.module = modSpec ? new StyleModule(modSpec) : null;
     this.themeType = options.themeType;
@@ -30953,11 +30953,9 @@ function addFileTreeHandling() {
     if (response.status === 200) {
       const fileEntry = grant();
       let key = oldPath.replace(projectName3, ``);
-      console.log({ key });
       const entry = fileEntry.state;
       if (entry) {
         const newKey = newPath.replace(projectName3, ``);
-        console.log({ newKey });
         updateEditorBindings(fileEntry, entry, newKey, key);
       }
     } else {
@@ -31076,7 +31074,6 @@ function addFileTreeHandling() {
 
 // src/client/cm6/event-handling.js
 var mac2 = navigator.userAgent.includes(`Mac OS`);
-var all = document.getElementById(`all`);
 var left = document.getElementById(`left`);
 var right = document.getElementById(`right`);
 var download = document.getElementById(`download`);
@@ -31090,9 +31087,6 @@ function addEventHandling(projectName5) {
         evt.preventDefault();
       }
     }
-  });
-  all.addEventListener(`click`, async () => {
-    document.querySelectorAll(`file-entry`).forEach((e2) => e2.click());
   });
   download?.addEventListener(`click`, async () => {
     API.projects.download(projectName5);
@@ -31150,29 +31144,17 @@ function addTabScrollHandling() {
   }
 }
 
-// src/client/classes/browser-editor-test.js
+// src/client/script.js
 var { projectId: projectId4, projectName: projectName4 } = document.body.dataset;
-var BrowserEditorTest = class {
+var CodeMirror6 = class {
   constructor() {
     Object.assign(this, { projectId: projectId4, projectName: projectName4 });
     this.init();
   }
   async init() {
+    await setupFileTree(this);
+    addEventHandling(this.projectName);
     updatePreview();
   }
 };
-
-// src/client/classes/code-mirror-6.js
-var CodeMirror6Test = class extends BrowserEditorTest {
-  constructor() {
-    super();
-  }
-  async init() {
-    await setupFileTree(this);
-    addEventHandling(this.projectName);
-    super.init();
-  }
-};
-
-// src/client/script.js
-new CodeMirror6Test();
+new CodeMirror6();

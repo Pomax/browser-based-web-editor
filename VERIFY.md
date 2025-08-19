@@ -1,0 +1,4 @@
+- [ ] user can log in
+- [ ] user can create a new project
+- [ ] user can load said project
+- [ ] ...finish later...

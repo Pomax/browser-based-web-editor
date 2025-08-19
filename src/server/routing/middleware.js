@@ -177,7 +177,9 @@ export function bindCommonValues(req, res, next) {
   }
 
   if (project) {
-    projectName = res.locals.projectName = project;
+    projectName = res.locals.projectName = project
+      .toLowerCase()
+      .replace(/\s+/g, `-`);
   } else if (projectId) {
     try {
       projectName = res.locals.projectName = getNameForProjectId(projectId);
@@ -241,9 +243,9 @@ export function loadProjectList(req, res, next) {
  * @param {*} next
  */
 export function loadStarters(req, res, next) {
-  res.locals.starters = readdirSync(
-    join(CONTENT_DIR, `__starter_projects`)
-  ).filter((v) => !v.includes(`.`));
+  res.locals.starters = readdirSync(join(CONTENT_DIR, `__starter_projects`))
+    .filter((v) => !v.includes(`.`))
+    .filter((v) => !v.startsWith(`__`));
   next();
 }
 

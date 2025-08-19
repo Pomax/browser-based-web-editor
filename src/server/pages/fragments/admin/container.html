@@ -12,9 +12,13 @@
   <td>{{ container.size }}</td>
   <td>
     {% if container.state == "Exited" %}
-      <button class="remove" data-id="{{ container.id }}">remove</button>
+    <form action="/v1/admin/container/remove/{{ container.id }}" method="post">
+      <button>remove</button>
+    </form>
     {% else %}
-      <button class="stop" data-name="{{ container.image }}">stop</button>
+    <form action="/v1/admin/container/stop/{{ container.image }}" method="post">
+      <button>stop</button>
+    </form>
     {% endif %}
   </td>
 </tr>

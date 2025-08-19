@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Test Editor</title>
-    <script src="/vendor/drag-drop-touch.esm.min.js?autoload" type="module"></script>
+    <script
+      src="/vendor/drag-drop-touch.esm.min.js?autoload"
+      type="module"
+    ></script>
     <script src="/js/editor.bundle.js" type="module" async></script>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="stylesheet" href="/css/layout.css" />
@@ -21,10 +24,8 @@
         <button id="download" title="Download project files">💾</button>
         {% if not projectMember %}
         <button id="remix" title="Remix this project!">✨</button>
-        {% endif %}
-        {% endif %}
+        {% endif %} {% endif %}
         <button class="project-settings">settings</button>
-        <button id="all" title="Open all files">!!!</button>
         {% if user and projectMember %}
         <button id="format" title="Make my code pretty!">🤩</button>
         {% endif %}
@@ -45,9 +46,11 @@
 
       <div id="preview" style="position: relative">
         <span id="preview-buttons">
+          {% if user %}
           <button class="restart" title="Restart your host container">
             restart
           </button>
+          {% endif %}
           <button class="newtab" title="Open preview in new tab">
             new tab
           </button>
@@ -61,10 +64,24 @@
       </div>
 
       <div id="status">
-        Welcome to the editor test interface! This editor uses CodeMirror 6 for
-        its editor panels, and &lt;file-tree&gt; for its file browser. The project
-        is hosted over on <a href="https://github.com/pomax/browser-based-web-editor"
-        target="_blank">https://github.com/pomax/browser-based-web-editor</a>.
+        Welcome to
+        <a href="https://mastodon.social/deck/@TheRealPomax" target="_blank"
+          >my</a
+        >
+        browser based web editor! This editor uses
+        <a href="https://codemirror.net/" target="_blank">CodeMirror 6</a> for
+        its file panels, and
+        <a
+          href="https://pomax.github.io/custom-file-tree/public/"
+          target="_blank"
+          >&lt;file-tree&gt;</a
+        >
+        for its file browser. The project is hosted over on
+        <a
+          href="https://github.com/pomax/browser-based-web-editor"
+          target="_blank"
+          >https://github.com/pomax/browser-based-web-editor</a
+        >.
       </div>
     </main>
 

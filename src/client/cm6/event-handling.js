@@ -4,7 +4,6 @@ import { API } from "../api.js";
 const mac = navigator.userAgent.includes(`Mac OS`);
 
 // These always exist
-const all = document.getElementById(`all`);
 const left = document.getElementById(`left`);
 const right = document.getElementById(`right`);
 
@@ -26,10 +25,6 @@ export function addEventHandling(projectName) {
         // TODO: something silly to make the user think they saved?
       }
     }
-  });
-
-  all.addEventListener(`click`, async () => {
-    document.querySelectorAll(`file-entry`).forEach((e) => e.click());
   });
 
   download?.addEventListener(`click`, async () => {

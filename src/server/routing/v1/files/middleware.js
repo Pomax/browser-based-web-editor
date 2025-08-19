@@ -81,7 +81,6 @@ export async function getDirListing(req, res, next) {
  */
 export function createFile(req, res, next) {
   const { projectName, fileName } = res.locals;
-  console.log({ projectName, fileName });
   const slug = fileName.substring(fileName.lastIndexOf(`/`) + 1);
   const dirs = fileName.replace(`/${slug}`, ``);
   mkdirSync(dirs, { recursive: true });
@@ -195,10 +194,20 @@ export async function formatFile(req, res, next) {
   const ext = fileName.substring(fileName.lastIndexOf(`.`), fileName.length);
   if ([`.js`, `.css`, `.html`].includes(ext)) {
     try {
-      await execPromise(`${npm} run  prettier -- ${fileName}`);
+      await execPromise(`${npm} run prettier -- ${fileName}`);
       formatted = true;
     } catch (e) {
-      return next(new Error(`Could not format file`));
+      return next(
+        new Error(`Prettier could not format file:\n` + e.toString())
+      );
+    }
+  }
+  if ([`.py`].includes(ext)) {
+    try {
+      await execPromise(`black ${fileName}`);
+      formatted = true;
+    } catch (e) {
+      return next(new Error(`Black could not format file:\n` + e.toString()));
     }
   }
   res.locals.formatted = formatted;

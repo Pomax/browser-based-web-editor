@@ -23,7 +23,14 @@ export async function runContainer(projectName) {
 
   if (!result.match(new RegExp(`\\b${projectName}\\b`, `gm`))) {
     console.log(`- Building image`);
-    execSync(`docker build --tag ${projectName} --no-cache .`);
+    try {
+      execSync(`docker build --tag ${projectName} --no-cache .`, {
+        shell: true,
+        stdio: `inherit`,
+      });
+    } catch (e) {
+      return console.error(e);
+    }
   }
 
   // FIXME: TODO: check if `docker ps -a` has a dead container that we need to cleanup
@@ -36,7 +43,8 @@ export async function runContainer(projectName) {
     console.log(`- Starting container on port ${port}`);
     const runFlags = `--rm --stop-timeout 0 --name ${projectName}`;
     const bindMount = `--mount type=bind,src=.${sep}content${sep}${projectName},dst=/app`;
-    const runCommand = `docker run ${runFlags} ${bindMount} -p ${port}:8000 -t ${projectName}`;
+    const entry = `/bin/sh .container/run.sh`;
+    const runCommand = `docker run ${runFlags} ${bindMount} -p ${port}:8000 ${projectName} ${entry}`;
     console.log(runCommand);
     exec(runCommand);
     // FIXME: TODO: it would be nice if we could just "check until we know" rather than

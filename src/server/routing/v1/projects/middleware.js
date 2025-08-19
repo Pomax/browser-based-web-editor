@@ -29,7 +29,10 @@ import {
   updateSettingsForProject,
   deleteProjectForUser,
   getAccessFor,
+  getProjectSuspensions,
+  projectSuspendedThroughOwner,
   MEMBER,
+  OWNER,
 } from "../../../database.js";
 import { removeCaddyEntry } from "../../../../caddy/caddy.js";
 
@@ -55,7 +58,7 @@ export async function createProject(req, res, next) {
 export async function remixProject(req, res, next) {
   const { projectName, userName } = res.locals;
   const newProjectName = (res.locals.newProjectName =
-    `${projectName}-for-${userName}`.toLocaleLowerCase());
+    `${userName}-${projectName}`.toLocaleLowerCase());
   cloneProject(projectName, newProjectName, false);
   try {
     createProjectForUser(userName, newProjectName);
@@ -102,7 +105,7 @@ function cloneProject(source, projectName, isStarter = true) {
  * @param {*} next
  */
 export async function loadProject(req, res, next) {
-  const { projectName } = res.locals;
+  const { projectName, user } = res.locals;
   const dir = join(CONTENT_DIR, projectName);
 
   if (!existsSync(dir)) return next(new Error(`No such project`));
@@ -113,11 +116,37 @@ export async function loadProject(req, res, next) {
     execSync(`cd ${dir} && git init && cd ..`);
   }
 
+  let suspended = false;
+
+  const suspensions = getProjectSuspensions(projectName);
+  if (suspensions.length) {
+    suspended = true;
+    if (!user.admin)
+      return next(
+        new Error(
+          `This project has been suspended (${suspensions.map((s) => `"${s.reason}"`).join(`, `)})`
+        )
+      );
+  }
+
+  if (projectSuspendedThroughOwner(projectName)) {
+    suspended = true;
+    if (!user.admin) {
+      return next(
+        new Error(
+          `This project has been suspended because its project owner is suspended`
+        )
+      );
+    } else {
+      console.log(`Suspended project load by admin`);
+    }
+  }
+
   // ensure git knows who we are.
   setupGit(dir, projectName);
 
   // Then get a container running
-  await runContainer(projectName);
+  if (!suspended) await runContainer(projectName);
 
   // is this a logged in user?
   if (res.locals.user) {
@@ -125,6 +154,9 @@ export async function loadProject(req, res, next) {
     const a = getAccessFor(res.locals.user.name, projectName);
     if (a >= MEMBER) {
       res.locals.projectMember = true;
+      if (a === OWNER) {
+        res.locals.projectOwner = true;
+      }
     }
   }
 
@@ -168,7 +200,6 @@ export async function updateProjectSettings(req, res, next) {
   const newSettings = Object.fromEntries(
     Object.entries(req.body).map(([k, v]) => [k, v.value.trim()])
   );
-
 
   const newName = newSettings.name;
   const newDir = join(CONTENT_DIR, newSettings.name);

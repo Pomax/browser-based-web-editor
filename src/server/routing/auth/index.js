@@ -13,16 +13,27 @@ export function addPassportAuth(app) {
   addEmailAuth(app);
 }
 
+const githubSettings = {
+  clientID: process.env.GITHUB_CLIENT_ID,
+  clientSecret: process.env.GITHUB_CLIENT_SECRET,
+  callbackURL: process.env.GITHUB_CALLBACK_URL,
+};
+
+console.log({ githubSettings });
+
+const magicSettings = {
+  secret: process.env.MAGIC_LINK_SECRET,
+  userFields: ["email"],
+  tokenField: "token",
+  verifyUserAfterToken: true,
+};
+
 /**
  * Set up github auth
  */
 function addGithubAuth(app) {
   const githubStrategy = new GitHubStrategy(
-    {
-      clientID: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: process.env.GITHUB_CALLBACK_URL,
-    },
+    githubSettings,
     (accessToken, refreshToken, profile, done) => {
       const user = {
         userName: profile.displayName,
@@ -50,12 +61,7 @@ function addGithubAuth(app) {
  */
 function addEmailAuth(app) {
   const magicStrategy = new MagicLoginStrategy(
-    {
-      secret: process.env.MAGIC_LINK_SECRET,
-      userFields: ["email"],
-      tokenField: "token",
-      verifyUserAfterToken: true,
-    },
+    magicSettings,
     function send(user, token) {
       const url = `https://${process.env.WEB_EDITOR_HOSTNAME}/auth/email/verify?token=${token}`;
       console.log(`send:`, user, url);

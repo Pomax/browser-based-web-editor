@@ -11,10 +11,12 @@
     <form action="/v1/admin/user/disable/{{ user.id }}" method="post">
       <button>disable</button>
     </form>
+    {% if not user.activeSuspensions %}
     <form action="/v1/admin/user/suspend/{{ user.id }}" method="post">
       <input type="text" name="reason" placeholder="suspension reason" />
       <button>suspend</button>
     </form>
+    {% endif %}
     {% else %}
     <form action="/v1/admin/user/enable/{{ user.id }}" method="post">
       <button>enable</button>
@@ -36,7 +38,7 @@
     {% if not s.invalidated_at %}
     <strong>Active suspension:</strong> "{{ s.reason }}", active since {{
     s.suspended_at }}
-    <form action="/v1/admin/user/unsuspend/{{ s.id}}" method="post">
+    <form action="/v1/admin/user/unsuspend/{{ s.id }}" method="post">
       <button>lift suspension</button>
     </form>
     {% else %}<em> Past suspension: "{{ s.reason }}" set {{ s.suspended_at}}
