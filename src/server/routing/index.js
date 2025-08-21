@@ -37,6 +37,9 @@ export function setupRoutes(app) {
   const sessionsDB = new sqlite3("./data/sessions.sqlite3");
   app.use(
     session({
+      resave: false,
+      saveUninitialized: false,
+      secret: process.env.SESSION_SECRET,
       store: new SQLite3Store({
         client: sessionsDB,
         expired: {
@@ -44,8 +47,6 @@ export function setupRoutes(app) {
           intervalMs: FIFTEEN_MINUTES_IN_MS,
         },
       }),
-      secret: process.env.SESSION_SECRET,
-      resave: false,
     })
   );
 

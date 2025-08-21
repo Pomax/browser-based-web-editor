@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { passport } from "./passport.js";
+import { passport } from "./middleware.js";
 import { Strategy as GitHubStrategy } from "passport-github2";
 import { Strategy as MagicLoginStrategy } from "passport-magic-link";
 import { loginWithGithub, handleGithubCallback, logout } from "./middleware.js";
-import { processUserLogin, enableUser } from "../../database.js";
+import { processUserLogin } from "../../database.js";
 
 export function addPassportAuth(app) {
   app.use(passport.initialize());
@@ -18,8 +18,6 @@ const githubSettings = {
   clientSecret: process.env.GITHUB_CLIENT_SECRET,
   callbackURL: process.env.GITHUB_CALLBACK_URL,
 };
-
-console.log({ githubSettings });
 
 const magicSettings = {
   secret: process.env.MAGIC_LINK_SECRET,

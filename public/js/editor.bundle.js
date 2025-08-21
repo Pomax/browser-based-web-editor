@@ -31077,7 +31077,6 @@ var mac2 = navigator.userAgent.includes(`Mac OS`);
 var left = document.getElementById(`left`);
 var right = document.getElementById(`right`);
 var download = document.getElementById(`download`);
-var remix = document.getElementById(`remix`);
 var format = document.getElementById(`format`);
 function addEventHandling(projectName5) {
   document.addEventListener(`keydown`, (evt) => {
@@ -31090,9 +31089,6 @@ function addEventHandling(projectName5) {
   });
   download?.addEventListener(`click`, async () => {
     API.projects.download(projectName5);
-  });
-  remix?.addEventListener(`click`, async () => {
-    API.projects.remix(projectName5);
   });
   format?.addEventListener(`click`, async () => {
     const tab = document.querySelector(`.active`);

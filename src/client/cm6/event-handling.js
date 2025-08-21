@@ -9,7 +9,6 @@ const right = document.getElementById(`right`);
 
 // These may not always exist:
 const download = document.getElementById(`download`);
-const remix = document.getElementById(`remix`);
 const format = document.getElementById(`format`);
 
 /**
@@ -29,10 +28,6 @@ export function addEventHandling(projectName) {
 
   download?.addEventListener(`click`, async () => {
     API.projects.download(projectName);
-  });
-
-  remix?.addEventListener(`click`, async () => {
-    API.projects.remix(projectName);
   });
 
   format?.addEventListener(`click`, async () => {

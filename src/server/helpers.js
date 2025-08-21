@@ -9,6 +9,7 @@ export const npm = isWindows ? `npm. cmd` : `npm`;
 // Set up the vars we need for pointing to the right dirs
 export const CONTENT_BASE = process.env.CONTENT_BASE ?? `content`;
 process.env.CONTENT_BASE = CONTENT_BASE;
+
 export const CONTENT_DIR = isWindows ? CONTENT_BASE : `./${CONTENT_BASE}`;
 process.env.CONTENT_DIR = CONTENT_DIR;
 

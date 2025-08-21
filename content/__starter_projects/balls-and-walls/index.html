@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web graphics</title>
+    <script
+      src="././graphics-element/graphics-element.js"
+      type="module"
+      async
+    ></script>
+    <link rel="stylesheet" href="./graphics-element/graphics-element.css" />
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Creating web graphics</h1>
+    </header>
+
+    <p>
+      This is an example of a basic interactive graphic: some balls, some walls,
+      and some <s>falls</s> collisions:
+    </p>
+
+    <main>
+      <graphics-element
+        id="graphics"
+        title="Shoot some balls!"
+        src="./sketches/my-sketch.js"
+        safemode
+      >
+        <source src="./sketches/Ball.js" />
+        <source src="./sketches/Line.js" />
+        <source src="./sketches/physics.js" />
+      </graphics-element>
+    </main> 
+
+    <p>
+      You control the biggest ball, and you can shoot it in the direction of
+      wherever you click/tap in the graphic. The further away from the ball you
+      click/tap, the faster it'll go.
+    </p>
+
+    <p>
+      You may also notice that the balls bounce against walls "at their centers"
+      rather than at their edges, and sometimes, if things are moving
+      <em>real</em> fast, balls seem to be able to just... "go through each
+      other", and sometimes even <em>through walls</em>???
+    </p>
+
+    <p>
+      Think you can fix that? Hit up the code in the
+      <code>sketches</code> folder on the left and start reading
+      <code>my-sketch.js</code> to see if you can figure out where things start
+      going wrong, and why.
+    </p>
+  </body>
+</html>

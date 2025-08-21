@@ -1,1 +1,0 @@
-- We should reorganize these routes based on role (e.g editor, users, projects, etc)

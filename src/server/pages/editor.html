@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Test Editor</title>
+    <title>{{ projectName }}</title>
     <script
       src="/vendor/drag-drop-touch.esm.min.js?autoload"
       type="module"
@@ -22,9 +22,8 @@
         <span class="projectname">{{ projectName }}</span>
         {% if user %}
         <button id="download" title="Download project files">💾</button>
-        {% if not projectMember %}
-        <button id="remix" title="Remix this project!">✨</button>
-        {% endif %} {% endif %}
+        <a title="Remix this project!" href="/v1/projects/remix/{{ projectName }}">✨</a>
+        {% endif %}
         <button class="project-settings">settings</button>
         {% if user and projectMember %}
         <button id="format" title="Make my code pretty!">🤩</button>
