@@ -112,7 +112,7 @@ As of August 18, 2025, as a visitor you can:
 As a user you can:
 
 - Log in with github.
-- Load any project's "edit" route. You can't actually edit unless you have edit rights, but you can't download the project as a .zip file (but note that this will not include a project's private data dir nor .env file, of course).
+- Load any project's "edit" route. You can't actually edit unless you have edit rights, but you can download the project as a .zip file (note that this will not include a project's private data dir nor .env file, of course).
 - Remix projects, using the sparkle button, which creates a new copy of the public code parts with a new name "yourusername-projectname" (so you'll probably want to rename it!).
 - Create, load, and edit your own projects, including editing project settings (project name, provided the new name isn't taken, description, build script, run script, and environment variables).
 - Auto-format any supported file using the sparkly-eyed emoji
