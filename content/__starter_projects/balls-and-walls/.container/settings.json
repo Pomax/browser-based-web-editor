@@ -1,0 +1,4 @@
+{
+  "description": "A 2D physics web graphics starter",
+  "run_script": "npx http-server -c-1 -p $PORT --cors"
+}

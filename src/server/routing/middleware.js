@@ -92,6 +92,7 @@ export async function verifyLogin(req, res, next) {
 export function verifyAdmin(req, res, next) {
   const { userName } = res.locals;
   if (getUserAdminFlag(userName)) {
+    res.locals.adminCall = true;
     next();
   } else {
     next(new Error(`You're not an admin`));

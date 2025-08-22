@@ -293,8 +293,8 @@ export async function loadProjectHistory(req, res, next) {
  * @param {*} next
  */
 export async function deleteProject(req, res, next) {
-  const { userName, projectName } = res.locals;
-  deleteProjectForUser(userName, projectName);
+  const { userName, projectName, adminCall } = res.locals;
+  deleteProjectForUser(userName, projectName, adminCall);
 
   console.log(`Cleaning up Caddyfile`);
   removeCaddyEntry(projectName);

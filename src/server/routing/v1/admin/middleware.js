@@ -1,5 +1,6 @@
 import * as Database from "../../../database.js";
 import * as Docker from "../../../../docker/docker-helpers.js";
+import * as ProjectRoutes from "../projects/middleware.js";
 
 export function back(req, res) {
   res.redirect(`/v1/admin`);
@@ -63,8 +64,7 @@ export function unsuspendUser(req, res, next) {
 // Project related routes
 
 export function deleteProject(req, res, next) {
-  Database.deleteProject(res.locals.projectId);
-  next();
+  ProjectRoutes.deleteProject(req, res, next);
 }
 
 export function suspendProject(req, res, next) {

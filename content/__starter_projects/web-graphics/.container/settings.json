@@ -1,0 +1,4 @@
+{
+  "description": "A basic web graphics example, using <graphics-element>",
+  "run_script": "npx http-server -c-1 -p $PORT --cors"
+}

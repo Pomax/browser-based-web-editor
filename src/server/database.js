@@ -1,6 +1,7 @@
 import sqlite3 from "better-sqlite3";
-import { existsSync, unlinkSync } from "node:fs";
+import { existsSync, unlinkSync, rmSync } from "node:fs";
 import { stopContainer } from "../docker/docker-helpers.js";
+import { CONTENT_DIR } from "./helpers.js";
 
 const DEBUG_SQL = false;
 
@@ -102,6 +103,8 @@ class Model {
 
 const User = new Model(`users`);
 const Project = new Model(`projects`);
+const StarterProject = new Model(`starter_projects`);
+const Remix = new Model(`remix`);
 const ProjectSettings = new Model(`project_container_settings`);
 const Access = new Model(`project_access`);
 const Admin = new Model(`admin_table`);
@@ -196,6 +199,8 @@ export function deleteUser(userId) {
     const p = Project.find({ id: project_id });
     if (p && Access.findAll({ project_id }).length === 0) {
       Project.delete(p);
+      const projectDir = join(CONTENT_DIR, p.name);
+      rmSync(projectDir, { recursive: true, force: true });
     }
   });
   User.delete(u);
@@ -239,6 +244,12 @@ export function getProjectListForUser(userNameOrId) {
   return projects.map((p) => Project.find({ id: p.project_id }));
 }
 
+export function getStarterProjects() {
+  // Would a JOIN be faster? Probably. Are we running at a
+  // scale where that matters? Hopefully never =)
+  return StarterProject.all().map((s) => Project.find({ id: s.project_id }));
+}
+
 export function getOwnedProjectsForUser(userNameOrId) {
   const u = getUser(userNameOrId);
   const access = Access.findAll({ user_id: u.id });
@@ -252,6 +263,11 @@ export function createProjectForUser(userName, projectName) {
   const p = Project.create({ name: projectName });
   Access.create({ project_id: p.id, user_id: u.id });
   ProjectSettings.create({ project_id: p.id });
+  return { user: u, project: p };
+}
+
+export function recordProjectRemix(originalId, projectId) {
+  Remix.create({ original_id: originalId, project_id: projectId });
 }
 
 export function getAccessFor(userName, projectName) {
@@ -263,13 +279,13 @@ export function getAccessFor(userName, projectName) {
   return a ? a.access_level : UNKNOWN_USER;
 }
 
-export function deleteProjectForUser(userName, projectName) {
+export function deleteProjectForUser(userName, projectName, adminCall) {
   const u = User.find({ name: userName });
   const p = Project.find({ name: projectName });
   const a = Access.find({ project_id: p.id, user_id: u.id });
 
   // secondary layer of protection:
-  if (a.access_level < OWNER) throw new Error(`Not yours, mate`);
+  if (a.access_level < OWNER && !adminCall) throw new Error(`Not yours, mate`);
 
   const { name } = p;
 
@@ -389,12 +405,13 @@ export function getAllUsers() {
   return Object.values(userList);
 }
 
-export function getAllProjects() {
+export function getAllProjects(omitStarters = true) {
   const projectList = {};
 
   const projects = Project.all(`name`);
   projects.forEach((p) => {
     if (!p) return;
+    if (omitStarters && isStarterProject(p.id)) return;
     p.suspensions = [];
     projectList[p.id] = p;
   });
@@ -420,6 +437,10 @@ export function getProject(projectNameOrId) {
   }
   if (!p) throw new Error(`Project not found`);
   return p;
+}
+
+export function isStarterProject(id) {
+  return !!StarterProject.find({ project_id: id });
 }
 
 export function deleteProject(projectId) {

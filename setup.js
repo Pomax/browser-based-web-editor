@@ -11,7 +11,8 @@
 
 import readline from "node:readline";
 import { execSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import sqlite3 from "better-sqlite3";
 import dotenv from "@dotenvx/dotenvx";
 dotenv.config({ quiet: true });
 
@@ -353,12 +354,51 @@ function setupCaddy() {
  * database file in the right place, and if not, create it.
  */
 async function setupSqlite() {
-  if (existsSync(`./data/data.sqlite3`)) return;
+  const dbPath = `./data/data.sqlite3`;
 
-  try {
-    execSync(`sqlite3 ./data/data.sqlite3 ".read ./data/schema.sql"`);
-  } catch (e) {
-    // We explicitly make it fail by using a bad SQL intruction
-    // as exit hack. Otherwise the REPL run and we never exit =_=
-  }
+  // Do we need to bootstrap the db? (note that this may include
+  // simply creating a missing table, not rebuilding the full db)
+  execSync(`sqlite3 ${dbPath} ".read ./data/schema.sql"`);
+
+  // Make sure all the starters from the content/__starter_projects have
+  // database entries, and that the database is up to date with respect
+  // to whatever is in each starter's settings.json file.
+
+  const db = sqlite3(dbPath);
+  const starterDir = `./content/__starter_projects`;
+  const starters = readdirSync(starterDir)
+    .filter((v) => !v.includes(`.`))
+    .filter((v) => !v.startsWith(`__`));
+
+  starters.forEach((name) => {
+    const settingsFile = `${starterDir}/${name}/.container/settings.json`;
+    const settings = JSON.parse(readFileSync(settingsFile).toString());
+    const { description, run_script } = settings;
+
+    // Create or update the project record:
+    let result = db.prepare(`SELECT * FROM projects WHERE name = ?`).get(name);
+    if (!result) {
+      db.prepare(`INSERT INTO projects (name, description) VALUES (?, ?)`).run(
+        name,
+        description
+      );
+      result = db.prepare(`SELECT * FROM projects WHERE name = ?`).get(name);
+      const { id } = result;
+      db.prepare(
+        `INSERT INTO project_container_settings (project_id, run_script) VALUES (?,?)`
+      ).run(id, run_script);
+      db.prepare(`INSERT INTO starter_projects (project_id) VALUES (?)`).run(
+        id
+      );
+    } else {
+      const { id } = result;
+      db.prepare(`UPDATE projects SET description=? WHERE id=?`).run(
+        description,
+        id
+      );
+      db.prepare(
+        `UPDATE project_container_settings SET run_script=? WHERE project_id=?`
+      ).run(run_script, id);
+    }
+  });
 }
