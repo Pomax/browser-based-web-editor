@@ -5,9 +5,9 @@ import {
   createReadStream,
   createWriteStream,
   existsSync,
-  lstat,
   lstatSync,
   mkdirSync,
+  readFileSync,
   renameSync,
   rmSync,
   unlinkSync,
@@ -105,7 +105,7 @@ function cloneProject(source, projectName, isStarter = true) {
  * @param {*} next
  */
 export async function loadProject(req, res, next) {
-  const { projectName, user } = res.locals;
+  const { projectId, projectName, user } = res.locals;
   const dir = join(CONTENT_DIR, projectName);
 
   if (!existsSync(dir)) return next(new Error(`No such project`));
@@ -160,6 +160,9 @@ export async function loadProject(req, res, next) {
     }
   }
 
+  const settings = loadSettingsForProject(projectId);
+  res.locals.projectSettings = settings;
+
   next();
 }
 
@@ -170,7 +173,7 @@ export async function loadProject(req, res, next) {
  * @param {*} next
  */
 export function checkContainerHealth(req, res, next) {
-  res.locals.healthStatus = dockerHealthCheck(req.locals.projectName);
+  res.locals.healthStatus = dockerHealthCheck(res.locals.projectName);
   next();
 }
 
@@ -195,7 +198,7 @@ export function getProjectSettings(req, res, next) {
  */
 export async function updateProjectSettings(req, res, next) {
   const { projectId, projectName, settings } = res.locals;
-  const { build_script, run_script, env_vars } = settings;
+  const { run_script, env_vars } = settings;
 
   const newSettings = Object.fromEntries(
     Object.entries(req.body).map(([k, v]) => [k, v.value.trim()])
@@ -203,10 +206,21 @@ export async function updateProjectSettings(req, res, next) {
 
   const newName = newSettings.name;
   const newDir = join(CONTENT_DIR, newSettings.name);
+  const containerDir = join(CONTENT_DIR, projectName, `.container`);
 
   if (projectName !== newName) {
     if (existsSync(newDir)) {
       return next(new Error("Cannot rename project"));
+    }
+  }
+
+  // no run script? See if there's a run.sh and copy that.
+  if (newSettings.run_script.trim() === ``) {
+    try {
+      const data = readFileSync(join(containerDir, `run.sh`)).toString();
+      newSettings.run_script = data;
+    } catch (e) {
+      // console.error(e);
     }
   }
 
@@ -222,11 +236,7 @@ export async function updateProjectSettings(req, res, next) {
 
     // Do we need to update our container files?
     let containerChange = false;
-    const containerDir = join(CONTENT_DIR, projectName, `.container`);
-    if (build_script !== newSettings.build_script) {
-      containerChange = true;
-      writeFileSync(join(containerDir, `build.sh`), newSettings.build_script);
-    } else if (run_script !== newSettings.run_script) {
+    if (run_script !== newSettings.run_script) {
       containerChange = true;
       writeFileSync(join(containerDir, `run.sh`), newSettings.run_script);
     } else if (env_vars !== newSettings.env_vars) {

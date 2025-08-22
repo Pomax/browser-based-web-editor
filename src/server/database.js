@@ -233,13 +233,18 @@ export function unsuspendUser(suspensionId) {
   UserSuspension.save(s);
 }
 
-export function getProjectListForUser(userName) {
-  const record = User.findOrCreate({ name: userName });
-  if (record) {
-    const { id: user_id } = record;
-    const projects = Access.findAll({ user_id });
-    return projects.map((p) => Project.find({ id: p.project_id }));
-  }
+export function getProjectListForUser(userNameOrId) {
+  const u = getUser(userNameOrId);
+  const projects = Access.findAll({ user_id: u.id });
+  return projects.map((p) => Project.find({ id: p.project_id }));
+}
+
+export function getOwnedProjectsForUser(userNameOrId) {
+  const u = getUser(userNameOrId);
+  const access = Access.findAll({ user_id: u.id });
+  return access
+    .filter((a) => a.access_level === OWNER)
+    .map((a) => getProject(a.project_id));
 }
 
 export function createProjectForUser(userName, projectName) {
@@ -284,39 +289,29 @@ export function loadSettingsForProject(projectId) {
   const s = ProjectSettings.find({ project_id: p.id });
   if (!s) return false;
   const { name, description } = p;
-  const { build_script, run_script, env_vars } = s;
+  const { project_id, ...settings } = s;
   return {
     name,
     description,
-    build_script,
-    run_script,
-    env_vars,
+    ...settings,
   };
 }
 
 export function updateSettingsForProject(projectId, settings) {
-  console.log(projectId, settings);
+  const { name, description, ...containerSettings } = settings;
 
   const p = Project.find({ id: projectId });
-  const s = ProjectSettings.find({ project_id: p.id });
-
-  const { name, description } = settings;
-
   if (p.name !== name) {
     if (!name.trim()) throw new Error(`Invalid project name`);
     p.name = name;
   }
-
   p.description = description;
   Project.save(p);
 
-  const { build_script, run_script, env_vars } = settings;
-
-  // TODO: make this "update if changed" because each
-  //       results in needing to do some Docker work...
-  s.build_script = build_script;
-  s.run_script = run_script;
-  s.env_vars = env_vars;
+  const s = ProjectSettings.find({ project_id: projectId });
+  Object.entries(containerSettings).forEach(([key, value]) => {
+    s[key] = value;
+  });
   ProjectSettings.save(s, `project_id`);
 }
 
@@ -475,12 +470,4 @@ export function unsuspendProject(suspensionId) {
   if (!s) throw new Error(`Suspension not found`);
   s.invalidated_at = new Date().toISOString();
   ProjectSuspension.save(s);
-}
-
-export function getOwnedProjectsForUser(userNameOrId) {
-  const u = getUser(userNameOrId);
-  const access = Access.findAll({ user_id: u.id });
-  return access
-    .filter((a) => a.access_level === OWNER)
-    .map((a) => getProject(a.project_id));
 }

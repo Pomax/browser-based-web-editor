@@ -1,11 +1,4 @@
-- Suspending a user should stop all their solely owned projects, and not allow them to be loaded in the editor (expect by admins)
-- DONE BUT NEEDS VERIFICATION
-
-- Suspending a project should stop its container, and it should not be possible to start a project with outstanding suspensions.
-- DONE BUT NEEDS VERIFICATION
-
-- the edit route for a suspended project should allow the project to be loaded in the editor when loaded by an admin, but should not start the project's container.
-- DONE BUT NEEDS VERIFICATION
+- refactor res.locals.projectThings to just res.locals.project
 
 - Verify that .env and build/run scripts update when saving project settings. And then also verify that remixing does the right thing (stripping the .env file)
 

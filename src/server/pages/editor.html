@@ -8,21 +8,29 @@
       src="/vendor/drag-drop-touch.esm.min.js?autoload"
       type="module"
     ></script>
-    <script src="/js/editor.bundle.js" type="module" async></script>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="stylesheet" href="/css/layout.css" />
     <link rel="stylesheet" href="/css/editor.css" />
     <link rel="stylesheet" href="/css/file-tree.css" />
     <link rel="stylesheet" href="/css/cm6.css" />
   </head>
-  <body data-project-id="{{ projectId }}" data-project-name="{{ projectName }}">
+  <body
+    data-project-id="{{ projectId }}"
+    data-project-name="{{ projectName }}"
+    data-default-file="{{ projectSettings.default_file }}"
+    data-default-collapse="{{ projectSettings.default_collapse}}"
+  >
     <main>
       <span id="buttons">
         <a class="link-back" href="https://{{ WEB_EDITOR_HOSTNAME }}">home</a>
         <span class="projectname">{{ projectName }}</span>
         {% if user %}
         <button id="download" title="Download project files">💾</button>
-        <a title="Remix this project!" href="/v1/projects/remix/{{ projectName }}">✨</a>
+        <a
+          title="Remix this project!"
+          href="/v1/projects/remix/{{ projectName }}"
+          >✨</a
+        >
         {% endif %}
         <button class="project-settings">settings</button>
         {% if user and projectMember %}
@@ -85,5 +93,7 @@
     </main>
 
     {% include "fragments/edit.html" %}
+
+    <script src="/js/editor.bundle.js" type="module" async></script>
   </body>
 </html>

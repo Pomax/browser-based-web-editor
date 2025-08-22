@@ -47,20 +47,26 @@ export async function runContainer(projectName) {
     const runCommand = `docker run ${runFlags} ${bindMount} -p ${port}:8000 ${projectName} ${entry}`;
     console.log(runCommand);
     exec(runCommand);
-    // FIXME: TODO: it would be nice if we could just "check until we know" rather than
-    //              using a 2 second timeout to see what the actual port is. Because
-    //              despite all logic, I've seen docker pick a *different* port than
-    //              the one the run command instructs it to use O_o
-    await new Promise((resolve) => {
-      setTimeout(() => {
-        result = execSync(check).toString().trim();
-        resolve();
-      }, 2000);
-    });
   }
 
-  port = result.match(/0.0.0.0:(\d+)->/m)[1];
-  console.log(`- found a running container on port ${port}`);
+  // FIXME: TODO: it would be nice if we could just "check until we know" rather than
+  //              using a 2 second timeout to see what the actual port is. Because
+  //              despite all logic, I've seen docker pick a *different* port than
+  //              the one the run command instructs it to use O_o
+  await new Promise((resolve) => {
+    setTimeout(() => {
+      result = execSync(check).toString().trim();
+      resolve();
+    }, 2000);
+  });
+
+  try {
+    port = result.match(/0.0.0.0:(\d+)->/m)[1];
+    console.log(`- found a running container on port ${port}`);
+  } catch (e) {
+    console.log(`could not get the port from docker...`);
+  }
+
   updateCaddyFile(projectName, port);
 }
 
@@ -69,7 +75,7 @@ export async function runContainer(projectName) {
  * @param {*} name
  * @returns
  */
-export function checkContainerHealth(name) {
+export function checkContainerHealth(projectName) {
   const check = `docker ps --no-trunc -f name=^/${projectName}$`;
   const result = execSync(check).toString().trim();
   if (result.includes(`Exited`)) {

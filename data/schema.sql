@@ -56,7 +56,8 @@ CREATE UNIQUE INDEX project_names ON projects(name);
 
 CREATE TABLE project_container_settings (
   project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
-  build_script TEXT,
+  default_file TEXT,
+  default_collapse TEXT,
   run_script TEXT,
   env_vars TEXT
 );

@@ -5,8 +5,6 @@ function setup() {
 function draw() {
   clear(`white`);
   setColor(`black`);
-  center();
-  text(`my ${playing ? `playing ` : ``}sketch`, 0,0)
 }
 
 function keyDown(key) {

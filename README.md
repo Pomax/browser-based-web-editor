@@ -9,7 +9,7 @@ This is an attempt at implementing a friendly browser-based web content editor, 
 1. It's a node project, so you'll need that installed (I recommend `nvm` or its windows equivalent).
 1. You'll also need docker installed, which has different instructions depending on the OS you're using.
 1. And you'll want `caddy` installed, for reverse-proxying container ports so you can just load https://projectname.localhost
-1. Finally, you need `sqlite3` installed. Rinse and repeat for linux or MacOs, on Windows you'll want to donwnload the `sqlite-tools-win-x64-3500400.zip` from https://www.sqlite.org/download.html, create a `C:\Program Files\Sqlite3`, and unpack the zip file into that, then add that folder to your PATH (The "Docker" section below goes over how you do that for docker, just do the same for sqlite3).
+1. Finally, you need `sqlite3` installed. Rinse and repeat for linux or MacOs, on Windows you'll want to donwnload the `sqlite-tools-win-x64-somenumbershere.zip` from https://www.sqlite.org/download.html, create a `C:\Program Files\Sqlite3`, and unpack the zip file into that, then add that folder to your PATH (The "Docker" section below goes over how you do that for docker, just do the same for sqlite3).
 
 With those prerequisites met:
 
@@ -112,7 +112,7 @@ As of August 18, 2025, as a visitor you can:
 As a user you can:
 
 - Log in with github.
-- Load any project's "edit" route. You can't actually edit unless you have edit rights, but you can't download the project as a .zip file (but note that this will not include a project's private data dir nor .env file, of course).
+- Load any project's "edit" route. You can't actually edit unless you have edit rights, but you can download the project as a .zip file (note that this will not include a project's private data dir nor .env file, of course).
 - Remix projects, using the sparkle button, which creates a new copy of the public code parts with a new name "yourusername-projectname" (so you'll probably want to rename it!).
 - Create, load, and edit your own projects, including editing project settings (project name, provided the new name isn't taken, description, build script, run script, and environment variables).
 - Auto-format any supported file using the sparkly-eyed emoji

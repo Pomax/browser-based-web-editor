@@ -287,8 +287,8 @@ var E = class extends f {
       return i = i.path, n = n.path, i < n ? -1 : 1;
     }), r.forEach((i) => this.appendChild(i)), t2 && this.findAll("& > dir-entry").forEach((i) => i.sort(t2));
   }
-  toggle() {
-    this.classList.toggle("closed");
+  toggle(t2) {
+    this.classList.toggle("closed", t2);
   }
   toJSON() {
     return JSON.stringify(this.toValue());
@@ -635,7 +635,7 @@ function verifyRIFF(bytes) {
 var restart = document.querySelector(`#preview-buttons .restart`);
 var newtab = document.querySelector(`#preview-buttons .newtab`);
 var preview = document.getElementById(`preview`);
-var { projectId, projectName } = document.body.dataset;
+var { projectName } = document.body.dataset;
 var first_time_load = 0;
 async function updatePreview() {
   const iframe = preview.querySelector(`iframe`);
@@ -643,11 +643,14 @@ async function updatePreview() {
   if (first_time_load++ < 10) {
     console.log(`checking container for ready`);
     const status = await API.projects.health(projectName);
-    console.log(`result: ${status}`);
     if (status === `failed`) {
       return console.error(`Project failed to start. That's bad`);
     } else if (status === `not running` || status === `wait`) {
-      return setTimeout(updatePreview, 1e3);
+      if (first_time_load < 10) {
+        return setTimeout(updatePreview, 1e3);
+      } else {
+        return console.log(`this project failed to start in a timely manner.`);
+      }
     }
   }
   newFrame.onerror = () => {
@@ -29880,13 +29883,13 @@ async function syncContent(projectName5, entry, filename = entry.filename) {
 }
 
 // src/client/cm6/editor-components.js
-var { projectId: projectId2, projectName: projectName2 } = document.body.dataset;
+var { projectId, projectName: projectName2 } = document.body.dataset;
 var fileTree = document.querySelector(`file-tree`);
 var tabs2 = document.getElementById(`tabs`);
 var editors = document.getElementById(`editors`);
 var settingsIcon = document.querySelector(`.project-settings`);
 settingsIcon.addEventListener(`click`, () => {
-  showEditDialog(projectId2);
+  showEditDialog(projectId);
 });
 function setupEditorPanel(filename) {
   const panel = create(`div`);
@@ -30860,21 +30863,32 @@ async function unzip(source) {
 }
 
 // src/client/cm6/file-tree-utils.js
-var { projectId: projectId3, projectName: projectName3 } = document.body.dataset;
+var { projectId: projectId2, projectName: projectName3, defaultFile, defaultCollapse } = document.body.dataset;
 var fileTree2 = document.getElementById(`filetree`);
 fileTree2.addEventListener(`tree:ready`, async () => {
-  console.log(`TREE READY`);
   let fileEntry;
-  for (const d2 of DEFAULT_FILES) {
-    fileEntry = fileTree2.querySelector(`file-entry[path="${d2}"]`);
-    if (fileEntry) {
-      getOrCreateFileEditTab(
-        fileEntry,
-        projectName3,
-        fileEntry.getAttribute(`path`)
-      );
-      break;
+  if (defaultFile) {
+    fileEntry = fileTree2.querySelector(`file-entry[path="${defaultFile}"]`);
+  } else {
+    for (const d2 of DEFAULT_FILES) {
+      fileEntry = fileTree2.querySelector(`file-entry[path="${d2}"]`);
+      if (fileEntry) break;
     }
+  }
+  if (fileEntry) {
+    getOrCreateFileEditTab(
+      fileEntry,
+      projectName3,
+      fileEntry.getAttribute(`path`)
+    );
+  }
+  if (defaultCollapse.trim()) {
+    const entries = defaultCollapse.split(`
+`).map((v2) => v2.trim()).filter(Boolean);
+    entries.forEach((path) => {
+      let entry = fileTree2.querySelector(`dir-entry[path="${path}/"]`);
+      entry?.toggle(true);
+    });
   }
 });
 async function setupFileTree() {
@@ -31141,10 +31155,10 @@ function addTabScrollHandling() {
 }
 
 // src/client/script.js
-var { projectId: projectId4, projectName: projectName4 } = document.body.dataset;
+var { projectId: projectId3, projectName: projectName4 } = document.body.dataset;
 var CodeMirror6 = class {
   constructor() {
-    Object.assign(this, { projectId: projectId4, projectName: projectName4 });
+    Object.assign(this, { projectId: projectId3, projectName: projectName4 });
     this.init();
   }
   async init() {

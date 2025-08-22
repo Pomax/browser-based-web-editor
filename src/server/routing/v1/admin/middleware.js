@@ -29,7 +29,6 @@ export function deleteContainer(req, res, next) {
 
 export function stopContainer(req, res, next) {
   const c = req.params.container.replace(`sha256:`, ``);
-  console.log(`stopContainer(${c})`);
   Docker.stopContainer(c);
   next();
 }

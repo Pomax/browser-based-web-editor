@@ -3,7 +3,7 @@ import { API } from "./api.js";
 const restart = document.querySelector(`#preview-buttons .restart`);
 const newtab = document.querySelector(`#preview-buttons .newtab`);
 const preview = document.getElementById(`preview`);
-const { projectId, projectName } = document.body.dataset;
+const { projectName } = document.body.dataset;
 
 let first_time_load = 0;
 
@@ -17,11 +17,14 @@ export async function updatePreview() {
   if (first_time_load++ < 10) {
     console.log(`checking container for ready`);
     const status = await API.projects.health(projectName);
-    console.log(`result: ${status}`);
     if (status === `failed`) {
       return console.error(`Project failed to start. That's bad`);
     } else if (status === `not running` || status === `wait`) {
-      return setTimeout(updatePreview, 1000);
+      if (first_time_load < 10) {
+        return setTimeout(updatePreview, 1000);
+      } else {
+        return console.log(`this project failed to start in a timely manner.`);
+      }
     }
   }
 

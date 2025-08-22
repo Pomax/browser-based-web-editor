@@ -5,22 +5,37 @@ import { getOrCreateFileEditTab } from "./editor-components.js";
 import { DEFAULT_FILES } from "../default-files.js";
 import { unzip } from "../../../public/vendor/unzipit.module.js";
 
-const { projectId, projectName } = document.body.dataset;
+const { projectId, projectName, defaultFile, defaultCollapse } =
+  document.body.dataset;
 const fileTree = document.getElementById(`filetree`);
 
 fileTree.addEventListener(`tree:ready`, async () => {
-  console.log(`TREE READY`);
   let fileEntry;
-  for (const d of DEFAULT_FILES) {
-    fileEntry = fileTree.querySelector(`file-entry[path="${d}"]`);
-    if (fileEntry) {
-      getOrCreateFileEditTab(
-        fileEntry,
-        projectName,
-        fileEntry.getAttribute(`path`)
-      );
-      break;
+  if (defaultFile) {
+    fileEntry = fileTree.querySelector(`file-entry[path="${defaultFile}"]`);
+  } else {
+    for (const d of DEFAULT_FILES) {
+      fileEntry = fileTree.querySelector(`file-entry[path="${d}"]`);
+      if (fileEntry) break;
     }
+  }
+  if (fileEntry) {
+    getOrCreateFileEditTab(
+      fileEntry,
+      projectName,
+      fileEntry.getAttribute(`path`)
+    );
+  }
+
+  if (defaultCollapse.trim()) {
+    const entries = defaultCollapse
+      .split(`\n`)
+      .map((v) => v.trim())
+      .filter(Boolean);
+    entries.forEach((path) => {
+      let entry = fileTree.querySelector(`dir-entry[path="${path}/"]`);
+      entry?.toggle(true);
+    });
   }
 });
 
