@@ -506,7 +506,7 @@ var API = {
       method: `post`,
       body: form
     }),
-    get: async (projectName5, fileName) => fetch2(`files/${projectName5}/${fileName}`),
+    get: async (projectName5, fileName) => fetch2(`files/content/${projectName5}/${fileName}`),
     rename: async (projectName5, oldPath, newPath) => fetch2(`files/rename/${projectName5}/${oldPath}:${newPath}`, {
       method: `post`
     }),

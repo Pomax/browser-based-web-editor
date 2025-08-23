@@ -1,5 +1,6 @@
 import { execSync } from "node:child_process";
 import { join, resolve } from "node:path";
+
 import {
   cpSync,
   createReadStream,
@@ -16,53 +17,80 @@ import {
 import archiver from "archiver";
 
 import { CONTENT_DIR, execPromise, setupGit } from "../../../helpers.js";
+
 import {
-  runContainer,
   checkContainerHealth as dockerHealthCheck,
+  deleteContainerAndImage,
   renameContainer,
   restartContainer as restartDockerContainer,
-  deleteContainerAndImage,
+  runContainer,
 } from "../../../../docker/docker-helpers.js";
+
 import {
+  MEMBER,
+  OWNER,
   createProjectForUser,
-  loadSettingsForProject,
-  updateSettingsForProject,
   deleteProjectForUser,
   getAccessFor,
   getProjectSuspensions,
+  loadSettingsForProject,
   projectSuspendedThroughOwner,
-  MEMBER,
-  OWNER,
+  recordProjectRemix,
+  updateSettingsForProject,
 } from "../../../database.js";
+
 import { removeCaddyEntry } from "../../../../caddy/caddy.js";
 
 /**
- * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
+ * Mark this route as "create or remix" so that a bad
+ * project name (i.e. a name that has no db record) does
+ * not lead to a route error but instead ends up setting
+ * the res.locals.projectName property
+ *
+ * TODO: this is a tempoerary measure until we remove the
+ *       create route in favour of purely remixing.
  */
-export async function createProject(req, res, next) {
-  const { userName, projectName } = res.locals;
-  cloneProject(res.locals.starter, projectName);
-  createProjectForUser(userName, projectName);
+export async function routeWithoutProject(req, res, next) {
+  res.locals.routeWithoutProject = true;
   next();
 }
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
+ */
+export async function createProject(req, res, next) {
+  const { user, projectName, starter } = res.locals;
+  const source = starter.name;
+  console.log(`calling cloneProject(${source}, ${projectName})`);
+  cloneProject(source, projectName);
+  const { project } = createProjectForUser(user.name, projectName);
+  res.locals.lookups.project = project;
+  next();
+}
+
+/**
+ * ...docs go here...
  */
 export async function remixProject(req, res, next) {
-  const { projectName, userName } = res.locals;
+  const { user, lookups } = res.locals;
+  const { project } = lookups;
+
   const newProjectName = (res.locals.newProjectName =
     `${userName}-${projectName}`.toLocaleLowerCase());
-  cloneProject(projectName, newProjectName, false);
+
+  cloneProject(project.name, newProjectName, false);
+
   try {
-    createProjectForUser(userName, newProjectName);
-  } catch (e) {}
+    const { project: newProject } = createProjectForUser(
+      user.name,
+      newProjectName
+    );
+    recordProjectRemix(project.id, newProject.id);
+    // TODO: copy project settings (description and run_script);
+  } catch (e) {
+    console.error(e);
+    return next(e);
+  }
   next();
 }
 
@@ -100,15 +128,17 @@ function cloneProject(source, projectName, isStarter = true) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export async function loadProject(req, res, next) {
-  const { projectId, projectName, user } = res.locals;
+  const { user, lookups } = res.locals;
+  const { project } = lookups;
+  const { id: projectId, name: projectName } = project;
   const dir = join(CONTENT_DIR, projectName);
 
-  if (!existsSync(dir)) return next(new Error(`No such project`));
+  if (!existsSync(dir)) {
+    // not sure this is possible, but...
+    return next(new Error(`No such project`));
+  }
 
   // ensure there's a git dir
   if (!existsSync(`${dir}/.git`)) {
@@ -168,36 +198,30 @@ export async function loadProject(req, res, next) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export function checkContainerHealth(req, res, next) {
-  res.locals.healthStatus = dockerHealthCheck(res.locals.projectName);
+  const projectName = res.locals.lookups.project.name;
+  res.locals.healthStatus = dockerHealthCheck(projectName);
   next();
 }
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export function getProjectSettings(req, res, next) {
-  const { projectId } = res.locals;
+  const projectId = res.locals.lookups.project.id;
   res.locals.settings = loadSettingsForProject(projectId);
   next();
 }
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  * @returns
  */
 export async function updateProjectSettings(req, res, next) {
-  const { projectId, projectName, settings } = res.locals;
+  const { lookups, settings } = res.locals;
+  const { project } = lookups;
+  const { id: projectId, name: projectName } = project;
   const { run_script, env_vars } = settings;
 
   const newSettings = Object.fromEntries(
@@ -256,23 +280,18 @@ export async function updateProjectSettings(req, res, next) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export function restartContainer(req, res, next) {
-  restartDockerContainer(res.locals.projectName);
+  const projectName = res.locals.lookups.project.name;
+  restartDockerContainer(projectName);
   next();
 }
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export async function loadProjectHistory(req, res, next) {
-  const { projectName } = res.locals;
+  const projectName = res.locals.lookups.project.name;
   const cmd = `git log  --no-abbrev-commit --pretty=format:"%H%x09%ad%x09%s"`;
   const output = await execPromise(cmd, {
     cwd: join(CONTENT_DIR, projectName),
@@ -288,12 +307,12 @@ export async function loadProjectHistory(req, res, next) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export async function deleteProject(req, res, next) {
-  const { userName, projectName, adminCall } = res.locals;
+  const { user, lookups, adminCall } = res.locals;
+  const userName = user.name;
+  const projectName = lookups.project.name;
+
   deleteProjectForUser(userName, projectName, adminCall);
 
   console.log(`Cleaning up Caddyfile`);
@@ -312,7 +331,8 @@ export async function deleteProject(req, res, next) {
 }
 
 export async function createProjectDownload(req, res, next) {
-  const { projectName, dir } = res.locals;
+  const { dir, lookups } = res.locals;
+  const projectName = lookups.project.name;
   const zipDir = resolve(join(CONTENT_DIR, `__archives`));
   if (!existsSync(zipDir)) mkdirSync(zipDir);
   const dest = resolve(zipDir, projectName) + `.zip`;

@@ -70,15 +70,14 @@ files.post(
 
 /**
  * Get a file's content.
- * FIXME: this should throw an error if the user is trying to access
- *        private files and they don't have the right permissions.
  */
 files.get(
-  `/:project/:filename*`,
-  // anyone can see your (public) files. The web is open source!
+  `/content/:project/:filename*`,
   bindCommonValues,
   getMimeType,
   (req, res) => {
+    // FIXME: this should throw an error if the user is trying to access
+    //        private files and they don't have the right permissions.
     res.set(`Content-Type`, res.locals.mimeType);
     res.send(res.locals.data);
   }

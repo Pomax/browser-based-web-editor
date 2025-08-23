@@ -51,9 +51,8 @@
       <select name="starter">
         {% for s in starters %}
         <option
-          name="{{s}}"
-          value="{{s}}"
-          {% if s==="empty" %}selected{% endif %}>{{s}}</option>
+          value="{{ s }}"
+          {% if s === "basic-nodejs" %}selected{% endif %}>{{ s }}</option>
         {% endfor %}
       </select>
       as new project called:

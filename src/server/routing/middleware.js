@@ -1,25 +1,23 @@
 import { join, resolve } from "node:path";
 import { readdirSync } from "node:fs";
+
 import {
-  MEMBER,
   NOT_ACTIVATED,
+  MEMBER,
   OWNER,
   getAccessFor,
+  getProject,
   getProjectListForUser,
-  getNameForProjectId,
-  getIdForProjectName,
   getUser,
-  getUserSuspensions,
   getUserAdminFlag,
+  getUserSuspensions,
   hasAccessToUserRecords,
 } from "../database.js";
+
 import { CONTENT_DIR } from "../helpers.js";
 
 /**
  * For when you really don't want response caching.
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export function nocache(req, res, next) {
   res.setHeader("Surrogate-Control", "no-store");
@@ -46,9 +44,6 @@ export function pageNotFound(req, res) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export async function bindUser(req, res, next = () => {}) {
   const { user } = req.session.passport || {};
@@ -58,9 +53,6 @@ export async function bindUser(req, res, next = () => {}) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  * @returns
  */
 export async function verifyLogin(req, res, next) {
@@ -85,13 +77,9 @@ export async function verifyLogin(req, res, next) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export function verifyAdmin(req, res, next) {
-  const { userName } = res.locals;
-  if (getUserAdminFlag(userName)) {
+  if (getUserAdminFlag(res.locals.user.name)) {
     res.locals.adminCall = true;
     next();
   } else {
@@ -101,14 +89,12 @@ export function verifyAdmin(req, res, next) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  * @returns
  */
 export function verifyAccesToUser(req, res, next) {
-  const { userId: sessionUserId } = res.locals;
-  const { userId: lookupUserId } = res.locals.lookups ?? {};
+  const { user, lookups } = res.locals;
+  const { id: sessionUserId } = user;
+  const { id: lookupUserId } = lookups.user ?? {};
   if (!lookupUserId) return next(new Error(`No such user`));
   if (hasAccessToUserRecords(sessionUserId, lookupUserId)) {
     next();
@@ -119,14 +105,12 @@ export function verifyAccesToUser(req, res, next) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  * @returns
  */
 export function verifyEditRights(req, res, next) {
-  const { userName, projectName } = res.locals;
-  const accessLevel = getAccessFor(userName, projectName);
+  const { user, lookups } = res.locals;
+  const { project } = lookups;
+  const accessLevel = getAccessFor(user.name, project.name);
   if (accessLevel === NOT_ACTIVATED)
     return next(new Error(`Your account has not been activated yet`));
   if (accessLevel < MEMBER) return next(new Error(`Incorrect access level`));
@@ -135,14 +119,12 @@ export function verifyEditRights(req, res, next) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  * @returns
  */
 export function verifyOwner(req, res, next) {
-  const { userName, projectName } = res.locals;
-  const accessLevel = getAccessFor(userName, projectName);
+  const { user, lookups } = res.locals;
+  const { project } = lookups;
+  const accessLevel = getAccessFor(user.name, project.name);
   if (accessLevel === NOT_ACTIVATED)
     return next(new Error(`Your account has not been activated yet`));
   if (accessLevel < OWNER) return next(new Error(`Incorrect access level`));
@@ -151,66 +133,75 @@ export function verifyOwner(req, res, next) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  * @returns
  */
 export function bindCommonValues(req, res, next) {
+  const { uid, pid, project, filename, starter } = req.params;
+
+  // Bind the session user as res.locals.user
   bindUser(req, res);
-  const { user } = res.locals;
 
-  let userName, userId, projectName, projectId, fileName;
-  const { uid, project, pid, filename, starter } = req.params;
-
-  if (user) {
-    userName = res.locals.userName = user.name;
-    userId = res.locals.userId = user.id;
-  }
+  // Build route lookup locals
+  res.locals.lookups ??= {};
 
   if (uid) {
-    res.locals.lookups ??= {};
-    res.locals.lookups.userId = parseInt(uid, 10);
+    try {
+      res.locals.lookups.user = getUser(parseFloat(uid));
+    } catch (e) {
+      console.error(e);
+      return next(e);
+    }
   }
 
   if (pid) {
-    projectId = res.locals.projectId = parseInt(pid, 10);
+    try {
+      res.locals.lookups.project = getProject(parseFloat(pid));
+    } catch (e) {
+      console.error(e);
+      return next(e);
+    }
   }
 
   if (project) {
-    projectName = res.locals.projectName = project
-      .toLowerCase()
-      .replace(/\s+/g, `-`);
-  } else if (projectId) {
+    const projectName = project.toLowerCase().replace(/\s+/g, `-`);
     try {
-      projectName = res.locals.projectName = getNameForProjectId(projectId);
-    } catch (e) {}
-  }
-
-  if (!projectId && projectName) {
-    try {
-      projectId = res.locals.projectId = getIdForProjectName(projectName);
-    } catch (e) {}
+      res.locals.lookups.project = getProject(projectName);
+    } catch (e) {
+      if (res.locals.routeWithoutProject) {
+        res.locals.projectName = projectName;
+      } else {
+        console.error(e);
+        return next(e);
+      }
+    }
   }
 
   if (starter) {
-    res.locals.starter = starter;
+    try {
+      res.locals.starter = getProject(starter);
+    } catch (e) {
+      console.error(e);
+      return next(e);
+    }
   }
 
+  // File operations may need to work with a "file
+  // name" (which is really just a file path).
   if (filename) {
+    const projectName =
+      res.locals.lookups.project?.name ?? res.locals.projectName;
     const suffix = req.params[0] || ``;
-
-    fileName = res.locals.fileName = join(
+    const fileName = (res.locals.fileName = join(
       CONTENT_DIR,
-      project,
+      projectName,
       filename + suffix
-    );
-
+    ));
     const apath = resolve(join(CONTENT_DIR, projectName));
     const bpath = resolve(fileName);
     if (!bpath.startsWith(apath)) {
       return next(new Error(`Illegal file path`));
     }
+    res.locals.fileName = fileName;
   }
 
   next();
@@ -218,9 +209,6 @@ export function bindCommonValues(req, res, next) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export function loadProjectList(req, res, next) {
   // FIXME: this shouldn't blindly rebuild the list every time,
@@ -239,9 +227,6 @@ export function loadProjectList(req, res, next) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export function loadStarters(req, res, next) {
   res.locals.starters = readdirSync(join(CONTENT_DIR, `__starter_projects`))
@@ -252,9 +237,6 @@ export function loadStarters(req, res, next) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export async function parseBodyText(req, res, next) {
   let chunks = [];
@@ -276,9 +258,6 @@ function getDelimiter(req) {
 
 /**
  * ...docs go here...
- * @param {*} req
- * @param {*} res
- * @param {*} next
  */
 export async function parseMultiPartBody(req, res, next) {
   const delimiter = getDelimiter(req);

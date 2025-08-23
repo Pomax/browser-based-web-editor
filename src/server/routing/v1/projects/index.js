@@ -1,23 +1,24 @@
 import { unlinkSync } from "node:fs";
 import {
   bindCommonValues,
-  verifyLogin,
-  verifyEditRights,
-  verifyOwner,
   parseMultiPartBody,
+  verifyEditRights,
+  verifyLogin,
+  verifyOwner,
 } from "../../middleware.js";
 
 import {
   checkContainerHealth,
-  getProjectSettings,
-  updateProjectSettings,
-  restartContainer,
   createProject,
+  createProjectDownload,
   deleteProject,
+  getProjectSettings,
   loadProject,
   loadProjectHistory,
-  createProjectDownload,
   remixProject,
+  restartContainer,
+  routeWithoutProject,
+  updateProjectSettings,
 } from "./middleware.js";
 
 import { getDirListing } from "../files/middleware.js";
@@ -29,8 +30,11 @@ export const projects = Router();
  * Create a project by name (using res.params.project)
  */
 projects.post(
+  // OBSOLETE ROUTE, ONLY HERE UNTIL THE CODE HAS BEEN SWITCHED
+  // OVER TO REMIXING STARTERS INSTEAD OF "CREATING FROM"
   `/create/:starter/:project`,
   verifyLogin,
+  routeWithoutProject,
   bindCommonValues,
   createProject,
   loadProject,
@@ -129,7 +133,7 @@ projects.post(
 );
 
 /**
- * Remix someone's
+ * Remix a project
  */
 projects.get(
   `/remix/:project`,

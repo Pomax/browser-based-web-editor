@@ -24,7 +24,7 @@ export const admin = Router();
 
 const prechecks = [verifyLogin, bindCommonValues, verifyAdmin];
 
-admin.get(`/`, loadAdminData, (req, res) =>
+admin.get(`/`, ...prechecks, loadAdminData, (req, res) =>
   res.render(`admin.html`, { ...res.locals, ...req.session, ...process.env })
 );
 
@@ -39,4 +39,4 @@ admin.post(`/user/unsuspend/:sid`, ...prechecks, unsuspendUser, back);
 
 admin.post(`/project/delete/:pid`, ...prechecks, deleteProject, back);
 admin.post(`/project/suspend/:pid`, ...prechecks, suspendProject, back);
-admin.post(`/project/unsuspend/:pid`, ...prechecks, unsuspendProject, back);
+admin.post(`/project/unsuspend/:sid`, ...prechecks, unsuspendProject, back);

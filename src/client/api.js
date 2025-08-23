@@ -40,7 +40,7 @@ export const API = {
         body: form,
       }),
     get: async (projectName, fileName) =>
-      fetch(`files/${projectName}/${fileName}`),
+      fetch(`files/content/${projectName}/${fileName}`),
     rename: async (projectName, oldPath, newPath) =>
       fetch(`files/rename/${projectName}/${oldPath}:${newPath}`, {
         method: `post`,
