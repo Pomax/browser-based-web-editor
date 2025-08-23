@@ -12,6 +12,7 @@ import {
   getUserAdminFlag,
   getUserSuspensions,
   hasAccessToUserRecords,
+  getStarterProjects,
 } from "../database.js";
 
 import { CONTENT_DIR } from "../helpers.js";
@@ -225,9 +226,7 @@ export function loadProjectList(req, res, next) {
  * ...docs go here...
  */
 export function loadStarters(req, res, next) {
-  res.locals.starters = readdirSync(join(CONTENT_DIR, `__starter_projects`))
-    .filter((v) => !v.includes(`.`))
-    .filter((v) => !v.startsWith(`__`));
+  res.locals.starters = getStarterProjects();
   next();
 }
 

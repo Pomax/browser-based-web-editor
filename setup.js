@@ -23,7 +23,7 @@ const stdin = readline.createInterface({
 
 const STDIO = process.argv.includes(`--debug`) ? `inherit` : `ignore`;
 const BYPASS_FINISH = existsSync(`./data/data.sqlite3`);
-const DOCKER_MAINTENANCE = process.argv.includes(`--docker-cleanup`);
+const DOCKER_MAINTENANCE = process.argv.includes(`--cleanup`);
 const noop = () => {};
 
 setup(
@@ -329,8 +329,6 @@ function setupDocker() {
   writeFileSync(
     `Dockerfile`,
     `FROM ${WEB_EDITOR_IMAGE_NAME}:latest
-RUN sh -c source .container/.env || true
-RUN sh .container/build.sh || true
 CMD sh .container/run.sh
 `
   );

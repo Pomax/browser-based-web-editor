@@ -1,11 +1,21 @@
+{
+	# debug
+}
+
 $WEB_EDITOR_HOSTNAME {
 	reverse_proxy localhost:8000
 }
 
 $WEB_EDITOR_APPS_HOSTNAME {
+	rewrite * /not-running.html 
+	root * ./src/caddy/html/
+	file_server
+}
+
+(proxy_error_handling) {
 	handle_errors {
 		rewrite * /{err.status_code}.html 
-		root * ./src/caddy/
+		root * ./src/caddy/html/
 		file_server
-	}
+	}	
 }

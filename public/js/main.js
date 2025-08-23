@@ -3,6 +3,7 @@
  */
 const create = document.getElementById(`create-project-form`);
 const starter = create.querySelector(`select`);
+const description = create.querySelector(`.description`);
 const button = create.querySelector(`button`);
 
 if (starter && button) {
@@ -10,14 +11,23 @@ if (starter && button) {
   const createProject = async (evt) => {
     const starterName = starter.value || `empty`;
     if (confirm(`Create new ${starterName} project ?`)) {
-      const url = await fetch(`/v1/projects/remix/${starterName}`).then((r) =>
-        r.text()
+      const newName = prompt(
+        `New project name? (leave blank for a default name)`
+      ).trim();
+      const response = await fetch(
+        `/v1/projects/remix/${starterName}${newName ? `/${newName}` : ``}`
       );
-      console.log(`got url ${url}`);
-      location = url;
+      location = response.url;
     }
   };
   button.addEventListener(`click`, createProject);
+  function setDescription() {
+    const opt = starter.selectedOptions[0];
+    const desc = opt.dataset?.description.trim();
+    if (desc) description.textContent = `(${desc})`;
+  }
+  starter.addEventListener(`change`, setDescription);
+  setDescription();
 
   /**
    * Hook up the "delete project" buttons

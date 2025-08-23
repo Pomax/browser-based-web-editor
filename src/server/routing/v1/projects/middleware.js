@@ -50,8 +50,10 @@ export async function remixProject(req, res, next) {
   const { user, lookups } = res.locals;
   const { project } = lookups;
 
-  const newProjectName = (res.locals.newProjectName =
-    `${user.name}-${project.name}`.toLocaleLowerCase());
+  const newName =
+    req.params.newname?.replaceAll(/\s+/g, `-`) ??
+    `${user.name}-${project.name}`;
+  const newProjectName = (res.locals.newProjectName = newName.toLowerCase());
 
   const isStarter = isStarterProject(project.id);
 
@@ -214,6 +216,7 @@ export async function updateProjectSettings(req, res, next) {
 
   const newName = newSettings.name;
   const newDir = join(CONTENT_DIR, newName);
+  const containerDir = join(newDir, `.container`);
 
   if (projectName !== newName) {
     if (existsSync(newDir)) {

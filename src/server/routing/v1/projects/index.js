@@ -119,11 +119,11 @@ projects.post(
  * Remix a project
  */
 projects.get(
-  `/remix/:project`,
+  `/remix/:project/:newname?`,
   verifyLogin,
   bindCommonValues,
   remixProject,
-  (req, res) => res.send(`/v1/projects/edit/${res.locals.newProjectName}`)
+  (req, res) => res.redirect(`/v1/projects/edit/${res.locals.newProjectName}`)
 );
 
 /**

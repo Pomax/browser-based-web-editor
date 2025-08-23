@@ -20,14 +20,12 @@ export function loadAdminData(req, res, next) {
 // Container related routes
 
 export function deleteContainer(req, res, next) {
-  const containerId = req.params.id;
-  Docker.deleteContainer(containerId);
+  Docker.deleteContainer(containerreq.params.idId);
   next();
 }
 
 export function stopContainer(req, res, next) {
-  const containerId = req.params.container.replace(`sha256:`, ``);
-  Docker.stopContainer(containerId);
+  Docker.stopContainer(req.params.id);
   next();
 }
 

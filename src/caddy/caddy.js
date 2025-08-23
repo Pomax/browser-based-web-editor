@@ -12,9 +12,14 @@ const caddyFile = join(import.meta.dirname, `Caddyfile`);
  */
 export function startCaddy() {
   stopCaddy();
+
+  const DEBUG = readFileSync(caddyFile)
+    .toString()
+    .match(/{[\s\r\n]*debug[\s\r\n]*}/);
+
   spawn(`caddy`, [`start`, `--config`, caddyFile], {
     shell: true,
-    // stdio: `inherit`,
+    stdio: DEBUG ? `inherit` : `ignore`,
   });
 }
 
@@ -60,7 +65,7 @@ export function updateCaddyFile(name, port) {
     }
   } else {
     // Create a new binding
-    const entry = `\n${host} {\n\treverse_proxy localhost:${port}\n}\n`;
+    const entry = `\n${host} {\n\treverse_proxy localhost:${port}\n\timport proxy_error_handling\n}\n`;
     writeFileSync(caddyFile, data + entry);
   }
 
