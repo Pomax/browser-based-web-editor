@@ -82,8 +82,8 @@ function addFileTreeHandling() {
       projectName,
       fileEntry.getAttribute(`path`)
     );
-    // we handle selection in the file tree as part of editor reveals,
-    // so we do not call the event's own grant() function.
+    // note: we handle "selection" in the file tree as part of editor
+    // reveals, so we do not call the event's own grant() function.
   });
 
   fileTree.addEventListener(`dir:click`, async (evt) => {

@@ -18379,7 +18379,7 @@ var historyField_ = /* @__PURE__ */ StateField.define({
     return new HistoryState(json.done.map(HistEvent.fromJSON), json.undone.map(HistEvent.fromJSON));
   }
 });
-function history(config3 = {}) {
+function history2(config3 = {}) {
   return [
     historyField_,
     historyConfig.of(config3),
@@ -22574,7 +22574,7 @@ var basicSetup = /* @__PURE__ */ (() => [
   lineNumbers(),
   highlightActiveLineGutter(),
   highlightSpecialChars(),
-  history(),
+  history2(),
   foldGutter(),
   drawSelection(),
   dropCursor(),
@@ -29922,6 +29922,9 @@ function addEditorEventHandling(fileEntry, panel, tab, close, view) {
     tab.classList.add(`active`);
     tab.scrollIntoView();
     view.focus();
+    const currentURL = location.toString().replace(location.search, ``);
+    const viewURL = `${currentURL}?view=${fileEntry.path}`;
+    history.replaceState(null, null, viewURL);
   });
   close.addEventListener(`pointerdown`, () => {
     let newTab;

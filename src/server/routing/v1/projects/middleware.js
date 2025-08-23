@@ -176,6 +176,7 @@ export async function loadProject(req, res, next) {
 
   const settings = loadSettingsForProject(projectId);
   res.locals.projectSettings = settings;
+  res.locals.viewFile = req.query.view;
 
   next();
 }
