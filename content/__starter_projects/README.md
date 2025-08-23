@@ -19,7 +19,7 @@ A basic `settings.json` will look like:
 
 Note that your starter _must_ have a `run_script`, otherwise nothing will happen when folks try to remix it.
 
-In addition to the `description` and `run_script` keys, any other key from the `ProjectSettings` model (which maps to the `project_container_settings` table in the database) can be used. For example, the web graphics starter uses the following settings:
+In addition to the `description` and `run_script` keys, any other key from the `ProjectSettings` model (which maps to the `project_settings` table in the database) can be used. For example, the web graphics starter uses the following settings:
 
 ```json
 {

@@ -127,7 +127,7 @@ export const Models = {
   Admin: new Model(`admin_table`),
   Login: new Model(`user_logins`),
   Project: new Model(`projects`),
-  ProjectSettings: new Model(`project_container_settings`),
+  ProjectSettings: new Model(`project_settings`),
   ProjectSuspension: new Model(`suspended_projects`),
   Remix: new Model(`remix`),
   StarterProject: new Model(`starter_projects`),

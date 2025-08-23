@@ -68,7 +68,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS remix_ids ON remix(original_id, project_id);
 
 -- project settings
 
-CREATE TABLE IF NOT EXISTS project_container_settings (
+CREATE TABLE IF NOT EXISTS project_settings (
   project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
   default_file TEXT,
   default_collapse TEXT,
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS project_container_settings (
   env_vars TEXT
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS container_ids ON project_container_settings(project_id);
+CREATE UNIQUE INDEX IF NOT EXISTS container_ids ON project_settings(project_id);
 
 -- project suspension
 

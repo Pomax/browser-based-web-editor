@@ -384,7 +384,7 @@ async function setupSqlite() {
       result = db.prepare(`SELECT * FROM projects WHERE name = ?`).get(name);
       const { id } = result;
       db.prepare(
-        `INSERT INTO project_container_settings (project_id, default_file, default_collapse, run_script) VALUES (?,?)`
+        `INSERT INTO project_settings (project_id, default_file, default_collapse, run_script) VALUES (?,?)`
       ).run(id, default_file ?? ``, default_collapse ?? ``, run_script);
       db.prepare(`INSERT INTO starter_projects (project_id) VALUES (?)`).run(
         id
@@ -396,7 +396,7 @@ async function setupSqlite() {
         id
       );
       db.prepare(
-        `UPDATE project_container_settings SET default_file=?, default_collapse=?, run_script=? WHERE project_id=?`
+        `UPDATE project_settings SET default_file=?, default_collapse=?, run_script=? WHERE project_id=?`
       ).run(default_file ?? ``, default_collapse ?? ``, run_script, id);
     }
   });
