@@ -12,7 +12,7 @@ import {
 
 import { lstat } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { getAccessFor, MEMBER } from "../../../database.js";
+import { getAccessFor, MEMBER } from "../../../database/index.js";
 
 import {
   CONTENT_DIR,

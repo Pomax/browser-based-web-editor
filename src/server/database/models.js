@@ -1,0 +1,136 @@
+import sqlite3 from "better-sqlite3";
+import { composeWhere } from "./utils.js";
+
+const DEBUG_SQL = false;
+
+// not quite a fan of this, so this solution may change in the future:
+export const UNKNOWN_USER = -1;
+export const NOT_ACTIVATED = -2;
+export const OWNER = 30; // full access, can delete projects
+export const EDITOR = 20; // edit access, cannot delete projects, can edit project settings
+export const MEMBER = 10; // edit access, cannot edit project settings
+
+// We're in ./src/server/database, and we want ./data
+const dbPath = `${import.meta.dirname}/../../../data/data.sqlite3`;
+const db = sqlite3(dbPath);
+db.pragma("foreign_keys = ON");
+
+/**
+ * Let's define a generic model class, because we're just making things work right now.
+ */
+class Model {
+  constructor(table) {
+    this.table = table;
+  }
+
+  /**
+   * Save a record - if the primary key is not "id", you
+   * will need to explicitly specify it as second argument.
+   */
+  save(record, primaryKey = `id`) {
+    const pval = record[primaryKey];
+    delete record[primaryKey];
+    const update = Object.keys(record)
+      .map((k) => `${k} = ?`)
+      .join(`, `);
+    const values = Object.values(record);
+    const sql = `UPDATE ${this.table} SET ${update} WHERE ${primaryKey} = ?`;
+    if (DEBUG_SQL) console.log(`UPDATE`, sql, values);
+    db.prepare(sql).run(...values, pval);
+  }
+
+  /**
+   * This one should be self-explanatory. Find a record.
+   */
+  find(where) {
+    return this.findAll(where)[0];
+  }
+
+  /**
+   * This all records that match our where criteria.
+   */
+  findAll(where) {
+    const { filter, values } = composeWhere(where);
+    const sql = `SELECT * FROM ${this.table} WHERE ${filter}`;
+    if (DEBUG_SQL) console.log(`FIND`, sql, values);
+    return db.prepare(sql).all(values).filter(Boolean);
+  }
+
+  /**
+   * Get me all records. You get a choice in ordering, but
+   * you probably want to make sure that you're not using
+   * this with a million-row table or the like =D
+   */
+  all(sortKey, sortDir = `ASC`) {
+    let sql = `SELECT * FROM ${this.table}`;
+    if (sortKey) {
+      sql = `${sql} ORDER BY ${sortKey} ${sortDir}`;
+    }
+    return db.prepare(sql).all();
+  }
+
+  /**
+   * Insert a record into this table, using the column values
+   * in the colVals object. Columns that, in the database, have
+   * a default value may be left off.
+   */
+  insert(colVals) {
+    const keys = Object.keys(colVals);
+    const values = Object.values(colVals);
+    const sql = `INSERT INTO ${this.table} (${keys.join(`,`)}) VALUES (${keys.map((v) => `?`).join(`,`)})`;
+    if (DEBUG_SQL) console.log(`INSERT`, sql, values);
+    db.prepare(sql).run(...values);
+  }
+
+  /**
+   * Does what it says in the function name.
+   */
+  findOrCreate(where = {}) {
+    const row = this.find(where);
+    if (row) return row;
+    this.insert(where);
+    return this.find(where);
+  }
+
+  /**
+   * Create a new record in this table. Does a find() first, to
+   * make sure you're not trying to create a record that already
+   * exists. If that happens, you generally want to update your
+   * code to use findOrCreate instead in that codepath.
+   */
+  create(where = {}) {
+    if (DEBUG_SQL) console.log(`CREATE with`, where);
+    const record = this.find(where);
+    if (record) throw new Error(`record already exists`);
+    this.insert(where);
+    return this.find(where);
+  }
+
+  /**
+   * I hope you're sure, because there's no undelete.
+   * I also hope you remembered to specify "where" constraints,
+   * because if you didn't, your table WILL BE EMPTY after
+   * this call completes, which is almost certainly not what
+   * you were trying to do!!!
+   */
+  delete(where) {
+    const { filter, values } = composeWhere(where);
+    const sql = `DELETE FROM ${this.table} WHERE ${filter}`;
+    if (DEBUG_SQL) console.log(`DELETE`, sql, values);
+    return db.prepare(sql).run(values);
+  }
+}
+
+// And then let's create some models!
+export const Models = {
+  Access: new Model(`project_access`),
+  Admin: new Model(`admin_table`),
+  Login: new Model(`user_logins`),
+  Project: new Model(`projects`),
+  ProjectSettings: new Model(`project_container_settings`),
+  ProjectSuspension: new Model(`suspended_projects`),
+  Remix: new Model(`remix`),
+  StarterProject: new Model(`starter_projects`),
+  User: new Model(`users`),
+  UserSuspension: new Model(`suspended_users`),
+};

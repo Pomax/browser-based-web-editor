@@ -1,4 +1,4 @@
-import * as Database from "../../../database.js";
+import * as Database from "../../../database/index.js";
 import * as Docker from "../../../../docker/docker-helpers.js";
 import * as ProjectRoutes from "../projects/middleware.js";
 

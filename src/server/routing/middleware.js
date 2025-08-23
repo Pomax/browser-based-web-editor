@@ -13,7 +13,7 @@ import {
   getUserSuspensions,
   hasAccessToUserRecords,
   getStarterProjects,
-} from "../database.js";
+} from "../database/index.js";
 
 import { CONTENT_DIR } from "../helpers.js";
 

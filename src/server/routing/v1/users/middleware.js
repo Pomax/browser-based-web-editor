@@ -1,4 +1,4 @@
-import * as Database from "../../../database.js";
+import * as Database from "../../../database/index.js";
 
 export function getUserSettings(req, res, next) {
   const { user } = res.locals.lookups ?? {};

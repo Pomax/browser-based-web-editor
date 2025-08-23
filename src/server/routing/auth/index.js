@@ -3,7 +3,7 @@ import { passport } from "./middleware.js";
 import { Strategy as GitHubStrategy } from "passport-github2";
 import { Strategy as MagicLoginStrategy } from "passport-magic-link";
 import { loginWithGithub, handleGithubCallback, logout } from "./middleware.js";
-import { processUserLogin } from "../../database.js";
+import { processUserLogin } from "../../database/index.js";
 
 export function addPassportAuth(app) {
   app.use(passport.initialize());

@@ -39,7 +39,7 @@ import {
   projectSuspendedThroughOwner,
   recordProjectRemix,
   updateSettingsForProject,
-} from "../../../database.js";
+} from "../../../database/index.js";
 
 import { removeCaddyEntry } from "../../../../caddy/caddy.js";
 
