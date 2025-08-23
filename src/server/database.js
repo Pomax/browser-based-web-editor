@@ -270,6 +270,22 @@ export function recordProjectRemix(originalId, projectId) {
   Remix.create({ original_id: originalId, project_id: projectId });
 }
 
+export function copyProjectSettings(originalId, projectId) {
+  // Copy over the project description
+  let source = getProject(originalId);
+  let target = getProject(projectId);
+  target.description = source.description;
+  Project.save(target);
+  // And create a new project settings entry
+  source = ProjectSettings.find({ project_id: originalId });
+  target = ProjectSettings.find({ project_id: projectId });
+  target.run_script = source.run_script;
+  target.default_file = source.default_file;
+  target.default_collapse = source.default_collapse;
+  ProjectSettings.save(target, `project_id`);
+  return target;
+}
+
 export function getAccessFor(userName, projectName) {
   if (!userName) return UNKNOWN_USER;
   const u = User.find({ name: userName });

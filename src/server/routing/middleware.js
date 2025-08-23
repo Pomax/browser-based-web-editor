@@ -167,12 +167,8 @@ export function bindCommonValues(req, res, next) {
     try {
       res.locals.lookups.project = getProject(projectName);
     } catch (e) {
-      if (res.locals.routeWithoutProject) {
-        res.locals.projectName = projectName;
-      } else {
-        console.error(e);
-        return next(e);
-      }
+      console.error(e);
+      return next(e);
     }
   }
 

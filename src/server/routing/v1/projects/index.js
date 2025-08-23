@@ -9,7 +9,6 @@ import {
 
 import {
   checkContainerHealth,
-  createProject,
   createProjectDownload,
   deleteProject,
   getProjectSettings,
@@ -17,7 +16,6 @@ import {
   loadProjectHistory,
   remixProject,
   restartContainer,
-  routeWithoutProject,
   updateProjectSettings,
 } from "./middleware.js";
 
@@ -25,21 +23,6 @@ import { getDirListing } from "../files/middleware.js";
 
 import { Router } from "express";
 export const projects = Router();
-
-/**
- * Create a project by name (using res.params.project)
- */
-projects.post(
-  // OBSOLETE ROUTE, ONLY HERE UNTIL THE CODE HAS BEEN SWITCHED
-  // OVER TO REMIXING STARTERS INSTEAD OF "CREATING FROM"
-  `/create/:starter/:project`,
-  verifyLogin,
-  routeWithoutProject,
-  bindCommonValues,
-  createProject,
-  loadProject,
-  (_req, res) => res.send(`ok`)
-);
 
 /**
  * Delete a project by name
@@ -140,7 +123,7 @@ projects.get(
   verifyLogin,
   bindCommonValues,
   remixProject,
-  (req, res) => res.redirect(`/v1/projects/edit/${res.locals.newProjectName}`)
+  (req, res) => res.send(`/v1/projects/edit/${res.locals.newProjectName}`)
 );
 
 /**

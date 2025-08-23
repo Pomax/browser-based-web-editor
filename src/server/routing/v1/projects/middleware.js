@@ -29,10 +29,12 @@ import {
 import {
   MEMBER,
   OWNER,
+  copyProjectSettings,
   createProjectForUser,
   deleteProjectForUser,
   getAccessFor,
   getProjectSuspensions,
+  isStarterProject,
   loadSettingsForProject,
   projectSuspendedThroughOwner,
   recordProjectRemix,
@@ -42,33 +44,6 @@ import {
 import { removeCaddyEntry } from "../../../../caddy/caddy.js";
 
 /**
- * Mark this route as "create or remix" so that a bad
- * project name (i.e. a name that has no db record) does
- * not lead to a route error but instead ends up setting
- * the res.locals.projectName property
- *
- * TODO: this is a tempoerary measure until we remove the
- *       create route in favour of purely remixing.
- */
-export async function routeWithoutProject(req, res, next) {
-  res.locals.routeWithoutProject = true;
-  next();
-}
-
-/**
- * ...docs go here...
- */
-export async function createProject(req, res, next) {
-  const { user, projectName, starter } = res.locals;
-  const source = starter.name;
-  console.log(`calling cloneProject(${source}, ${projectName})`);
-  cloneProject(source, projectName);
-  const { project } = createProjectForUser(user.name, projectName);
-  res.locals.lookups.project = project;
-  next();
-}
-
-/**
  * ...docs go here...
  */
 export async function remixProject(req, res, next) {
@@ -76,9 +51,11 @@ export async function remixProject(req, res, next) {
   const { project } = lookups;
 
   const newProjectName = (res.locals.newProjectName =
-    `${userName}-${projectName}`.toLocaleLowerCase());
+    `${user.name}-${project.name}`.toLocaleLowerCase());
 
-  cloneProject(project.name, newProjectName, false);
+  const isStarter = isStarterProject(project.id);
+
+  cloneProject(project.name, newProjectName, isStarter);
 
   try {
     const { project: newProject } = createProjectForUser(
@@ -86,25 +63,30 @@ export async function remixProject(req, res, next) {
       newProjectName
     );
     recordProjectRemix(project.id, newProject.id);
-    // TODO: copy project settings (description and run_script);
+    const s = copyProjectSettings(project.id, newProject.id);
+    const containerDir = join(CONTENT_DIR, newProjectName, `.container`);
+    const runScript = join(containerDir, `run.sh`);
+    writeFileSync(runScript, s.run_script);
+    if (isStarter) rmSync(join(containerDir, `settings.json`));
+    next();
   } catch (e) {
     console.error(e);
     return next(e);
   }
-  next();
 }
 
 /**
  * ...docs go here...
  * @param {*} source
  * @param {*} projectName
- * @param {*} isStarter
  */
-function cloneProject(source, projectName, isStarter = true) {
+function cloneProject(source, projectName, isStarter) {
   const dir = join(CONTENT_DIR, projectName);
+
   if (isStarter) {
     source = `__starter_projects/${source || `empty`}`;
   }
+
   if (!existsSync(dir)) {
     mkdirSync(dir);
     cpSync(dir.replace(projectName, source), dir, { recursive: true });
@@ -224,13 +206,15 @@ export async function updateProjectSettings(req, res, next) {
   const { id: projectId, name: projectName } = project;
   const { run_script, env_vars } = settings;
 
-  const newSettings = Object.fromEntries(
-    Object.entries(req.body).map(([k, v]) => [k, v.value.trim()])
-  );
+  const newSettings =
+    res.locals.newSettings ??
+    Object.fromEntries(
+      Object.entries(req.body).map(([k, v]) => [k, v.value.trim()])
+    );
 
   const newName = newSettings.name;
-  const newDir = join(CONTENT_DIR, newSettings.name);
-  const containerDir = join(CONTENT_DIR, projectName, `.container`);
+  const newDir = join(CONTENT_DIR, newName);
+  c;
 
   if (projectName !== newName) {
     if (existsSync(newDir)) {

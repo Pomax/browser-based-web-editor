@@ -2,26 +2,21 @@
  * Hook up the "create project" button
  */
 const create = document.getElementById(`create-project-form`);
-const input = document.querySelector(`input`);
-const starter = document.querySelector(`select`);
-const button = document.querySelector(`button`);
+const starter = create.querySelector(`select`);
+const button = create.querySelector(`button`);
 
-if (input && starter && button) {
-  document.querySelectorAll(`[disabled]`).forEach((e) => (e.disabled = false));
+if (starter && button) {
+  create.querySelectorAll(`[disabled]`).forEach((e) => (e.disabled = false));
   const createProject = async (evt) => {
-    const projectName = input.value;
-    const type = starter.value || `empty`;
-    if (confirm(`Create ${type} project "${projectName}"?`)) {
-      await fetch(`/v1/projects/create/${type}/${projectName}`, {
-        method: `POST`,
-      });
-      location.reload();
+    const starterName = starter.value || `empty`;
+    if (confirm(`Create new ${starterName} project ?`)) {
+      const url = await fetch(`/v1/projects/remix/${starterName}`).then((r) =>
+        r.text()
+      );
+      console.log(`got url ${url}`);
+      location = url;
     }
   };
-  input.addEventListener(
-    `keydown`,
-    ({ key }) => key === `Enter` && button.click()
-  );
   button.addEventListener(`click`, createProject);
 
   /**

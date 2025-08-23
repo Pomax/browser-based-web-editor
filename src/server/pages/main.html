@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="./css/layout.css" />
     <link rel="stylesheet" href="./css/editor.css" />
     <link rel="stylesheet" href="./css/main.css" />
-    <script src="js/main.js" async defer></script>
   </head>
   <body>
     <h1>Welcome</h1>
@@ -54,10 +53,7 @@
           value="{{ s }}"
           {% if s === "basic-nodejs" %}selected{% endif %}>{{ s }}</option>
         {% endfor %}
-      </select>
-      as new project called:
-      <input disabled name="name" type="text" placeholder="project name" />
-      <button disabled>create new project</button>
+      </select> as new project <button disabled>go!</button>
     </div>
 
     <h2>Your projects:</h2>
@@ -69,5 +65,7 @@
     {% endif %}
 
     {% include "fragments/edit.html" %}
+
+    <script src="js/main.js" async defer></script>
   </body>
 </html>

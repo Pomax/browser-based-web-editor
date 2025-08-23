@@ -373,7 +373,8 @@ async function setupSqlite() {
   starters.forEach((name) => {
     const settingsFile = `${starterDir}/${name}/.container/settings.json`;
     const settings = JSON.parse(readFileSync(settingsFile).toString());
-    const { description, run_script } = settings;
+    const { description, run_script, default_file, default_collapse } =
+      settings;
 
     // Create or update the project record:
     let result = db.prepare(`SELECT * FROM projects WHERE name = ?`).get(name);
@@ -385,8 +386,8 @@ async function setupSqlite() {
       result = db.prepare(`SELECT * FROM projects WHERE name = ?`).get(name);
       const { id } = result;
       db.prepare(
-        `INSERT INTO project_container_settings (project_id, run_script) VALUES (?,?)`
-      ).run(id, run_script);
+        `INSERT INTO project_container_settings (project_id, default_file, default_collapse, run_script) VALUES (?,?)`
+      ).run(id, default_file ?? ``, default_collapse ?? ``, run_script);
       db.prepare(`INSERT INTO starter_projects (project_id) VALUES (?)`).run(
         id
       );
@@ -397,8 +398,8 @@ async function setupSqlite() {
         id
       );
       db.prepare(
-        `UPDATE project_container_settings SET run_script=? WHERE project_id=?`
-      ).run(run_script, id);
+        `UPDATE project_container_settings SET default_file=?, default_collapse=?, run_script=? WHERE project_id=?`
+      ).run(default_file ?? ``, default_collapse ?? ``, run_script, id);
     }
   });
 }
