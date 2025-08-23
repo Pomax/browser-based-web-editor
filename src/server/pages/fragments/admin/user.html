@@ -22,8 +22,10 @@
       <button>enable</button>
     </form>
     {% endif %}
-    <form action="/v1/admin/user/delete/{{ user.id }}" method="post">
-      <button>delete</button>
+    <form action="/v1/admin/user/delete/{{ user.id }}" method="post" disabled>
+      <fieldset disabled>
+        <button>delete</button>
+      </fieldset>
     </form>
     {% endif %}
   </td>

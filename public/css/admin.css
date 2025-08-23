@@ -1,25 +1,51 @@
 html {
   body {
     fieldset {
+      display: inline-block;
+      border: none;
+      margin: 0;
+      padding: 0;
+
       & + fieldset {
         margin-top: 1em;
       }
-      table {
-        tr {
-          th:not(:empty) {
-            border-bottom: 1px solid grey;
-          }
-          td {
-            padding: 0 1em;
-            form {
-              display: inline-block;
-              & + form {
-                margin-left: 1em;
-              }
+
+      button.enabled {
+        box-shadow: 0 0 1px 1px lime;
+      }
+
+      &[disabled] button.enabling {
+        animation: enabling 2s linear;
+      }
+    }
+    table {
+      tr {
+        th:not(:empty) {
+          border-bottom: 1px solid grey;
+        }
+        td {
+          padding: 0 1em;
+          form {
+            display: inline-block;
+            & + form {
+              margin-left: 1em;
             }
           }
         }
       }
     }
+  }
+}
+
+@keyframes enabling {
+  0% {
+    opacity: 0.5;
+    color: inherit;
+    box-shadow: 0 0 0 0 red;
+  }
+  100% {
+    opacity: 1;
+    color: black;
+    box-shadow: 0 0 10px 0 red;
   }
 }

@@ -1,7 +1,11 @@
 <tr>
   <td>{{ project.id }}</td>
   <td>
-    <a href="https://{{ WEB_EDITOR_HOSTNAME }}/v1/projects/edit/{{ project.name }}" target="_blank">{{ project.name }}</a>
+    <a
+      href="https://{{ WEB_EDITOR_HOSTNAME }}/v1/projects/edit/{{ project.name }}"
+      target="_blank"
+      >{{ project.name }}</a
+    >
   </td>
   <td>{{ project.description }}</td>
   <td>{{ project.created_at | year }}</td>
@@ -13,14 +17,17 @@
     </form>
     {% endif %}
     <form action="/v1/admin/project/delete/{{ project.id }}" method="post">
-      <button>delete</button>
+      <fieldset disabled>
+        <button>delete</button>
+      </fieldset>
     </form>
   </td>
 </tr>
 
-
 {% if project.suspensions.length %}
-<tr><td colspan="5">&nbsp;</td></tr>
+<tr>
+  <td colspan="5">&nbsp;</td>
+</tr>
 {% for s in project.suspensions |reverse %}
 <tr>
   <td></td>
@@ -31,10 +38,14 @@
     <form action="/v1/admin/project/unsuspend/{{ s.id }}" method="post">
       <button>lift suspension</button>
     </form>
-    {% else %}<em> Past suspension: "{{ s.reason }}" set {{ s.suspended_at}}
-    but invalidated on {{ s.invalidated_at | date }} </em>{% endif %}
+    {% else %}<em>
+      Past suspension: "{{ s.reason }}" set {{ s.suspended_at}} but invalidated
+      on {{ s.invalidated_at | date }} </em
+    >{% endif %}
   </td>
 </tr>
 {% endfor %}
-<tr><td colspan="6">&nbsp;</td></tr>
+<tr>
+  <td colspan="6">&nbsp;</td>
+</tr>
 {% endif %}
