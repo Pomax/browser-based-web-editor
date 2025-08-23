@@ -124,7 +124,7 @@ export function patchFile(req, res, next) {
   const patched = applyPatch(data, patch);
   if (patched) writeFileSync(fileName, patched);
   res.locals.fileHash = `${getFileSum(projectName, fileName, true)}`;
-  createRewindPoint(res.locals.projectName);
+  createRewindPoint(projectName);
   next();
 }
 

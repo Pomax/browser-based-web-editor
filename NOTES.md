@@ -1,8 +1,4 @@
-- refactor res.locals.projectThings to just res.locals.project
-
-- Verify that .env and build/run scripts update when saving project settings. And then also verify that remixing does the right thing (stripping the .env file)
-
-- When creating a project, make sure to bootstrap the run script off of what is in the .container dir
+- fix project renaming
 
 
 ===================

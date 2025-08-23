@@ -214,7 +214,6 @@ export async function updateProjectSettings(req, res, next) {
 
   const newName = newSettings.name;
   const newDir = join(CONTENT_DIR, newName);
-  c;
 
   if (projectName !== newName) {
     if (existsSync(newDir)) {

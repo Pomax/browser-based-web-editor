@@ -1,4 +1,6 @@
 {
   "description": "A 2D physics web graphics starter",
-  "run_script": "npx http-server -c-1 -p $PORT --cors"
+  "run_script": "npx http-server -c-1 -p $PORT --cors",
+  "default_file": "sketches/my-sketch.js",
+  "default_collapse": "graphics-element"
 }
