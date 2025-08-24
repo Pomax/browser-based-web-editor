@@ -1,5 +1,4 @@
 import { join, resolve } from "node:path";
-import { readdirSync } from "node:fs";
 
 import {
   NOT_ACTIVATED,
