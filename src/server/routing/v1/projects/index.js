@@ -83,7 +83,7 @@ projects.get(
  * Get the git log, to show all rewind points.
  */
 projects.get(
-  `/history/:project`,
+  `/history/:project/:commit?`,
   verifyLogin,
   bindCommonValues,
   verifyEditRights,

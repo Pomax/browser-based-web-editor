@@ -281,16 +281,27 @@ export function restartContainer(req, res, next) {
  */
 export async function loadProjectHistory(req, res, next) {
   const projectName = res.locals.lookups.project.name;
-  const cmd = `git log  --no-abbrev-commit --pretty=format:"%H%x09%ad%x09%s"`;
-  const output = await execPromise(cmd, {
-    cwd: join(CONTENT_DIR, projectName),
-  });
-  const parsed = output.split(`\n`).map((line) => {
-    let [hash, timestamp, reason] = line.split(`\t`).map((e) => e.trim());
-    reason = reason.replace(/^['"]?/, ``).replace(/['"]?$/, ``);
-    return { hash, timestamp, reason };
-  });
-  res.locals.history = parsed;
+  const { commit } = req.params;
+  if (commit) {
+    const cmd = `git show ${commit}`;
+    const output = await execPromise(cmd, {
+      cwd: join(CONTENT_DIR, projectName),
+    });
+    res.locals.history = {
+      commit: output,
+    };
+  } else {
+    const cmd = `git log --no-abbrev-commit --pretty=format:"%H%x09%ad%x09%s"`;
+    const output = await execPromise(cmd, {
+      cwd: join(CONTENT_DIR, projectName),
+    });
+    const parsed = output.split(`\n`).map((line) => {
+      let [hash, timestamp, reason] = line.split(`\t`).map((e) => e.trim());
+      reason = reason.replace(/^['"]?/, ``).replace(/['"]?$/, ``);
+      return { hash, timestamp, reason };
+    });
+    res.locals.history = parsed;
+  }
   next();
 }
 
