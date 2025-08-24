@@ -6,6 +6,7 @@ import express from "express";
 import nocache from "nocache";
 import helmet from "helmet";
 import ubase from "ubase.js";
+import { touch } from "./database/project.js";
 
 export const isWindows = process.platform === `win32`;
 export const npm = isWindows ? `npm. cmd` : `npm`;
@@ -37,6 +38,10 @@ export function getFreePort() {
   });
 }
 
+export function scrubDateTime(datetime) {
+  return datetime.replace(`T`, ` `).replace(`Z`, ``).replace(/\.\d+/, ``);
+}
+
 /**
  * Schedule a git commit to capture all changes since the last time we did that.
  * @param {*} projectName
@@ -45,11 +50,10 @@ export function getFreePort() {
 export function createRewindPoint(projectName, reason) {
   console.log(`scheduling rewind point`);
 
-  const now = new Date()
-    .toISOString()
-    .replace(`T`, ` `)
-    .replace(`Z`, ``)
-    .replace(/\.\d+/, ``);
+  // An edit happened, clearly, so touch the project.
+  touch(projectName);
+
+  const now = scrubDateTime(new Date().toISOString());
   reason = reason || `Autosave (${now})`;
 
   const dir = join(CONTENT_DIR, projectName);

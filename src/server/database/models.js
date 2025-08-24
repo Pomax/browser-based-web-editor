@@ -1,5 +1,6 @@
 import sqlite3 from "better-sqlite3";
 import { composeWhere } from "./utils.js";
+import { scrubDateTime } from "../helpers.js";
 
 const DEBUG_SQL = false;
 
@@ -38,7 +39,8 @@ class Model {
   save(record, primaryKey = `id`) {
     const pval = record[primaryKey];
     delete record[primaryKey];
-    if (record.updated_at) record.updated_at = new Date().toISOString();
+    if (record.updated_at)
+      record.updated_at = scrubDateTime(new Date().toISOString());
     const update = Object.keys(record)
       .map((k) => `${k} = ?`)
       .join(`, `);

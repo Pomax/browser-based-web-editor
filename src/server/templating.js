@@ -1,6 +1,6 @@
 // Set up the render engine:
 import nunjucks from "nunjucks";
-import { safify } from "./helpers.js";
+import { safify, scrubDateTime } from "./helpers.js";
 
 export function setupTemplating(app) {
   const nenv = nunjucks.configure("src/server/pages", {
@@ -19,9 +19,7 @@ export function setupTemplating(app) {
 
   nenv.addFilter(`year`, (str, count) => str?.split(/[ T]/)[0]);
 
-  nenv.addFilter(`date`, (str, count) =>
-    str?.replace(`T`, ` `).replace(`Z`, ``).replace(/\.\d+/, ``)
-  );
+  nenv.addFilter(`date`, (str, count) => scrubDateTime(str));
 
   nenv.addFilter(`shorthash`, (str, count) => str.substring(0, 16));
 

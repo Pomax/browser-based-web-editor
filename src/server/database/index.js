@@ -69,6 +69,7 @@ import {
   projectSuspendedThroughOwner,
   recordProjectRemix,
   suspendProject,
+  touch,
   unsuspendProject,
   updateSettingsForProject,
 } from "./project.js";
@@ -92,8 +93,9 @@ export {
   isStarterProject,
   loadSettingsForProject,
   projectSuspendedThroughOwner,
-  recordProjectRemix,
+  recordProjectRemix,  
   suspendProject,
+  touch,
   unsuspendProject,
   updateSettingsForProject,
 };

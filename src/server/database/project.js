@@ -38,6 +38,11 @@ export function getMostRecentProjects(projectCount) {
   `);
 }
 
+export function touch(projectNameOrId) {
+  const p = getProject(projectNameOrId);
+  Project.save(p);
+}
+
 /**
  * ...docs go here...
  */

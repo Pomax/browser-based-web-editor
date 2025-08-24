@@ -10,6 +10,7 @@ import {
 } from "./middleware.js";
 import { addPassportAuth } from "./auth/index.js";
 import { setupRoutesV1 } from "./v1/setup-routes.js";
+import { scrubDateTime } from "../helpers.js";
 
 const FIFTEEN_MINUTES_IN_MS = 15 * 60 * 1000;
 
@@ -17,11 +18,7 @@ const FIFTEEN_MINUTES_IN_MS = 15 * 60 * 1000;
  * Naive logging for dev work.
  */
 function log(req, _res, next) {
-  const time = new Date()
-    .toISOString()
-    .replace(`T`, ` `)
-    .replace(`Z`, ``)
-    .replace(/\.\d+$/, ``);
+  const time = scrubDateTime(new Date().toISOString());
   console.log(`${req.method} [${time}] ${req.url}`);
   next();
 }
