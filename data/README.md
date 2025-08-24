@@ -1,12 +1,12 @@
-# Data management
+To set up the database, run `node setup`.
 
-requirements:
+# git diffing
+
+If you want to diff sqlite3 databases, you may want to add the following to your git configuration:
 
 ```
-git config diff.sqlite3.binary true
-git config diff.sqlite3.textconv "echo .dump | sqlite3"
+git config --local diff.sqlite3.binary true
+git config --local diff.sqlite3.textconv "echo .dump | sqlite3"
 ```
 
-All sqlite3 connections must start with `PRAGMA foreign_keys = ON;`
-
-To create the db, run `sqlite3 data.sqlite3` and then `.read schema.sql`, optionally followed by a `.read seed.sql` to seed the database.
+While the code already does this, if you want to do any sqlite3 debugging, remember to always start your sessions with `PRAGMA foreign_keys = ON;` just in case.
