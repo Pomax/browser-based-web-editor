@@ -9,6 +9,8 @@ import {
   MEMBER,
 } from "./models.js";
 
+import { slugify } from "../helpers.js";
+
 export { UNKNOWN_USER, NOT_ACTIVATED, OWNER, EDITOR, MEMBER };
 
 const {
@@ -57,7 +59,10 @@ export function getOwnedProjectsForUser(userNameOrId) {
  */
 export function createProjectForUser(userName, projectName) {
   const u = User.find({ name: userName });
-  const p = Project.create({ name: projectName });
+  const p = Project.create({
+    name: projectName,
+    slug: slugify(projectName),
+  });
   Access.create({ project_id: p.id, user_id: u.id });
   ProjectSettings.create({ project_id: p.id });
   return { user: u, project: p };
@@ -77,6 +82,7 @@ export function copyProjectSettings(originalId, projectId) {
   // Copy over the project description
   let source = getProject(originalId);
   let target = getProject(projectId);
+  target.slug = slugify(target.name);
   target.description = source.description;
   Project.save(target);
   // And create a new project settings entry
@@ -151,6 +157,7 @@ export function updateSettingsForProject(projectId, settings) {
   if (p.name !== name) {
     if (!name.trim()) throw new Error(`Invalid project name`);
     p.name = name;
+    p.slug = slugify(name);
   }
   p.description = description;
   Project.save(p);

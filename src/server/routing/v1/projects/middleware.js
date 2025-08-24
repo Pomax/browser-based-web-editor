@@ -311,7 +311,7 @@ export async function deleteProject(req, res, next) {
   deleteContainerAndImage(projectName);
 
   console.log(`Removing ${projectName} from the filesystem`);
-  rmSync(`${CONTENT_DIR}/${projectName}`, {
+  rmSync(join(CONTENT_DIR, projectName), {
     recursive: true,
     force: true,
   });

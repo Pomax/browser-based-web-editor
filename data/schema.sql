@@ -50,11 +50,13 @@ CREATE INDEX IF NOT EXISTS suspended_user_names ON suspended_users(user_id);
 CREATE TABLE IF NOT EXISTS projects (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
+  slug TEXT NOT NULL UNIQUE,
   description TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS project_names ON projects(name);
+CREATE UNIQUE INDEX IF NOT EXISTS project_slugs ON projects(slug);
 
 CREATE TABLE IF NOT EXISTS starter_projects (
   project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE

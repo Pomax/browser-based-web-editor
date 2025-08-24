@@ -1,10 +1,11 @@
 import net from "node:net";
 import { readFileSync } from "node:fs";
-import { resolve, sep, posix } from "node:path";
+import { join, resolve, sep, posix } from "node:path";
 import { exec } from "node:child_process";
 import express from "express";
 import nocache from "nocache";
 import helmet from "helmet";
+import ubase from "ubase.js";
 
 export const isWindows = process.platform === `win32`;
 export const npm = isWindows ? `npm. cmd` : `npm`;
@@ -51,7 +52,7 @@ export function createRewindPoint(projectName, reason) {
     .replace(/\.\d+/, ``);
   reason = reason || `Autosave (${now})`;
 
-  const dir = `${CONTENT_DIR}/${projectName}`;
+  const dir = join(CONTENT_DIR, projectName);
   const debounce = COMMIT_TIMEOUTS[projectName];
 
   if (debounce) clearTimeout(debounce);
@@ -172,4 +173,18 @@ export function makeSafeProjectName(name) {
 
 export function safify(text) {
   return text.replaceAll(`<`, `&lt;`).replaceAll(`>`, `&gt;`);
+}
+
+export function slugify(text) {
+  return ubase
+    .basify(text)
+    .toLowerCase()
+    .replace(/\s+/g, `-`)
+    .replace(
+      /[\u0021-\u002C\u002E-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u00BF]+/g,
+      ``
+    )
+    .replace(/×/g, `x`)
+    .replace(/÷/g, ``)
+    .replace(/--+/g, `-`);
 }
