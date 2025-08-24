@@ -3,12 +3,15 @@ import express from "express";
 import { setDefaultAspects, execPromise } from "./helpers.js";
 import { setupRoutes } from "./routing/index.js";
 import { watchForRebuild } from "./watcher.js";
-import { startCaddy } from "../caddy/caddy.js";
+import { setupCaddy, startCaddy } from "../caddy/caddy.js";
 import { setupTemplating } from "./templating.js";
 
 // And our environment.
 import dotenv from "@dotenvx/dotenvx";
 dotenv.config({ quiet: true });
+
+// Reset our caddy file
+setupCaddy();
 
 // Quick check: does docker work?
 try {

@@ -320,6 +320,7 @@ export function unsuspendProject(suspensionId) {
 export function getProjectEnvironmentVariables(projectNameOrId) {
   const p = getProject(projectNameOrId);
   const { env_vars } = ProjectSettings.find({ project_id: p.id });
+  if (!env_vars) return [];
   return Object.fromEntries(
     env_vars
       .split(`\n`)

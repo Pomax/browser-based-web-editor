@@ -6,6 +6,19 @@ dotenv.config({ quiet: true });
 
 const { WEB_EDITOR_APPS_HOSTNAME } = process.env;
 const caddyFile = join(import.meta.dirname, `Caddyfile`);
+const defaultCaddyFile = join(import.meta.dirname, `Caddyfile.default`);
+
+/**
+ * Create (or reset) our Caddyfile
+ */
+export function setupCaddy() {
+  const { WEB_EDITOR_HOSTNAME, WEB_EDITOR_APPS_HOSTNAME } = process.env;
+  const config = readFileSync(defaultCaddyFile)
+    .toString()
+    .replace(`$WEB_EDITOR_HOSTNAME`, WEB_EDITOR_HOSTNAME)
+    .replace(`$WEB_EDITOR_APPS_HOSTNAME`, `*.${WEB_EDITOR_APPS_HOSTNAME}`);
+  writeFileSync(caddyFile, config);
+}
 
 /**
  * Ensure a local Caddyfile exists for us to work with

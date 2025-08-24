@@ -11,9 +11,12 @@
 
 import readline from "node:readline";
 import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import sqlite3 from "better-sqlite3";
 import dotenv from "@dotenvx/dotenvx";
+import { setupCaddy } from "./src/caddy/caddy.js";
 dotenv.config({ quiet: true });
 
 const stdin = readline.createInterface({
@@ -26,16 +29,18 @@ const BYPASS_FINISH = existsSync(`./data/data.sqlite3`);
 const DOCKER_MAINTENANCE = process.argv.includes(`--clean`);
 const noop = () => {};
 
-setup(
-  // do we have everything we need?
-  runNpmInstall,
-  checkDependencies,
-  // Excellent. Let's set everything up:
-  setupEnv,
-  setupDocker,
-  DOCKER_MAINTENANCE ? noop : setupCaddy,
-  DOCKER_MAINTENANCE ? noop : setupSqlite
-);
+const filePath = fileURLToPath(import.meta.url);
+const moduleDir = dirname(filePath);
+if (filePath.startsWith(process.argv[1])) {
+  setup(
+    runNpmInstall,
+    checkDependencies,
+    setupEnv,
+    setupDocker,
+    DOCKER_MAINTENANCE ? noop : setupCaddy,
+    DOCKER_MAINTENANCE ? noop : setupSqlite
+  );
+}
 
 // ---------------------------------------------------------------------------
 //  Functions get hoisted at load time, so we can declare them after our call
@@ -93,7 +98,7 @@ Run "npm start", log in, and have fun!
     // enables the user account, and flips the admin switch for it.
     else {
       const token = `${Math.random()}`.substring(2);
-      writeFileSync(`./.finish-setup`, token);
+      writeFileSync(join(moduleDir, `finish-setup`), token);
 
       console.log(`
 Setup complete.
@@ -123,23 +128,25 @@ function runNpmInstall() {
  * Verify we have all the tools necessary to run the codebase.
  */
 function checkDependencies() {
-  const git = checkForGit();
-  const docker = checkForDocker();
-  const caddy = checkForCaddy();
-  const sqlite = checkForSqlite();
-  if (!(git && docker && caddy && sqlite)) {
-    throw new Error(`Missing dependencies`);
+  const missing = [];
+  checkForGit(missing);
+  checkForDocker(missing);
+  checkForCaddy(missing);
+  checkForSqlite(missing);
+  if (missing.length) {
+    throw new Error(`Missing dependencies: ${missing.join(`, `)}`);
   }
 }
 
 /**
  * Generic "see if this command works" code.
  */
-function checkFor(cmd) {
+function checkFor(cmd, missing) {
   try {
     execSync(`${cmd} --version`, { env: process.env });
     return true;
   } catch (e) {
+    missing.push(cmd);
     console.log(e);
     console.error(`Command "${cmd}" does not appear to be available`);
   }
@@ -148,8 +155,8 @@ function checkFor(cmd) {
 /**
  * Make sure we have git installed.
  */
-function checkForGit() {
-  checkFor(`git`);
+function checkForGit(missing) {
+  checkFor(`git`, missing);
 }
 
 /**
@@ -157,8 +164,8 @@ function checkForGit() {
  * docker engine is running, because the docker CLI can't work without
  * that running in the background.
  */
-function checkForDocker() {
-  checkFor(`docker`);
+function checkForDocker(missing) {
+  checkFor(`docker`, missing);
   try {
     execSync(`docker ps`, { shell: true, stdio: STDIO });
     return true;
@@ -170,15 +177,15 @@ function checkForDocker() {
 /**
  * Is caddy installed?
  */
-function checkForCaddy() {
-  return checkFor(`caddy`);
+function checkForCaddy(missing) {
+  return checkFor(`caddy`, missing);
 }
 
 /**
  * Is sqlite3 installed?
  */
-function checkForSqlite() {
-  return checkFor(`sqlite3`);
+function checkForSqlite(missing) {
+  return checkFor(`sqlite3`, missing);
 }
 
 /**
@@ -266,8 +273,9 @@ codebase will read in every time it starts up.
 
   // (Re)generate the .env file
   writeFileSync(
-    `.env`,
-    `WEB_EDITOR_HOSTNAME=${WEB_EDITOR_HOSTNAME}
+    join(moduleDir, `.env`),
+    `LOCAL_DEV_TESTING=true
+WEB_EDITOR_HOSTNAME=${WEB_EDITOR_HOSTNAME}
 WEB_EDITOR_APPS_HOSTNAME=${WEB_EDITOR_APPS_HOSTNAME}
 WEB_EDITOR_IMAGE_NAME=${WEB_EDITOR_IMAGE_NAME}
 SESSION_SECRET=${randomSecret()}
@@ -335,24 +343,11 @@ function setupDocker() {
     });
   }
   writeFileSync(
-    `Dockerfile`,
+    join(moduleDir, `Dockerfile`),
     `FROM ${WEB_EDITOR_IMAGE_NAME}:latest
 CMD sh .container/run.sh
 `
   );
-}
-
-/**
- * If we have caddy available, check to see if there's a Caddyfile
- * in the right place, and if not, create it.
- */
-function setupCaddy() {
-  const { WEB_EDITOR_HOSTNAME, WEB_EDITOR_APPS_HOSTNAME } = process.env;
-  const caddyFile = readFileSync(`./src/caddy/Caddyfile.default`)
-    .toString()
-    .replace(`$WEB_EDITOR_HOSTNAME`, WEB_EDITOR_HOSTNAME)
-    .replace(`$WEB_EDITOR_APPS_HOSTNAME`, `*.${WEB_EDITOR_APPS_HOSTNAME}`);
-  writeFileSync(`./src/caddy/Caddyfile`, caddyFile);
 }
 
 /**
@@ -377,7 +372,13 @@ async function setupSqlite() {
     .filter((v) => !v.startsWith(`__`));
 
   starters.forEach((name) => {
-    const settingsFile = `${starterDir}/${name}/.container/settings.json`;
+    const settingsFile = join(
+      moduleDir,
+      starterDir,
+      name,
+      `.container`,
+      `settings.json`
+    );
     const settings = JSON.parse(readFileSync(settingsFile).toString());
     const { description, run_script, default_file, default_collapse } =
       settings;

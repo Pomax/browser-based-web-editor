@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="./css/main.css" />
   </head>
   <body>
-    <h1>Welcome!</h1>
+    <h1>Welcome{% if user %} back {{ user.name }}{% endif %}!</h1>
 
     {% if user %}
       {% include "main/logged-in.html" %}
