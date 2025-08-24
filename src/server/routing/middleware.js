@@ -15,7 +15,7 @@ import {
   getStarterProjects,
 } from "../database/index.js";
 
-import { CONTENT_DIR } from "../helpers.js";
+import { CONTENT_DIR, makeSafeProjectName } from "../helpers.js";
 
 /**
  * For when you really don't want response caching.
@@ -164,7 +164,7 @@ export function bindCommonValues(req, res, next) {
   }
 
   if (project) {
-    const projectName = project.toLowerCase().replace(/\s+/g, `-`);
+    const projectName = makeSafeProjectName(project);
     try {
       res.locals.lookups.project = getProject(projectName);
     } catch (e) {

@@ -16,7 +16,12 @@ import {
 } from "node:fs";
 import archiver from "archiver";
 
-import { CONTENT_DIR, execPromise, setupGit } from "../../../helpers.js";
+import {
+  CONTENT_DIR,
+  execPromise,
+  makeSafeProjectName,
+  setupGit,
+} from "../../../helpers.js";
 
 import {
   checkContainerHealth as dockerHealthCheck,
@@ -50,11 +55,10 @@ export async function remixProject(req, res, next) {
   const { user, lookups } = res.locals;
   const { project } = lookups;
 
-  const newName =
-    req.params.newname?.replaceAll(/\s+/g, `-`) ??
-    `${user.name}-${project.name}`;
-  const newProjectName = (res.locals.newProjectName = newName.toLowerCase());
-
+  const newName = makeSafeProjectName(
+    req.params.newname ?? `${user.name}-${project.name}`
+  );
+  const newProjectName = (res.locals.newProjectName = newName);
   const isStarter = isStarterProject(project.id);
 
   cloneProject(project.name, newProjectName, isStarter);

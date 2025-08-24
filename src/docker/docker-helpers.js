@@ -2,6 +2,7 @@ import { sep } from "node:path";
 import { getFreePort } from "../server/helpers.js";
 import { exec, execSync } from "child_process";
 import { removeCaddyEntry, updateCaddyFile } from "../caddy/caddy.js";
+import { getProjectEnvironmentVariables } from "../server/database/index.js";
 
 /**
  * ...docs go here...
@@ -43,8 +44,11 @@ export async function runContainer(projectName) {
     console.log(`- Starting container on port ${port}`);
     const runFlags = `--rm --stop-timeout 0 --name ${projectName}`;
     const bindMount = `--mount type=bind,src=.${sep}content${sep}${projectName},dst=/app`;
+    const envVars = Object.entries(getProjectEnvironmentVariables(projectName))
+      .map(([k, v]) => `-e ${k}="${v}"`)
+      .join(` `);
     const entry = `/bin/sh .container/run.sh`;
-    const runCommand = `docker run ${runFlags} ${bindMount} -p ${port}:8000 ${projectName} ${entry}`;
+    const runCommand = `docker run ${runFlags} ${bindMount} -p ${port}:8000 ${envVars} ${projectName} ${entry}`;
     console.log(runCommand);
     exec(runCommand);
   }

@@ -2,6 +2,9 @@ import net from "node:net";
 import { readFileSync } from "node:fs";
 import { resolve, sep, posix } from "node:path";
 import { exec } from "node:child_process";
+import express from "express";
+import nocache from "nocache";
+import helmet from "helmet";
 
 export const isWindows = process.platform === `win32`;
 export const npm = isWindows ? `npm. cmd` : `npm`;
@@ -135,4 +138,34 @@ export async function setupGit(dir, projectName) {
   ]) {
     await execPromise(`git config --local ${cfg}`, { cwd: dir });
   }
+}
+
+/**
+ *
+ * @param {*} app
+ */
+export function setDefaultAspects(app) {
+  app.set("etag", false);
+  app.use(nocache());
+  app.use(express.urlencoded({ extended: true }));
+  app.use(
+    helmet.contentSecurityPolicy({
+      directives: {
+        connectSrc: `* data: blob: 'unsafe-inline'`,
+        defaultSrc: `* data: mediastream: blob: filesystem: about: ws: wss: 'unsafe-eval' 'unsafe-inline'`,
+        fontSrc: `* data: blob: 'unsafe-inline'`,
+        frameAncestors: `* data: blob: 'unsafe-inline'`,
+        frameSrc: `* data: blob:`,
+        imgSrc: `* data: blob: 'unsafe-inline'`,
+        mediaSrc: `* data: blob: 'unsafe-inline'`,
+        scriptSrc: `* data: blob: 'unsafe-inline' 'unsafe-eval'`,
+        scriptSrcElem: `* data: blob: 'unsafe-inline'`,
+        styleSrc: `* data: blob: 'unsafe-inline'`,
+      },
+    })
+  );
+}
+
+export function makeSafeProjectName(name) {
+  return name.toLowerCase().replace(/\s+/g, `-`);
 }

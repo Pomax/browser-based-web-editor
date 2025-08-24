@@ -291,3 +291,14 @@ export function unsuspendProject(suspensionId) {
   s.invalidated_at = new Date().toISOString();
   ProjectSuspension.save(s);
 }
+
+export function getProjectEnvironmentVariables(projectNameOrId) {
+  const p = getProject(projectNameOrId);
+  const { env_vars } = ProjectSettings.find({ project_id: p.id });
+  return Object.fromEntries(
+    env_vars
+      .split(`\n`)
+      .map((v) => v.trim().split(`=`))
+      .map(([k, v]) => [k.trim(), v.trim()])
+  );
+}
