@@ -1,6 +1,7 @@
 export function composeWhere(where, suffix = []) {
   let filter = Object.entries(where)
     .map(([k, v]) => {
+      if (k === `updated_at`) return false;
       if (v === null || v === undefined) {
         suffix.push(`${k} IS NULL`);
         return false;

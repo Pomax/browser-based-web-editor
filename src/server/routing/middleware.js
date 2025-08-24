@@ -5,6 +5,7 @@ import {
   MEMBER,
   OWNER,
   getAccessFor,
+  getMostRecentProjects,
   getProject,
   getProjectListForUser,
   getUser,
@@ -217,6 +218,8 @@ export function loadProjectList(req, res, next) {
       req.session.projectList = list;
       req.session.save();
     }
+  } else {
+    req.session.projectList = getMostRecentProjects(5);
   }
   next();
 }

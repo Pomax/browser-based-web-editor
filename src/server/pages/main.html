@@ -10,64 +10,14 @@
     <link rel="stylesheet" href="./css/main.css" />
   </head>
   <body>
-    <h1>Welcome</h1>
+    <h1>Welcome!</h1>
 
-    {% if user %} Currently logged in as {{ user.name }}, click here to
-    <a href="/auth/github/logout">log out</a>{% if user.admin %} or click
-    here for the <a href="/v1/admin">admin interface</a>{% endif %}.
+    {% if user %}
+      {% include "main/logged-in.html" %}
     {% else %}
-    <p>You'll probably want to log in, either by:<p>
-    
-    <ul>
-      <li>using <a href="/auth/github">GitHub</a>, or by</li>
-      <li>
-        <form action="/auth/email" method="post">
-          <button>faking</button>
-          an
-          <input type="email" name="email" placeholder="email"/> signin.
-        </form>
-        <p>
-          This option only exists to do user testing with fake<br>
-          users, and doesn't actually send out any emails.<br>
-          The activation link gets logged to the console.
-        </p>
-      </li>
-    </ul>
-    
-    <p>
-      And instead of a cookie banner, you get an opt-in agreement: obviously
-      logins require storing enough information in a database to know enough
-      about you to constitute "personally identifiable information", and 
-      persistent login means cookies need to be set for session management,
-      so by logging in you're equally obviously okay with all of that. 
-    </p>
-    {% endif %} {% if projectList %}
-
-    <h2>Start a new project</h2>
-
-    <div id="create-project-form">
-      Remix:
-      <select name="starter">
-        {% for s in starters %}
-        {% set name = s.name %}
-        <option
-          value="{{ name }}"
-          data-description="{{ s.description }}"
-          {% if name === "basic-nodejs" %}selected{% endif %}>{{ name }}</option>
-        {% endfor %}
-      </select> <span class="description"></span> as a new project <button disabled>Let's go!</button>
-    </div>
-
-    <h2>Your projects:</h2>
-    <ul>
-      {% for project in projectList %}
-      {% include "fragments/project-card.html" %}
-      {% endfor %}
-    </ul>
+      {% include "main/anonymous.html" %}
     {% endif %}
-
-    {% include "fragments/edit.html" %}
-
+    
     <script src="js/main.js" async defer></script>
   </body>
 </html>

@@ -139,7 +139,7 @@ export async function loadProject(req, res, next) {
   const suspensions = getProjectSuspensions(projectName);
   if (suspensions.length) {
     suspended = true;
-    if (!user.admin)
+    if (!user?.admin)
       return next(
         new Error(
           `This project has been suspended (${suspensions.map((s) => `"${s.reason}"`).join(`, `)})`
@@ -149,7 +149,7 @@ export async function loadProject(req, res, next) {
 
   if (projectSuspendedThroughOwner(projectName)) {
     suspended = true;
-    if (!user.admin) {
+    if (!use?.admin) {
       return next(
         new Error(
           `This project has been suspended because its project owner is suspended`

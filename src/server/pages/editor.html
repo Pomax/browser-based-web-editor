@@ -32,7 +32,9 @@
           >✨</a
         >
         {% endif %}
+        {% if user and projectOnwer %}
         <button class="project-settings">settings</button>
+        {% endif %}
         {% if user and projectMember %}
         <button id="format" title="Make my code pretty!">🤩</button>
         {% endif %}

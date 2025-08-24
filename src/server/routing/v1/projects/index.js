@@ -58,12 +58,17 @@ projects.get(
  * or not they have permission to do so, when handling file operations.
  */
 projects.get(
-  // This is the editor.html route
   `/edit/:project`,
   bindCommonValues,
   loadProject,
+  // Make sure editor.html has all the render details
   (req, res) =>
-    res.render(`editor.html`, { ...res.locals, ...req.session, ...process.env })
+    res.render(`editor.html`, {
+      currentTime: Date.now(),
+      ...res.locals,
+      ...req.session,
+      ...process.env,
+    })
 );
 
 /**

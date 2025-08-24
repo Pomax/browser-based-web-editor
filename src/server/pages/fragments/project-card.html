@@ -1,28 +1,35 @@
+{# TODO: export to github button? #}
+
 <li>
   <h3>
-    <a href="https://{{ WEB_EDITOR_HOSTNAME }}/v1/projects/edit/{{ project.name }}"
+    <a
+      href="https://{{ WEB_EDITOR_HOSTNAME }}/v1/projects/edit/{{ project.name }}"
       >{{ project.name }}</a
     >
   </h3>
   {% if project.description %}
   <p>{{ project.description | para | safe}}</p>
-  {% endif %}
-  <p class="date">Created {{ project.created_at | year }}</p>
+  {% endif %} {% if user %}
   <button data-project-id="{{ project.id }}" class="edit-project">edit</button>
   <button data-project-name="{{ project.name }}" class="delete-project">
     delete
   </button>
+  {% endif %}
   <iframe
     width="1000"
     height="600"
-    src="https://{{ project.name }}.{{ WEB_EDITOR_APPS_HOSTNAME }}"
+    src="https://{{ project.name }}.{{ WEB_EDITOR_APPS_HOSTNAME }}/?v={{ currentTime }}"
   ></iframe>
-  <a href="https://{{ project.name }}.{{ WEB_EDITOR_APPS_HOSTNAME }}" target="_blank"
-    >Open in new tab</a
-  >
+  <p class="date">
+    Created {{ project.created_at | year }}, last updated {{ project.updated_at
+    | year }}
+  </p>
+  <p>
+    <a
+      class="website"
+      href="https://{{ project.name }}.{{ WEB_EDITOR_APPS_HOSTNAME }}"
+      target="_blank"
+      >Open as website in a new tab</a
+    >
+  </p>
 </li>
-
-<!--
-  TODO: export to github button?
--->
-  

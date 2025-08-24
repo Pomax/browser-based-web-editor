@@ -9,10 +9,13 @@ import {
   pageNotFound,
 } from "./middleware.js";
 import { addPassportAuth } from "./auth/index.js";
-import { setupRoutesV1 } from "./v1/index.js";
+import { setupRoutesV1 } from "./v1/setup-routes.js";
 
 const FIFTEEN_MINUTES_IN_MS = 15 * 60 * 1000;
 
+/**
+ * Naive logging for dev work.
+ */
 function log(req, _res, next) {
   const time = new Date()
     .toISOString()
@@ -23,16 +26,19 @@ function log(req, _res, next) {
   next();
 }
 
-function errorHandler(err, req, res, next) {
-  // TODO: we can do more here... maybe
+/**
+ * Our "last stop" error handler.
+ */
+function internalErrorHandler(err, req, res, next) {
+  console.error(err);
   res.status(500).send(err.message);
 }
 
-export function setupRoutes(app) {
-  // Add some poor man's logging
-  app.use(log);
-
-  // basic session properties, with sqlite store
+/**
+ * Session management, backed by a sqlite3 database
+ * so that sessions can be persisted across restarts.
+ */
+function addSessionManagement(app) {
   const SQLite3Store = betterSQLite3Store(session);
   const sessionsDB = new sqlite3("./data/sessions.sqlite3");
   app.use(
@@ -49,6 +55,17 @@ export function setupRoutes(app) {
       }),
     })
   );
+}
+
+/**
+ * The main function for this module: set up all URL responses.
+ */
+export function setupRoutes(app) {
+  // Add some poor man's logging
+  app.use(log);
+
+  // We're going to need sessions
+  addSessionManagement(app);
 
   // passport-mediated login routes
   addPassportAuth(app);
@@ -57,8 +74,18 @@ export function setupRoutes(app) {
   setupRoutesV1(app);
 
   // ...and the main page
-  app.get(`/`, bindCommonValues, loadProjectList, loadStarters, (req, res) =>
-    res.render(`main.html`, { ...res.locals, ...req.session, ...process.env })
+  app.get(
+    `/`,
+    bindCommonValues,
+    loadProjectList, // either user list, or global "most recent"
+    loadStarters,
+    (req, res) =>
+      res.render(`main.html`, {
+        currentTime: Date.now(),
+        ...process.env,
+        ...res.locals,
+        ...req.session,
+      })
   );
 
   // static routes for the website itself
@@ -69,5 +96,5 @@ export function setupRoutes(app) {
   app.use(pageNotFound);
 
   // And terminal error handling.
-  app.use(errorHandler);
+  app.use(internalErrorHandler);
 }

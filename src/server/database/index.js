@@ -6,7 +6,13 @@ import {
   MEMBER,
 } from "./models.js";
 
-export { UNKNOWN_USER, NOT_ACTIVATED, OWNER, EDITOR, MEMBER };
+export {
+  UNKNOWN_USER,
+  NOT_ACTIVATED,
+  OWNER,
+  EDITOR,
+  MEMBER,
+};
 
 // User related database functions
 import {
@@ -50,10 +56,11 @@ import {
   getAccessFor,
   getAllProjects,
   getIdForProjectName,
-  getProjectEnvironmentVariables,
+  getMostRecentProjects,
   getNameForProjectId,
   getOwnedProjectsForUser,
   getProject,
+  getProjectEnvironmentVariables,
   getProjectListForUser,
   getProjectSuspensions,
   getStarterProjects,
@@ -74,10 +81,11 @@ export {
   getAccessFor,
   getAllProjects,
   getIdForProjectName,
-  getProjectEnvironmentVariables,
+  getMostRecentProjects,
   getNameForProjectId,
   getOwnedProjectsForUser,
   getProject,
+  getProjectEnvironmentVariables,
   getProjectListForUser,
   getProjectSuspensions,
   getStarterProjects,

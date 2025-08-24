@@ -16,6 +16,14 @@ const db = sqlite3(dbPath);
 db.pragma(`foreign_keys = ON`);
 
 /**
+ * Generic "run me this SQL" function, because sometimes you need complex queries.
+ */
+export function runQuery(sql, values = []) {
+  if (DEBUG_SQL) console.log(`RUN QUERY`, sql, values);
+  return db.prepare(sql).all(...values);
+}
+
+/**
  * Let's define a generic model class, because we're just making things work right now.
  */
 class Model {
@@ -30,6 +38,7 @@ class Model {
   save(record, primaryKey = `id`) {
     const pval = record[primaryKey];
     delete record[primaryKey];
+    if (record.updated_at) record.updated_at = new Date().toISOString();
     const update = Object.keys(record)
       .map((k) => `${k} = ?`)
       .join(`, `);
@@ -37,6 +46,7 @@ class Model {
     const sql = `UPDATE ${this.table} SET ${update} WHERE ${primaryKey} = ?`;
     if (DEBUG_SQL) console.log(`UPDATE`, sql, values);
     db.prepare(sql).run(...values, pval);
+    record[primaryKey] = pval;
   }
 
   /**
@@ -61,10 +71,11 @@ class Model {
    * you probably want to make sure that you're not using
    * this with a million-row table or the like =D
    */
-  all(sortKey, sortDir = `ASC`) {
+  all(sortKeys, sortDir = `ASC`) {
+    if (sortKeys && !sortKeys.map) sortKeys = [sortKeys];
     let sql = `SELECT * FROM ${this.table}`;
-    if (sortKey) {
-      sql = `${sql} ORDER BY ${sortKey} ${sortDir}`;
+    if (sortKeys) {
+      sql = `${sql} ORDER BY ${sortKeys.join(`,`)} ${sortDir}`;
     }
     return db.prepare(sql).all();
   }

@@ -29888,7 +29888,7 @@ var fileTree = document.querySelector(`file-tree`);
 var tabs2 = document.getElementById(`tabs`);
 var editors = document.getElementById(`editors`);
 var settingsIcon = document.querySelector(`.project-settings`);
-settingsIcon.addEventListener(`click`, () => {
+settingsIcon?.addEventListener(`click`, () => {
   showEditDialog(projectId);
 });
 function setupEditorPanel(filename) {

@@ -2,9 +2,9 @@
  * Hook up the "create project" button
  */
 const create = document.getElementById(`create-project-form`);
-const starter = create.querySelector(`select`);
-const description = create.querySelector(`.description`);
-const button = create.querySelector(`button`);
+const starter = create?.querySelector(`select`);
+const description = create?.querySelector(`.description`);
+const button = create?.querySelector(`button`);
 
 if (starter && button) {
   create.querySelectorAll(`[disabled]`).forEach((e) => (e.disabled = false));

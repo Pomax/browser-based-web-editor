@@ -1,6 +1,7 @@
 import { stopContainer } from "../../docker/docker-helpers.js";
 
 import {
+  runQuery,
   Models,
   UNKNOWN_USER,
   NOT_ACTIVATED,
@@ -24,6 +25,18 @@ const {
 } = Models;
 
 import { getUser, getUserSuspensions } from "./user.js";
+
+export function getMostRecentProjects(projectCount) {
+  return runQuery(`
+    select *
+    from projects 
+    left join starter_projects as strt on strt.project_id=projects.id
+    left join suspended_projects as sus on sus.project_id=projects.id
+    where strt.project_id is null AND sus.project_id is null
+    order by updated_at DESC, created_at DESC
+    limit ${projectCount}
+  `);
+}
 
 /**
  * ...docs go here...
@@ -305,6 +318,7 @@ export function getProjectEnvironmentVariables(projectNameOrId) {
   return Object.fromEntries(
     env_vars
       .split(`\n`)
+      .filter((v) => v.includes(`=`))
       .map((v) => v.trim().split(`=`))
       .map(([k, v]) => [k.trim(), v.trim()])
   );

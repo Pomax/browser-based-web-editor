@@ -11,7 +11,7 @@ const editors = document.getElementById(`editors`);
 
 // "edit" button for editing project settings
 const settingsIcon = document.querySelector(`.project-settings`);
-settingsIcon.addEventListener(`click`, () => {
+settingsIcon?.addEventListener(`click`, () => {
   showEditDialog(projectId);
 });
 
