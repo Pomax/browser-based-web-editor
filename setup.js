@@ -113,26 +113,27 @@ do everything else.
 }
 
 /**
- * Install all npm dependencies for this codebase
+ * Install all npm dependencies for this codebase.
  */
 function runNpmInstall() {
   execSync(`npm i`, { shell: true, stdio: STDIO });
 }
 
 /**
- * Verify we have all the tools necessary to run the codebase
+ * Verify we have all the tools necessary to run the codebase.
  */
 function checkDependencies() {
+  const git = checkForGit();
   const docker = checkForDocker();
   const caddy = checkForCaddy();
   const sqlite = checkForSqlite();
-  if (!docker || !caddy || !sqlite) {
+  if (!(git && docker && caddy && sqlite)) {
     throw new Error(`Missing dependencies`);
   }
 }
 
 /**
- * Generic "see if this command works" code
+ * Generic "see if this command works" code.
  */
 function checkFor(cmd) {
   try {
@@ -142,6 +143,13 @@ function checkFor(cmd) {
     console.log(e);
     console.error(`Command "${cmd}" does not appear to be available`);
   }
+}
+
+/**
+ * Make sure we have git installed.
+ */
+function checkForGit() {
+  checkFor(`git`);
 }
 
 /**
