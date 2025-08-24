@@ -1,7 +1,11 @@
 html {
+  height: unset;
+  overflow: unset;
+
   body {
     overflow: auto !important;
     padding: 1em;
+    padding-bottom: 2em;
     ul {
       list-style: none;
       display: flex;
