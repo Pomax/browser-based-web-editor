@@ -5,9 +5,9 @@
     >
   </h3>
   {% if project.description %}
-  <p>{{ project.description }}</p>
+  <p>{{ project.description | para | safe}}</p>
   {% endif %}
-  <p class="date">Created {{ project.created_at }}</p>
+  <p class="date">Created {{ project.created_at | year }}</p>
   <button data-project-id="{{ project.id }}" class="edit-project">edit</button>
   <button data-project-name="{{ project.name }}" class="delete-project">
     delete
@@ -23,8 +23,6 @@
 </li>
 
 <!--
-  TODO: download button
-  TODO: export to github button
-  TODO: embed?
+  TODO: export to github button?
 -->
   

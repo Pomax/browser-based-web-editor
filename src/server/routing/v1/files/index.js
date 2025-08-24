@@ -1,5 +1,3 @@
-import { Router } from "express";
-
 // "route agnostic" middleware
 import {
   bindCommonValues,
@@ -21,6 +19,7 @@ import {
   formatFile,
 } from "./middleware.js";
 
+import { Router } from "express";
 export const files = Router();
 
 const prechecks = [verifyLogin, bindCommonValues, verifyEditRights];

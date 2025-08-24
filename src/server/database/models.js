@@ -13,7 +13,7 @@ export const MEMBER = 10; // edit access, cannot edit project settings
 // We're in ./src/server/database, and we want ./data
 const dbPath = `${import.meta.dirname}/../../../data/data.sqlite3`;
 const db = sqlite3(dbPath);
-db.pragma("foreign_keys = ON");
+db.pragma(`foreign_keys = ON`);
 
 /**
  * Let's define a generic model class, because we're just making things work right now.

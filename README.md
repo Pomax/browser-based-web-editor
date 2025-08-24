@@ -58,7 +58,7 @@ I have no advice here. This is probably not going to work for you, but if you wa
 To generate a new docker base image after updating the codebase, you can run:
 
 ```
-node setup --docker-cleanup
+node setup --clean
 ```
 
 This will leave any running containers alone, but clean up any "dead" containers based on the old image, generates a new local base image, after which any project container build to now use this new image instead.

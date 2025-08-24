@@ -169,3 +169,7 @@ export function setDefaultAspects(app) {
 export function makeSafeProjectName(name) {
   return name.toLowerCase().replace(/\s+/g, `-`);
 }
+
+export function safify(text) {
+  return text.replaceAll(`<`, `&lt;`).replaceAll(`>`, `&gt;`);
+}

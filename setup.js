@@ -23,7 +23,7 @@ const stdin = readline.createInterface({
 
 const STDIO = process.argv.includes(`--debug`) ? `inherit` : `ignore`;
 const BYPASS_FINISH = existsSync(`./data/data.sqlite3`);
-const DOCKER_MAINTENANCE = process.argv.includes(`--cleanup`);
+const DOCKER_MAINTENANCE = process.argv.includes(`--clean`);
 const noop = () => {};
 
 setup(

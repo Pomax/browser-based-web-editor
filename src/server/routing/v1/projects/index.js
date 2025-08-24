@@ -22,6 +22,7 @@ import {
 import { getDirListing } from "../files/middleware.js";
 
 import { Router } from "express";
+import multer from "multer";
 export const projects = Router();
 
 /**
@@ -91,31 +92,6 @@ projects.get(
 );
 
 /**
- * Allow the client to check project settings.
- */
-projects.get(
-  `/settings/:pid`,
-  verifyLogin,
-  bindCommonValues,
-  getProjectSettings,
-  (_req, res) => res.json(res.locals.settings)
-);
-
-/**
- * Update a project's settings
- */
-projects.post(
-  `/settings/:pid`,
-  verifyLogin,
-  bindCommonValues,
-  verifyOwner,
-  parseMultiPartBody,
-  getProjectSettings,
-  updateProjectSettings,
-  (_req, res) => res.send(`/v1/projects/edit/${res.locals.projectName}`)
-);
-
-/**
  * Remix a project
  */
 projects.get(
@@ -136,4 +112,30 @@ projects.post(
   verifyOwner,
   restartContainer,
   (_req, res) => res.send(`ok`)
+);
+
+/**
+ * Allow the client to check project settings.
+ */
+projects.get(
+  `/settings/:pid`,
+  verifyLogin,
+  bindCommonValues,
+  getProjectSettings,
+  (_req, res) => res.json(res.locals.settings)
+);
+
+/**
+ * Update a project's settings
+ */
+projects.post(
+  `/settings/:pid`,
+  verifyLogin,
+  bindCommonValues,
+  verifyOwner,
+  multer().none(),
+  getProjectSettings,
+  updateProjectSettings,
+  (_req, res) =>
+    res.send(`/v1/projects/edit/${res.locals.lookups.project.name}`)
 );

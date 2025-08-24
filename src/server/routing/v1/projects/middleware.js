@@ -213,11 +213,9 @@ export async function updateProjectSettings(req, res, next) {
   const { id: projectId, name: projectName } = project;
   const { run_script, env_vars } = settings;
 
-  const newSettings =
-    res.locals.newSettings ??
-    Object.fromEntries(
-      Object.entries(req.body).map(([k, v]) => [k, v.value.trim()])
-    );
+  const newSettings = Object.fromEntries(
+    Object.entries(req.body).map(([k, v]) => [k, v.trim()])
+  );
 
   const newName = newSettings.name;
   const newDir = join(CONTENT_DIR, newName);

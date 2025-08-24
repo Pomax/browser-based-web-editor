@@ -1,3 +1,7 @@
+-- we shouldn't need this but let's say it anyway:
+
+PRAGMA encoding = "UTF-8";
+
 -- make sure foreign constraints are enforced:
 
 PRAGMA foreign_keys = ON;
