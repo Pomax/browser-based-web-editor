@@ -86,7 +86,7 @@ Run `node setup`. Once that's done, you're good to go and you can simply run `np
 
 ## One-time Caddy permissions
 
-When you run the system, Caddy will set up a name binding when you switch projectsl. However, the first time you do that after having installed it, it will need your permission to add a new certificate authority to your OS's list of certificate authorities. You'll want to allow that, because otherwise localhost HTTPS won't work =)
+When you run the system, Caddy will set up a name binding when you switch projects. However, the first time you do that after having installed it, it will need your permission to add a new certificate authority to your OS's list of certificate authorities. You'll want to allow that, because otherwise localhost HTTPS won't work =)
 
 ## Edit syncing
 
