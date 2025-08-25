@@ -124,7 +124,9 @@ We're still in phase 1. We're close to phase 2! But we're still in phase 1.
 
 Look, it's the web. It's 20% HTML, 30% JavaScript, 50% CSS. 
 
-Just change the CSS and it'll look _nothing_ like this if you know what you're going. And if you need inspiration: let me remind you that the [CSS Zen Garden](https://csszengarden.com/) exists.
+Just change the CSS and it'll look _nothing_ like this if you know what you're doing (or not. It's CSS. You can make it as dumb or complicated as you want).
+
+And if you need inspiration: let me remind you that the [CSS Zen Garden](https://csszengarden.com/) exists.
 
 ## What can we currently do?
 
