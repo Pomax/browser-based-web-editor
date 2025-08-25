@@ -21,7 +21,7 @@ Once that finishes, things should be cross-platform enough to work on Windows, M
 
 The main page has a login link that uses github authentication (for now). After authenticating, you're dropped into what is basically a "profile-ish" view (which I'm sure will change in the future, but we're still in the PoC phase) where you can create new projects, load up projects you've made, and delete projects you no longer care about.
 
-Note that the first user to log in after the initial setup becomes the default admin user. Any admin user will have a link to the admin page available - that page does very little right now, but will eventually allow for tasks like enabling and (un)suspending users, (un)suspending projects, and performing container maintenance.
+Note that the first user to log in after the initial setup becomes the default admin user. Any admin user will have a link to the admin page available, which is a fairly bare bones but fully features, letting you enable/disable and (un)suspend users, or just delete their account (take that, spammers!), (un)suspend or delete projects, and perform container maintenance (which right now just means "hit the stop button" =D).
 
 Also note that there are, technically, two login options, but the second is a dev-only "magic link" email login form that doesn't actually email anyone. Its only purpose is to let admins create test user accounts for messing around with. Always fun to suspend or delete test users!
 
