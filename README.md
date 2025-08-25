@@ -1,6 +1,6 @@
 # Use the web to build the web
 
-<table border="1" cellpadding="0" cellspacing="0"><tr><td><img width="100%" src="public/screenshot.png"></td><tr></table>
+<img width="100%" style="border: 1px solid black" src="public/screenshot.png">
 
 This is an attempt at implementing a friendly browser-based web content editor, using [codemirror 6](https://codemirror.net), a [custom-file-tree](https://github.com/pomax/custom-file-tree) as file tree component (as codemirror itself only models single editing panels), and a sprinkling of docker for runtime isolation and a reverse proxy because we like opening https URLs, and we don't like having to remember port numbers.
 
@@ -94,6 +94,22 @@ File operations are persisted to the file system by sending diffs, with content 
 
 This is currently one-way, using POST operations, rather than two-way using websockets. There's nothing preventing websockets from being used, but (a) make it work first, and (b) websocket security doesn't exist, so we'd have to write a bunch of code to make all of that work well. We can do that later.
 
+## Any screenshots?
+
+Sure thing. Here's the main page if you're not logged in right now:
+
+<img width="100%" style="border: 1px solid black" src="public/anonymous-screenshot.png">
+
+Or, if you are and you have a bunch of cool projects made already:
+
+<img width="100%" style="border: 1px solid black" src="public/user-screenshot.png">
+
+Or of course, what if you're an admin?? O_O
+
+<img width="100%" style="border: 1px solid black" src="public/admin-screenshot.png">
+
+Okay that one needs work. You get the idea.
+
 ## This website looks... Spartan
 
 To reiterate on the previous paragraph, there's a decades old recipe for doing software development:
@@ -103,6 +119,12 @@ To reiterate on the previous paragraph, there's a decades old recipe for doing s
 3. make it nice
 
 We're still in phase 1. We're close to phase 2! But we're still in phase 1.
+
+## What is up with those colours??
+
+Look, it's the web. It's 20% HTML, 30% JavaScript, 50% CSS. 
+
+Just change the CSS and it'll look _nothing_ like this if you know what you're going. And if you need inspiration: let me remind you that the [CSS Zen Garden](https://csszengarden.com/) exists.
 
 ## What can we currently do?
 
