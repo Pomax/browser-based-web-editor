@@ -62,7 +62,7 @@ To generate a new docker base image after updating the codebase, you can run:
 node setup --clean
 ```
 
-This will leave any running containers alone, but clean up any "dead" containers based on the old image, generates a new local base image, after which any project container build to now use this new image instead.
+This will leave any running containers alone, but clean up any "dead" containers based on the old image, then generates a new local base image, after which any project container that gets built will use the new image instead. So if you need to "force people to update" you can run the `--clean` pass, then go into the admin page, stop all containers, and then whenever people try to load their site, that'll trigger an updated container build. Handy!
 
 ## What's Caddy?
 
