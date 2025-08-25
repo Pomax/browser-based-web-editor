@@ -10,7 +10,7 @@ This is an attempt at implementing a friendly browser-based web content editor, 
 1. You'll also need `git` installed. Normally that goes without saying, but in this case we're also using it as an under-the-hood tool for performing version control for project content so you can't just copy this repo's source code, you _need_ `git` installed properly.
 1. You'll also need docker installed, which has different instructions depending on the OS you're using.
 1. And you'll want `caddy` installed, for reverse-proxying container ports so you can just load https://projectname.localhost
-1. Finally, you need `sqlite3` installed. Rinse and repeat for linux or MacOs, on Windows you'll want to donwnload the `sqlite-tools-win-x64-somenumbershere.zip` from https://www.sqlite.org/download.html, create a `C:\Program Files\Sqlite3`, and unpack the zip file into that, then add that folder to your PATH (The "Docker" section below goes over how you do that for docker, just do the same for sqlite3).
+1. Finally, you need `sqlite3` installed. Rinse and repeat for linux or MacOs, on Windows you'll want to download the `sqlite-tools-win-x64-somenumbershere.zip` from https://www.sqlite.org/download.html, create a `C:\Program Files\Sqlite3`, and unpack the zip file into that, then add that folder to your PATH (The "Docker" section below goes over how you do that for docker, just do the same for sqlite3).
 
 With those prerequisites met:
 
@@ -21,9 +21,9 @@ Once that finishes, things should be cross-platform enough to work on Windows, M
 
 The main page has a login link that uses github authentication (for now). After authenticating, you're dropped into what is basically a "profile-ish" view (which I'm sure will change in the future, but we're still in the PoC phase) where you can create new projects, load up projects you've made, and delete projects you no longer care about.
 
-Note that the first user to log in after the initial setup becomes the default admin user. Any admin user will have a link to the admin page available - that page does very little right now, but will eventually allow for tasks like enabling and (un)suspending users, (un)suspending projects, and performing container maintenance.
+Note that the first user to log in after the initial setup becomes the default admin user. Any admin user will have a link to the admin page available, which is a fairly bare bones but fully features, letting you enable/disable and (un)suspend users, or just delete their account (take that, spammers!), (un)suspend or delete projects, and perform container maintenance (which right now just means "hit the stop button" =D).
 
-Also note that there are, technically, two login options, but the second is a dev-only "magic link" email login form that doesn't actually email anyone. Its only purpose is to let admins create test user accounts for messing around with. Always fun to suspend or delete test users!
+Also note that there are, technically, two login options _if the `LOCAL_DEV_TESTING` env var is set to `true`_ (which it will be, by default). This second option is a dev-only "magic link" email login form that doesn't actually email anyone and instead logs the activation link to the console's stdout... its only purpose is to let admins create test user accounts for messing around with. Always fun to suspend or delete test users!
 
 ## Docker?
 
@@ -62,7 +62,7 @@ To generate a new docker base image after updating the codebase, you can run:
 node setup --clean
 ```
 
-This will leave any running containers alone, but clean up any "dead" containers based on the old image, generates a new local base image, after which any project container build to now use this new image instead.
+This will leave any running containers alone, but clean up any "dead" containers based on the old image, then generates a new local base image, after which any project container that gets built will use the new image instead. So if you need to "force people to update" you can run the `--clean` pass, then go into the admin page, stop all containers, and then whenever people try to load their site, that'll trigger an updated container build. Handy!
 
 ## What's Caddy?
 
@@ -96,13 +96,13 @@ This is currently one-way, using POST operations, rather than two-way using webs
 
 ## This website looks... Spartan
 
-There's a decades old recipe for doing software development:
+To reiterate on the previous paragraph, there's a decades old recipe for doing software development:
 
 1. make it work,
 2. make it work properly (aka "make it fast", "make it secure", etc.),
 3. make it nice
 
-We're still in phase 1.
+We're still in phase 1. We're close to phase 2! But we're still in phase 1.
 
 ## What can we currently do?
 
