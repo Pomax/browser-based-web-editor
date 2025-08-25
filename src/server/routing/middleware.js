@@ -15,7 +15,7 @@ import {
   getStarterProjects,
 } from "../database/index.js";
 
-import { CONTENT_DIR, makeSafeProjectName } from "../helpers.js";
+import { CONTENT_DIR, makeSafeProjectName } from "../../helpers.js";
 
 /**
  * For when you really don't want response caching.

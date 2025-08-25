@@ -10,7 +10,7 @@ import {
   MEMBER,
 } from "./models.js";
 
-import { slugify } from "../helpers.js";
+import { slugify } from "../../helpers.js";
 
 export { UNKNOWN_USER, NOT_ACTIVATED, OWNER, EDITOR, MEMBER };
 
@@ -38,66 +38,6 @@ export function getMostRecentProjects(projectCount) {
   `);
 }
 
-export function touch(projectNameOrId) {
-  const p = getProject(projectNameOrId);
-  Project.save(p);
-}
-
-/**
- * ...docs go here...
- */
-export function getProjectListForUser(userNameOrId) {
-  const u = getUser(userNameOrId);
-  const projects = Access.findAll({ user_id: u.id });
-  return projects.map((p) => Project.find({ id: p.project_id }));
-}
-
-/**
- * ...docs go here...
- */
-export function getStarterProjects() {
-  // Would a JOIN be faster? Probably. Are we running at a
-  // scale where that matters? Hopefully never =)
-  return StarterProject.all().map((s) => Project.find({ id: s.project_id }));
-}
-
-export function isProjectSuspended(projectNameOrId) {
-  const p = getProject(projectNameOrId);
-  return !!ProjectSuspension.find({ project_id: p.id });
-}
-
-/**
- * ...docs go here...
- */
-export function getOwnedProjectsForUser(userNameOrId) {
-  const u = getUser(userNameOrId);
-  const access = Access.findAll({ user_id: u.id });
-  return access
-    .filter((a) => a.access_level === OWNER)
-    .map((a) => getProject(a.project_id));
-}
-
-/**
- * ...docs go here...
- */
-export function createProjectForUser(userName, projectName) {
-  const u = User.find({ name: userName });
-  const p = Project.create({
-    name: projectName,
-    slug: slugify(projectName),
-  });
-  Access.create({ project_id: p.id, user_id: u.id });
-  ProjectSettings.create({ project_id: p.id });
-  return { user: u, project: p };
-}
-
-/**
- * ...docs go here...
- */
-export function recordProjectRemix(originalId, projectId) {
-  Remix.create({ original_id: originalId, project_id: projectId });
-}
-
 /**
  * ...docs go here...
  */
@@ -121,13 +61,26 @@ export function copyProjectSettings(originalId, projectId) {
 /**
  * ...docs go here...
  */
-export function getAccessFor(userName, projectName) {
-  if (!userName) return UNKNOWN_USER;
+export function createProjectForUser(userName, projectName) {
   const u = User.find({ name: userName });
-  if (!u.enabled_at) return NOT_ACTIVATED;
-  const p = Project.find({ name: projectName });
-  const a = Access.find({ project_id: p.id, user_id: u.id });
-  return a ? a.access_level : UNKNOWN_USER;
+  const p = Project.create({
+    name: projectName,
+    slug: slugify(projectName),
+  });
+  Access.create({ project_id: p.id, user_id: u.id });
+  ProjectSettings.create({ project_id: p.id });
+  return { user: u, project: p };
+}
+
+/**
+ * ...docs go here...
+ */
+export function deleteProject(projectId) {
+  const p = getProject(projectId);
+  console.log(`deleting project ${p.name} with id ${p.id}`);
+  Access.delete({ project_id: p.id });
+  Project.delete(p);
+  // ON DELETE CASCADE should have taken care of everything else...
 }
 
 /**
@@ -157,57 +110,13 @@ export function deleteProjectForUser(userName, projectName, adminCall) {
 /**
  * ...docs go here...
  */
-export function loadSettingsForProject(projectId) {
-  const p = Project.find({ id: projectId });
-  const s = ProjectSettings.find({ project_id: p.id });
-  if (!s) return false;
-  const { name, description } = p;
-  const { project_id, ...settings } = s;
-  return {
-    name,
-    description,
-    ...settings,
-  };
-}
-
-/**
- * ...docs go here...
- */
-export function updateSettingsForProject(projectId, settings) {
-  const { name, description, ...containerSettings } = settings;
-
-  const p = Project.find({ id: projectId });
-  if (p.name !== name) {
-    if (!name.trim()) throw new Error(`Invalid project name`);
-    p.name = name;
-    p.slug = slugify(name);
-  }
-  p.description = description;
-  Project.save(p);
-
-  const s = ProjectSettings.find({ project_id: projectId });
-  Object.entries(containerSettings).forEach(([key, value]) => {
-    s[key] = value;
-  });
-  ProjectSettings.save(s, `project_id`);
-}
-
-/**
- * ...docs go here...
- */
-export function getNameForProjectId(projectId) {
-  const p = Project.find({ id: projectId });
-  if (!p) throw new Error("Project not found");
-  return p.name;
-}
-
-/**
- * ...docs go here...
- */
-export function getIdForProjectName(projectName) {
+export function getAccessFor(userName, projectName) {
+  if (!userName) return UNKNOWN_USER;
+  const u = User.find({ name: userName });
+  if (!u.enabled_at) return NOT_ACTIVATED;
   const p = Project.find({ name: projectName });
-  if (!p) throw new Error("Project not found");
-  return p.id;
+  const a = Access.find({ project_id: p.id, user_id: u.id });
+  return a ? a.access_level : UNKNOWN_USER;
 }
 
 /**
@@ -239,6 +148,35 @@ export function getAllProjects(omitStarters = true) {
 /**
  * ...docs go here...
  */
+export function getIdForProjectName(projectName) {
+  const p = Project.find({ name: projectName });
+  if (!p) throw new Error("Project not found");
+  return p.id;
+}
+
+/**
+ * ...docs go here...
+ */
+export function getNameForProjectId(projectId) {
+  const p = Project.find({ id: projectId });
+  if (!p) throw new Error("Project not found");
+  return p.name;
+}
+
+/**
+ * ...docs go here...
+ */
+export function getOwnedProjectsForUser(userNameOrId) {
+  const u = getUser(userNameOrId);
+  const access = Access.findAll({ user_id: u.id });
+  return access
+    .filter((a) => a.access_level === OWNER)
+    .map((a) => getProject(a.project_id));
+}
+
+/**
+ * ...docs go here...
+ */
 export function getProject(projectNameOrId) {
   let p;
   if (typeof projectNameOrId === `number`) {
@@ -253,34 +191,17 @@ export function getProject(projectNameOrId) {
 /**
  * ...docs go here...
  */
-export function isStarterProject(id) {
-  return !!StarterProject.find({ project_id: id });
-}
-
-/**
- * ...docs go here...
- */
-export function deleteProject(projectId) {
-  const p = getProject(projectId);
-  console.log(`deleting project ${p.name} with id ${p.id}`);
-  Access.delete({ project_id: p.id });
-  Project.delete(p);
-  // ON DELETE CASCADE should have taken care of everything else...
-}
-
-/**
- * ...docs go here...
- */
-export function suspendProject(projectNameOrId, reason, notes = ``) {
-  if (!reason) throw new Error(`Cannot suspend project without a reason`);
+export function getProjectEnvironmentVariables(projectNameOrId) {
   const p = getProject(projectNameOrId);
-  try {
-    stopContainer(p.name);
-    ProjectSuspension.create({ project_id: p.id, reason, notes });
-  } catch (e) {
-    console.error(e);
-    console.log(u, reason, notes);
-  }
+  const { env_vars } = ProjectSettings.find({ project_id: p.id });
+  if (!env_vars) return [];
+  return Object.fromEntries(
+    env_vars
+      .split(`\n`)
+      .filter((v) => v.includes(`=`))
+      .map((v) => v.trim().split(`=`))
+      .map(([k, v]) => [k.trim(), v.trim()])
+  );
 }
 
 /**
@@ -295,6 +216,55 @@ export function getProjectSuspensions(projectNameOrId, includeOld = false) {
   const s = ProjectSuspension.findAll({ project_id });
   if (includeOld) return s;
   return s.filter((s) => !s.invalidated_at);
+}
+
+/**
+ * ...docs go here...
+ */
+export function getProjectListForUser(userNameOrId) {
+  const u = getUser(userNameOrId);
+  const projects = Access.findAll({ user_id: u.id });
+  return projects.map((p) => Project.find({ id: p.project_id }));
+}
+
+/**
+ * ...docs go here...
+ */
+export function getStarterProjects() {
+  // Would a JOIN be faster? Probably. Are we running at a
+  // scale where that matters? Hopefully never =)
+  return StarterProject.all().map((s) => Project.find({ id: s.project_id }));
+}
+
+/**
+ * ...docs go here...
+ */
+export function isProjectSuspended(projectNameOrId) {
+  const p = getProject(projectNameOrId);
+  return !!ProjectSuspension.find({ project_id: p.id });
+}
+
+/**
+ * ...docs go here...
+ */
+export function isStarterProject(id) {
+  return !!StarterProject.find({ project_id: id });
+}
+
+/**
+ * ...docs go here...
+ */
+export function loadSettingsForProject(projectId) {
+  const p = Project.find({ id: projectId });
+  const s = ProjectSettings.find({ project_id: p.id });
+  if (!s) return false;
+  const { name, description } = p;
+  const { project_id, ...settings } = s;
+  return {
+    name,
+    description,
+    ...settings,
+  };
 }
 
 /**
@@ -315,6 +285,36 @@ export function projectSuspendedThroughOwner(projectNameOrId) {
 /**
  * ...docs go here...
  */
+export function recordProjectRemix(originalId, projectId) {
+  Remix.create({ original_id: originalId, project_id: projectId });
+}
+
+/**
+ * ...docs go here...
+ */
+export function suspendProject(projectNameOrId, reason, notes = ``) {
+  if (!reason) throw new Error(`Cannot suspend project without a reason`);
+  const p = getProject(projectNameOrId);
+  try {
+    stopContainer(p.name);
+    ProjectSuspension.create({ project_id: p.id, reason, notes });
+  } catch (e) {
+    console.error(e);
+    console.log(u, reason, notes);
+  }
+}
+
+/**
+ * ...docs go here...
+ */
+export function touch(projectNameOrId) {
+  const p = getProject(projectNameOrId);
+  if (p) Project.save(p);
+}
+
+/**
+ * ...docs go here...
+ */
 export function unsuspendProject(suspensionId) {
   const s = ProjectSuspension.find({ id: suspensionId });
   if (!s) throw new Error(`Suspension not found`);
@@ -322,15 +322,24 @@ export function unsuspendProject(suspensionId) {
   ProjectSuspension.save(s);
 }
 
-export function getProjectEnvironmentVariables(projectNameOrId) {
-  const p = getProject(projectNameOrId);
-  const { env_vars } = ProjectSettings.find({ project_id: p.id });
-  if (!env_vars) return [];
-  return Object.fromEntries(
-    env_vars
-      .split(`\n`)
-      .filter((v) => v.includes(`=`))
-      .map((v) => v.trim().split(`=`))
-      .map(([k, v]) => [k.trim(), v.trim()])
-  );
+/**
+ * ...docs go here...
+ */
+export function updateSettingsForProject(projectId, settings) {
+  const { name, description, ...containerSettings } = settings;
+
+  const p = Project.find({ id: projectId });
+  if (p.name !== name) {
+    if (!name.trim()) throw new Error(`Invalid project name`);
+    p.name = name;
+    p.slug = slugify(name);
+  }
+  p.description = description;
+  Project.save(p);
+
+  const s = ProjectSettings.find({ project_id: projectId });
+  Object.entries(containerSettings).forEach(([key, value]) => {
+    s[key] = value;
+  });
+  ProjectSettings.save(s, `project_id`);
 }

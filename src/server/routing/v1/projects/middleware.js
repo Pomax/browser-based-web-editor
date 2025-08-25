@@ -21,7 +21,7 @@ import {
   pathExists,
   makeSafeProjectName,
   setupGit,
-} from "../../../helpers.js";
+} from "../../../../helpers.js";
 
 import {
   checkContainerHealth as dockerHealthCheck,
@@ -51,34 +51,10 @@ import { removeCaddyEntry } from "../../../caddy/caddy.js";
 /**
  * ...docs go here...
  */
-export async function remixProject(req, res, next) {
-  const { user, lookups } = res.locals;
-  const { project } = lookups;
-
-  const newName = makeSafeProjectName(
-    req.params.newname ?? `${user.name}-${project.name}`
-  );
-  const newProjectName = (res.locals.newProjectName = newName);
-  const isStarter = isStarterProject(project.id);
-
-  cloneProject(project.name, newProjectName, isStarter);
-
-  try {
-    const { project: newProject } = createProjectForUser(
-      user.name,
-      newProjectName
-    );
-    recordProjectRemix(project.id, newProject.id);
-    const s = copyProjectSettings(project.id, newProject.id);
-    const containerDir = join(CONTENT_DIR, newProjectName, `.container`);
-    const runScript = join(containerDir, `run.sh`);
-    writeFileSync(runScript, s.run_script);
-    if (isStarter) rmSync(join(containerDir, `settings.json`));
-    next();
-  } catch (e) {
-    console.error(e);
-    return next(e);
-  }
+export function checkContainerHealth(req, res, next) {
+  const projectName = res.locals.lookups.project.name;
+  res.locals.healthStatus = dockerHealthCheck(projectName);
+  next();
 }
 
 /**
@@ -112,6 +88,65 @@ function cloneProject(source, projectName, isStarter) {
       // we also don't care if there was no .data dir
     }
   }
+}
+
+/**
+ * ...docs go here...
+ */
+export async function createProjectDownload(req, res, next) {
+  const { dir, lookups } = res.locals;
+  const projectName = lookups.project.name;
+  const zipDir = resolve(join(CONTENT_DIR, `__archives`));
+  if (!pathExists(zipDir)) mkdirSync(zipDir);
+  const dest = resolve(zipDir, projectName) + `.zip`;
+  res.locals.zipFile = dest;
+
+  const output = createWriteStream(dest);
+  const archive = archiver("zip", { zlib: { level: 9 } });
+  archive.pipe(output);
+
+  output.on("close", () => next());
+  archive.on("error", (err) => next(err));
+
+  // Additional "these should never be in a zip file"
+  const prefixes = [`node_modules/`];
+
+  dir.forEach((file) => {
+    if (prefixes.some((p) => file.startsWith(p))) return;
+    const path = resolve(CONTENT_DIR, projectName, file);
+    if (lstatSync(path).isDirectory()) return;
+    // console.log(file);
+    const stream = createReadStream(path);
+    archive.append(stream, { name: `${projectName}/${file}` });
+  });
+
+  // console.log(`finalizing ${projectName}.zip`)
+  archive.finalize();
+}
+
+/**
+ * ...docs go here...
+ */
+export async function deleteProject(req, res, next) {
+  const { user, lookups, adminCall } = res.locals;
+  const userName = user.name;
+  const projectName = lookups.project.name;
+
+  deleteProjectForUser(userName, projectName, adminCall);
+
+  console.log(`Cleaning up Caddyfile`);
+  removeCaddyEntry(projectName);
+
+  console.log(`Cleaning up ${projectName} container and image`);
+  deleteContainerAndImage(projectName);
+
+  console.log(`Removing ${projectName} from the filesystem`);
+  rmSync(join(CONTENT_DIR, projectName), {
+    recursive: true,
+    force: true,
+  });
+
+  next();
 }
 
 /**
@@ -188,18 +223,80 @@ export async function loadProject(req, res, next) {
 /**
  * ...docs go here...
  */
-export function checkContainerHealth(req, res, next) {
-  const projectName = res.locals.lookups.project.name;
-  res.locals.healthStatus = dockerHealthCheck(projectName);
+export function getProjectSettings(req, res, next) {
+  const projectId = res.locals.lookups.project.id;
+  res.locals.settings = loadSettingsForProject(projectId);
   next();
 }
 
 /**
  * ...docs go here...
  */
-export function getProjectSettings(req, res, next) {
-  const projectId = res.locals.lookups.project.id;
-  res.locals.settings = loadSettingsForProject(projectId);
+export async function loadProjectHistory(req, res, next) {
+  const projectName = res.locals.lookups.project.name;
+  const { commit } = req.params;
+  if (commit) {
+    const cmd = `git show ${commit}`;
+    const output = await execPromise(cmd, {
+      cwd: join(CONTENT_DIR, projectName),
+    });
+    res.locals.history = {
+      commit: output,
+    };
+  } else {
+    const cmd = `git log --no-abbrev-commit --pretty=format:"%H%x09%ad%x09%s"`;
+    const output = await execPromise(cmd, {
+      cwd: join(CONTENT_DIR, projectName),
+    });
+    const parsed = output.split(`\n`).map((line) => {
+      let [hash, timestamp, reason] = line.split(`\t`).map((e) => e.trim());
+      reason = reason.replace(/^['"]?/, ``).replace(/['"]?$/, ``);
+      return { hash, timestamp, reason };
+    });
+    res.locals.history = parsed;
+  }
+  next();
+}
+
+/**
+ * ...docs go here...
+ */
+export async function remixProject(req, res, next) {
+  const { user, lookups } = res.locals;
+  const { project } = lookups;
+
+  const newName = makeSafeProjectName(
+    req.params.newname ?? `${user.name}-${project.name}`
+  );
+  const newProjectName = (res.locals.newProjectName = newName);
+  const isStarter = isStarterProject(project.id);
+
+  cloneProject(project.name, newProjectName, isStarter);
+
+  try {
+    const { project: newProject } = createProjectForUser(
+      user.name,
+      newProjectName
+    );
+    recordProjectRemix(project.id, newProject.id);
+    const s = copyProjectSettings(project.id, newProject.id);
+    const containerDir = join(CONTENT_DIR, newProjectName, `.container`);
+    const runScript = join(containerDir, `run.sh`);
+    writeFileSync(runScript, s.run_script);
+    if (isStarter) rmSync(join(containerDir, `settings.json`));
+    next();
+  } catch (e) {
+    console.error(e);
+    return next(e);
+  }
+}
+
+/**
+ * ...docs go here...
+ */
+export function restartContainer(req, res, next) {
+  const projectName = res.locals.lookups.project.name;
+  restartDockerContainer(projectName);
   next();
 }
 
@@ -265,98 +362,4 @@ export async function updateProjectSettings(req, res, next) {
   } catch (e) {
     next(e);
   }
-}
-
-/**
- * ...docs go here...
- */
-export function restartContainer(req, res, next) {
-  const projectName = res.locals.lookups.project.name;
-  restartDockerContainer(projectName);
-  next();
-}
-
-/**
- * ...docs go here...
- */
-export async function loadProjectHistory(req, res, next) {
-  const projectName = res.locals.lookups.project.name;
-  const { commit } = req.params;
-  if (commit) {
-    const cmd = `git show ${commit}`;
-    const output = await execPromise(cmd, {
-      cwd: join(CONTENT_DIR, projectName),
-    });
-    res.locals.history = {
-      commit: output,
-    };
-  } else {
-    const cmd = `git log --no-abbrev-commit --pretty=format:"%H%x09%ad%x09%s"`;
-    const output = await execPromise(cmd, {
-      cwd: join(CONTENT_DIR, projectName),
-    });
-    const parsed = output.split(`\n`).map((line) => {
-      let [hash, timestamp, reason] = line.split(`\t`).map((e) => e.trim());
-      reason = reason.replace(/^['"]?/, ``).replace(/['"]?$/, ``);
-      return { hash, timestamp, reason };
-    });
-    res.locals.history = parsed;
-  }
-  next();
-}
-
-/**
- * ...docs go here...
- */
-export async function deleteProject(req, res, next) {
-  const { user, lookups, adminCall } = res.locals;
-  const userName = user.name;
-  const projectName = lookups.project.name;
-
-  deleteProjectForUser(userName, projectName, adminCall);
-
-  console.log(`Cleaning up Caddyfile`);
-  removeCaddyEntry(projectName);
-
-  console.log(`Cleaning up ${projectName} container and image`);
-  deleteContainerAndImage(projectName);
-
-  console.log(`Removing ${projectName} from the filesystem`);
-  rmSync(join(CONTENT_DIR, projectName), {
-    recursive: true,
-    force: true,
-  });
-
-  next();
-}
-
-export async function createProjectDownload(req, res, next) {
-  const { dir, lookups } = res.locals;
-  const projectName = lookups.project.name;
-  const zipDir = resolve(join(CONTENT_DIR, `__archives`));
-  if (!pathExists(zipDir)) mkdirSync(zipDir);
-  const dest = resolve(zipDir, projectName) + `.zip`;
-  res.locals.zipFile = dest;
-
-  const output = createWriteStream(dest);
-  const archive = archiver("zip", { zlib: { level: 9 } });
-  archive.pipe(output);
-
-  output.on("close", () => next());
-  archive.on("error", (err) => next(err));
-
-  // Additional "these should never be in a zip file"
-  const prefixes = [`node_modules/`];
-
-  dir.forEach((file) => {
-    if (prefixes.some((p) => file.startsWith(p))) return;
-    const path = resolve(CONTENT_DIR, projectName, file);
-    if (lstatSync(path).isDirectory()) return;
-    // console.log(file);
-    const stream = createReadStream(path);
-    archive.append(stream, { name: `${projectName}/${file}` });
-  });
-
-  // console.log(`finalizing ${projectName}.zip`)
-  archive.finalize();
 }

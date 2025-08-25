@@ -1,3 +1,6 @@
+/**
+ * ...docs go here...
+ */
 export function composeWhere(where, suffix = []) {
   let filter = Object.entries(where)
     .map(([k, v]) => {

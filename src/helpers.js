@@ -6,7 +6,13 @@ import express from "express";
 import nocache from "nocache";
 import helmet from "helmet";
 import ubase from "ubase.js";
-import { touch } from "./database/project.js";
+
+// It's a bit silly that we need this import here, and a
+// strong signal that the `createRewindPoint` does not
+// belong in this helpers file, but should probably
+// go in the v1/files middleware file, as it's related
+// to creating git commits based on file edits.
+import { touch } from "./server/database/project.js";
 
 // Explicit env loading as we rely on process.env
 // at the module's top level scope...
@@ -29,39 +35,6 @@ const COMMIT_TIMEOUT_MS = 5_000;
 
 // We can't save timeouts to req.session so we need a separate tracker
 const COMMIT_TIMEOUTS = {};
-
-/**
- * You'd think existSync is enough, but no,
- * it's unreliable on Windows, where checking
- * for a file that doesn't exist may report
- * "true" if that file eventually gets written
- * and I have no idea why. Super fun bug.
- */
-export function pathExists(path) {
-  try {
-    const stats = lstatSync(path);
-    if (stats.isDirectory()) return true;
-    return existsSync(path) && stats.size > 0;
-  } catch (e) {}
-  return false;
-}
-
-/**
- * Used for docker bindings
- */
-export function getFreePort() {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.listen(0, () => {
-      const { port } = server.address();
-      server.close((err) => (err ? reject(err) : resolve(port)));
-    });
-  });
-}
-
-export function scrubDateTime(datetime) {
-  return datetime.replace(`T`, ` `).replace(`Z`, ``).replace(/\.\d+/, ``);
-}
 
 /**
  * Schedule a git commit to capture all changes since the last time we did that.
@@ -96,6 +69,18 @@ export function createRewindPoint(projectName, reason) {
 }
 
 /**
+ * A little wrapper that turns exec() into an async rather than callback call.
+ */
+export async function execPromise(command, options = {}) {
+  return new Promise((resolve, reject) =>
+    exec(command, options, (err, stdout, stderr) => {
+      if (err) return reject(stderr);
+      resolve(stdout.trim());
+    })
+  );
+}
+
+/**
  * Create a super simple hash digest by summing all bytes in the file.
  * We don't need cryptographically secure, we're just need it to tell
  * whether a file on-disk and the same file in the browser differ, and
@@ -108,15 +93,39 @@ export function getFileSum(dir, filename, noFill = false) {
 }
 
 /**
- * A little wrapper that turns exec() into an async rather than callback call.
+ * Used for docker bindings
  */
-export async function execPromise(command, options = {}) {
-  return new Promise((resolve, reject) =>
-    exec(command, options, (err, stdout, stderr) => {
-      if (err) return reject(stderr);
-      resolve(stdout.trim());
-    })
-  );
+export function getFreePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.listen(0, () => {
+      const { port } = server.address();
+      server.close((err) => (err ? reject(err) : resolve(port)));
+    });
+  });
+}
+
+/**
+ * ...docs go here...
+ */
+export function makeSafeProjectName(name) {
+  return name.toLowerCase().replace(/\s+/g, `-`);
+}
+
+/**
+ * You'd think existSync is enough, but no,
+ * it's unreliable on Windows, where checking
+ * for a file that doesn't exist may report
+ * "true" if that file eventually gets written
+ * and I have no idea why. Super fun bug.
+ */
+export function pathExists(path) {
+  try {
+    const stats = lstatSync(path);
+    if (stats.isDirectory()) return true;
+    return existsSync(path) && stats.size > 0;
+  } catch (e) {}
+  return false;
 }
 
 /**
@@ -154,21 +163,22 @@ export async function readContentDir(dir) {
 }
 
 /**
- * Make git not guess at the name and email for commits.
+ * ...docs go here...
  */
-export async function setupGit(dir, projectName) {
-  for (let cfg of [
-    `init.defaultBranch main`,
-    `user.name "${projectName}"`,
-    `user.email "actions@browsertests.local"`,
-  ]) {
-    await execPromise(`git config --local ${cfg}`, { cwd: dir });
-  }
+
+export function safify(text) {
+  return text.replaceAll(`<`, `&lt;`).replaceAll(`>`, `&gt;`);
 }
 
 /**
- *
- * @param {*} app
+ * ...docs go here...
+ */
+export function scrubDateTime(datetime) {
+  return datetime.replace(`T`, ` `).replace(`Z`, ``).replace(/\.\d+/, ``);
+}
+
+/**
+ * ...docs go here...
  */
 export function setDefaultAspects(app) {
   app.set("etag", false);
@@ -192,13 +202,22 @@ export function setDefaultAspects(app) {
   );
 }
 
-export function makeSafeProjectName(name) {
-  return name.toLowerCase().replace(/\s+/g, `-`);
+/**
+ * Make git not guess at the name and email for commits.
+ */
+export async function setupGit(dir, projectName) {
+  for (let cfg of [
+    `init.defaultBranch main`,
+    `user.name "${projectName}"`,
+    `user.email "actions@browsertests.local"`,
+  ]) {
+    await execPromise(`git config --local ${cfg}`, { cwd: dir });
+  }
 }
 
-export function safify(text) {
-  return text.replaceAll(`<`, `&lt;`).replaceAll(`>`, `&gt;`);
-}
+/**
+ * ...docs go here...
+ */
 
 export function slugify(text) {
   return ubase

@@ -10,7 +10,7 @@ import {
 } from "./middleware.js";
 import { addPassportAuth } from "./auth/index.js";
 import { setupRoutesV1 } from "./v1/setup-routes.js";
-import { scrubDateTime } from "../helpers.js";
+import { scrubDateTime } from "../../helpers.js";
 
 const FIFTEEN_MINUTES_IN_MS = 15 * 60 * 1000;
 

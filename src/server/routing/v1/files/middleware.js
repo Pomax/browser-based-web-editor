@@ -12,28 +12,91 @@ import {
 import { lstatSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { getAccessFor, MEMBER } from "../../../database/index.js";
-import { pathExists } from "../../../helpers.js";
-
 import {
   CONTENT_DIR,
   createRewindPoint,
   execPromise,
   getFileSum,
   npm,
+  pathExists,
   readContentDir,
-} from "../../../helpers.js";
+} from "../../../../helpers.js";
 import { applyPatch } from "../../../../../public/vendor/diff.js";
+
+/**
+ * ...docs go gere,,,
+ */
+export function createFile(req, res, next) {
+  const { lookups, fileName } = res.locals;
+  const projectName = lookups.project.name;
+  const slug = fileName.substring(fileName.lastIndexOf(`/`) + 1);
+  const dirs = fileName.replace(`/${slug}`, ``);
+  mkdirSync(dirs, { recursive: true });
+  if (!pathExists(fileName)) {
+    if (slug.includes(`.`)) {
+      writeFileSync(fileName, ``);
+    } else {
+      mkdirSync(join(dirs, slug));
+    }
+  }
+  createRewindPoint(projectName);
+  next();
+}
 
 /**
  * ...docs go here...
  */
-export function getMimeType(req, res, next) {
-  const { fileName } = res.locals;
-  const mimeType = mime.getType(fileName);
-  res.locals = {
-    mimeType,
-    data: readFileSync(fileName),
-  };
+export async function deleteFile(req, res, next) {
+  const { lookups, fileName } = res.locals;
+  const projectName = lookups.project.name;
+  const fullPath = resolve(fileName);
+  const isDir = lstatSync(fullPath).isDirectory();
+  try {
+    if (isDir) {
+      rmSync(fullPath, { recursive: true });
+    } else {
+      unlinkSync(fullPath);
+    }
+    createRewindPoint(projectName);
+    next();
+  } catch (e) {
+    console.error(e);
+    next(new Error(`Could not delete ${fullPath}`));
+  }
+}
+
+/**
+ * ...docs go here...
+ */
+export async function formatFile(req, res, next) {
+  const { lookups, fileName } = res.locals;
+  const projectName = lookups.project.name;
+  const ext = fileName.substring(fileName.lastIndexOf(`.`), fileName.length);
+
+  let formatted = false;
+
+  if ([`.js`, `.css`, `.html`].includes(ext)) {
+    try {
+      await execPromise(`${npm} run prettier -- ${fileName}`);
+      formatted = true;
+    } catch (e) {
+      return next(
+        new Error(`Prettier could not format file:\n` + e.toString())
+      );
+    }
+  }
+
+  if ([`.py`].includes(ext)) {
+    try {
+      await execPromise(`black ${fileName}`);
+      formatted = true;
+    } catch (e) {
+      return next(new Error(`Black could not format file:\n` + e.toString()));
+    }
+  }
+
+  res.locals.formatted = formatted;
+  createRewindPoint(projectName);
   next();
 }
 
@@ -74,22 +137,15 @@ export async function getDirListing(req, res, next) {
 }
 
 /**
- * ...docs go gere,,,
+ * ...docs go here...
  */
-export function createFile(req, res, next) {
-  const { lookups, fileName } = res.locals;
-  const projectName = lookups.project.name;
-  const slug = fileName.substring(fileName.lastIndexOf(`/`) + 1);
-  const dirs = fileName.replace(`/${slug}`, ``);
-  mkdirSync(dirs, { recursive: true });
-  if (!pathExists(fileName)) {
-    if (slug.includes(`.`)) {
-      writeFileSync(fileName, ``);
-    } else {
-      mkdirSync(join(dirs, slug));
-    }
-  }
-  createRewindPoint(projectName);
+export function getMimeType(req, res, next) {
+  const { fileName } = res.locals;
+  const mimeType = mime.getType(fileName);
+  res.locals = {
+    mimeType,
+    data: readFileSync(fileName),
+  };
   next();
 }
 
@@ -148,61 +204,4 @@ export async function moveFile(req, res, next) {
   } catch (e) {
     next(new Error(`Rename failed`));
   }
-}
-
-/**
- * ...docs go here...
- */
-export async function deleteFile(req, res, next) {
-  const { lookups, fileName } = res.locals;
-  const projectName = lookups.project.name;
-  const fullPath = resolve(fileName);
-  const isDir = lstatSync(fullPath).isDirectory();
-  try {
-    if (isDir) {
-      rmSync(fullPath, { recursive: true });
-    } else {
-      unlinkSync(fullPath);
-    }
-    createRewindPoint(projectName);
-    next();
-  } catch (e) {
-    console.error(e);
-    next(new Error(`Could not delete ${fullPath}`));
-  }
-}
-
-/**
- * ...docs go here...
- */
-export async function formatFile(req, res, next) {
-  const { lookups, fileName } = res.locals;
-  const projectName = lookups.project.name;
-  const ext = fileName.substring(fileName.lastIndexOf(`.`), fileName.length);
-
-  let formatted = false;
-
-  if ([`.js`, `.css`, `.html`].includes(ext)) {
-    try {
-      await execPromise(`${npm} run prettier -- ${fileName}`);
-      formatted = true;
-    } catch (e) {
-      return next(
-        new Error(`Prettier could not format file:\n` + e.toString())
-      );
-    }
-  }
-
-  if ([`.py`].includes(ext)) {
-    try {
-      await execPromise(`black ${fileName}`);
-      formatted = true;
-    } catch (e) {
-      return next(new Error(`Black could not format file:\n` + e.toString()));
-    }
-  }
-
-  res.locals.formatted = formatted;
-  createRewindPoint(projectName);
-  next();
 }

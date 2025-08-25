@@ -1,6 +1,6 @@
 import { unlinkSync, rmSync } from "node:fs";
 import { stopContainer } from "../docker/docker-helpers.js";
-import { CONTENT_DIR, pathExists } from "../helpers.js";
+import { CONTENT_DIR, pathExists } from "../../helpers.js";
 import { Models } from "./models.js";
 
 const { User, Project, Access, Admin, UserSuspension, Login } = Models;
@@ -71,40 +71,6 @@ function __processFirstTimeUserLogin(userObject) {
 /**
  * ...docs go here...
  */
-export function getUser(userNameOrId) {
-  let u;
-  if (typeof userNameOrId === `number`) {
-    u = User.find({ id: userNameOrId });
-  } else {
-    u = User.find({ name: userNameOrId });
-  }
-  if (!u) throw new Error(`User not found`);
-  return u;
-}
-
-/**
- * ...docs go here...
- */
-export function enableUser(userNameOrId) {
-  const u = getUser(userNameOrId);
-  u.enabled_at = new Date().toISOString();
-  User.save(u);
-  return u;
-}
-
-/**
- * ...docs go here...
- */
-export function disableUser(userNameOrId) {
-  const u = getUser(userNameOrId);
-  u.enabled_at = null;
-  User.save(u);
-  return u;
-}
-
-/**
- * ...docs go here...
- */
 export function deleteUser(userId) {
   const u = getUser(userId);
   console.log(`deleting user ${u.name} with id ${u.id}`);
@@ -125,87 +91,21 @@ export function deleteUser(userId) {
 /**
  * ...docs go here...
  */
-export function suspendUser(userNameOrId, reason, notes = ``) {
-  if (!reason) throw new Error(`Cannot suspend user without a reason`);
+export function disableUser(userNameOrId) {
   const u = getUser(userNameOrId);
-  try {
-    UserSuspension.create({ user_id: u.id, reason, notes });
-    const projects = getOwnedProjectsForUser(u.id);
-    projects.forEach((p) => stopContainer(p.name));
-  } catch (e) {
-    console.error(e);
-    console.log(u, reason, notes);
-  }
+  u.enabled_at = null;
+  User.save(u);
+  return u;
 }
 
 /**
  * ...docs go here...
  */
-export function getUserSuspensions(userNameOrId, includeOld = false) {
-  let user_id = userNameOrId;
-  if (typeof userNameOrId !== `number`) {
-    const u = User.find({ name: userNameOrId });
-    user_id = u.id;
-  }
-  const s = UserSuspension.findAll({ user_id });
-  if (includeOld) return s;
-  return s.filter((s) => !s.invalidated_at);
-}
-
-/**
- * ...docs go here...
- */
-export function unsuspendUser(suspensionId) {
-  const s = UserSuspension.find({ id: suspensionId });
-  if (!s) throw new Error(`Suspension not found`);
-  s.invalidated_at = new Date().toISOString();
-  UserSuspension.save(s);
-}
-
-/**
- * ...docs go here...
- */
-export function getUserId(userName) {
-  const u = User.find({ name: userName });
-  if (!u) throw new Error(`User not found`);
-  return u.id;
-}
-
-/**
- * ...docs go here...
- */
-export function getUserAdminFlag(userName) {
-  const u = User.find({ name: userName });
-  if (!u) throw new Error(`User not found`);
-  const a = Admin.find({ user_id: u.id });
-  if (!a) return false;
-  return true;
-}
-
-/**
- * ...docs go here...
- */
-export function hasAccessToUserRecords(sessionUserId, lookupUserId) {
-  if (sessionUserId === lookupUserId) return true;
-  const u = User.find({ id: sessionUserId });
-  if (!u) throw new Error(`User not found`);
-  const a = Admin.find({ user_id: u.id });
-  if (!a) return false;
-  return true;
-}
-
-/**
- * ...docs go here...
- */
-export function getUserSettings(userId) {
-  const u = User.find({ id: userId });
-  if (!u) throw new Error(`User not found`);
-  const s = UserSuspension.find({ user_id: u.id });
-  return {
-    name: u.name,
-    enabled: u.enabled_at ? true : undefined,
-    suspended: s ? true : undefined,
-  };
+export function enableUser(userNameOrId) {
+  const u = getUser(userNameOrId);
+  u.enabled_at = new Date().toISOString();
+  User.save(u);
+  return u;
 }
 
 /**
@@ -237,4 +137,104 @@ export function getAllUsers() {
   });
 
   return Object.values(userList);
+}
+
+/**
+ * ...docs go here...
+ */
+export function getUser(userNameOrId) {
+  let u;
+  if (typeof userNameOrId === `number`) {
+    u = User.find({ id: userNameOrId });
+  } else {
+    u = User.find({ name: userNameOrId });
+  }
+  if (!u) throw new Error(`User not found`);
+  return u;
+}
+
+/**
+ * ...docs go here...
+ */
+export function getUserAdminFlag(userName) {
+  const u = User.find({ name: userName });
+  if (!u) throw new Error(`User not found`);
+  const a = Admin.find({ user_id: u.id });
+  if (!a) return false;
+  return true;
+}
+
+/**
+ * ...docs go here...
+ */
+export function getUserId(userName) {
+  const u = User.find({ name: userName });
+  if (!u) throw new Error(`User not found`);
+  return u.id;
+}
+
+/**
+ * ...docs go here...
+ */
+export function getUserSettings(userId) {
+  const u = User.find({ id: userId });
+  if (!u) throw new Error(`User not found`);
+  const s = UserSuspension.find({ user_id: u.id });
+  return {
+    name: u.name,
+    enabled: u.enabled_at ? true : undefined,
+    suspended: s ? true : undefined,
+  };
+}
+
+/**
+ * ...docs go here...
+ */
+export function getUserSuspensions(userNameOrId, includeOld = false) {
+  let user_id = userNameOrId;
+  if (typeof userNameOrId !== `number`) {
+    const u = User.find({ name: userNameOrId });
+    user_id = u.id;
+  }
+  const s = UserSuspension.findAll({ user_id });
+  if (includeOld) return s;
+  return s.filter((s) => !s.invalidated_at);
+}
+
+/**
+ * ...docs go here...
+ */
+export function hasAccessToUserRecords(sessionUserId, lookupUserId) {
+  if (sessionUserId === lookupUserId) return true;
+  const u = User.find({ id: sessionUserId });
+  if (!u) throw new Error(`User not found`);
+  const a = Admin.find({ user_id: u.id });
+  if (!a) return false;
+  return true;
+}
+
+/**
+ * ...docs go here...
+ */
+export function suspendUser(userNameOrId, reason, notes = ``) {
+  if (!reason) throw new Error(`Cannot suspend user without a reason`);
+  const u = getUser(userNameOrId);
+  try {
+    UserSuspension.create({ user_id: u.id, reason, notes });
+    const projects = getOwnedProjectsForUser(u.id);
+    projects.forEach((p) => stopContainer(p.name));
+  } catch (e) {
+    console.error(e);
+    console.log(u, reason, notes);
+  }
+}
+
+/**
+ * ...docs go here...
+ */
+export function unsuspendUser(suspensionId) {
+  const s = UserSuspension.find({ id: suspensionId });
+  if (!s) throw new Error(`Suspension not found`);
+  s.invalidated_at = new Date().toISOString();
+  UserSuspension.save(s);
 }

@@ -1,12 +1,110 @@
 import { sep } from "node:path";
-import { getFreePort } from "../helpers.js";
+import { getFreePort } from "../../helpers.js";
 import { exec, execSync } from "child_process";
 import { removeCaddyEntry, updateCaddyFile } from "../caddy/caddy.js";
 import { getProjectEnvironmentVariables } from "../database/index.js";
 
 /**
  * ...docs go here...
- * @param {*} projectName
+ */
+export function checkContainerHealth(projectName) {
+  const check = `docker ps --no-trunc -f name=^/${projectName}$`;
+  const result = execSync(check).toString().trim();
+  if (result.includes(`Exited`)) {
+    return `failed`;
+  }
+  if (!result.includes`0.0.0.0`) {
+    return `not running`;
+  }
+  if (result.includes(`starting`)) {
+    return `wait`;
+  }
+  if (result.includes(`(healthy)`)) {
+    return `ready`;
+  }
+}
+
+/**
+ * ...docs go here...
+ */
+export function deleteContainer(name) {
+  try {
+    execSync(`docker container rm ${name}`);
+  } catch (e) {
+    // failure just means it's already been removed.
+  }
+  try {
+    execSync(`docker image rm ${name}`);
+  } catch (e) {
+    // idem dito
+  }
+}
+
+/**
+ * ...docs go here...
+ */
+export function deleteContainerAndImage(name) {
+  console.log(`removing container and image...`);
+  stopContainer(name);
+  deleteContainer(name);
+}
+
+/**
+ * ...docs go here...
+ */
+export function getAllRunningContainers() {
+  const containerData = [];
+  const output = execSync(`docker ps -a --no-trunc --format json`)
+    .toString()
+    .split(`\n`);
+  output.forEach((line) => {
+    if (!line.trim()) return;
+    let obj = JSON.parse(line);
+    obj = Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => {
+        return [k[0].toLowerCase() + k.substring(1), v];
+      })
+    );
+    const { image, command, state, iD: id, status, size } = obj;
+    containerData.push({ image, id, command, state, status, size });
+  });
+  return containerData;
+}
+
+/**
+ * ...docs go here...
+ */
+export function renameContainer(oldName, newName) {
+  stopContainer(oldName);
+  try {
+    execSync(`docker tag ${oldName} ${newName}`);
+    execSync(`docker rmi ${oldName}`);
+  } catch (e) {}
+  runContainer(newName);
+}
+
+/**
+ * ...docs go here...
+ */
+export async function restartContainer(name, rebuild = false) {
+  if (rebuild) {
+    console.log(`rebuiling container for ${name}...`);
+    deleteContainerAndImage(name);
+    await runContainer(name);
+  } else {
+    console.log(`restarting container for ${name}...`);
+    try {
+      execSync(`docker container restart -t 0 ${name}`);
+    } catch (e) {
+      // if an admin force-stops this container, we can't "restart".
+      runContainer(name);
+    }
+  }
+  console.log(`...done!`);
+}
+
+/**
+ * ...docs go here...
  */
 export async function runContainer(projectName) {
   // note: we assume the caller already checked for project
@@ -75,64 +173,6 @@ export async function runContainer(projectName) {
 
 /**
  * ...docs go here...
- * @param {*} name
- * @returns
- */
-export function checkContainerHealth(projectName) {
-  const check = `docker ps --no-trunc -f name=^/${projectName}$`;
-  const result = execSync(check).toString().trim();
-  if (result.includes(`Exited`)) {
-    return `failed`;
-  }
-  if (!result.includes`0.0.0.0`) {
-    return `not running`;
-  }
-  if (result.includes(`starting`)) {
-    return `wait`;
-  }
-  if (result.includes(`(healthy)`)) {
-    return `ready`;
-  }
-}
-
-/**
- * ...docs go here...
- * @param {*} name
- */
-export async function restartContainer(name, rebuild = false) {
-  if (rebuild) {
-    console.log(`rebuiling container for ${name}...`);
-    deleteContainerAndImage(name);
-    await runContainer(name);
-  } else {
-    console.log(`restarting container for ${name}...`);
-    try {
-      execSync(`docker container restart -t 0 ${name}`);
-    } catch (e) {
-      // if an admin force-stops this container, we can't "restart".
-      runContainer(name);
-    }
-  }
-  console.log(`...done!`);
-}
-
-/**
- * ...docs go here...
- * @param {*} oldName
- * @param {*} newName
- */
-export function renameContainer(oldName, newName) {
-  stopContainer(oldName);
-  try {
-    execSync(`docker tag ${oldName} ${newName}`);
-    execSync(`docker rmi ${oldName}`);
-  } catch (e) {}
-  runContainer(newName);
-}
-
-/**
- * ...docs go here...
- * @param {*} name
  */
 export function stopContainer(name) {
   try {
@@ -141,50 +181,4 @@ export function stopContainer(name) {
     // failure just means it's already no longer running.
   }
   removeCaddyEntry(name);
-}
-
-/**
- * ...docs go here...
- * @param {*} name
- */
-export function deleteContainer(name) {
-  try {
-    execSync(`docker container rm ${name}`);
-  } catch (e) {
-    // failure just means it's already been removed.
-  }
-  try {
-    execSync(`docker image rm ${name}`);
-  } catch (e) {
-    // idem dito
-  }
-}
-
-/**
- * ...docs go here...
- * @param {*} name
- */
-export function deleteContainerAndImage(name) {
-  console.log(`removing container and image...`);
-  stopContainer(name);
-  deleteContainer(name);
-}
-
-export function getAllRunningContainers() {
-  const containerData = [];
-  const output = execSync(`docker ps -a --no-trunc --format json`)
-    .toString()
-    .split(`\n`);
-  output.forEach((line) => {
-    if (!line.trim()) return;
-    let obj = JSON.parse(line);
-    obj = Object.fromEntries(
-      Object.entries(obj).map(([k, v]) => {
-        return [k[0].toLowerCase() + k.substring(1), v];
-      })
-    );
-    const { image, command, state, iD: id, status, size } = obj;
-    containerData.push({ image, id, command, state, status, size });
-  });
-  return containerData;
 }

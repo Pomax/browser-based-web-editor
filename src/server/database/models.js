@@ -1,6 +1,6 @@
 import sqlite3 from "better-sqlite3";
 import { composeWhere } from "./utils.js";
-import { scrubDateTime } from "../helpers.js";
+import { scrubDateTime } from "../../helpers.js";
 
 const DEBUG_SQL = false;
 
@@ -33,42 +33,6 @@ class Model {
   }
 
   /**
-   * Save a record - if the primary key is not "id", you
-   * will need to explicitly specify it as second argument.
-   */
-  save(record, primaryKey = `id`) {
-    const pval = record[primaryKey];
-    delete record[primaryKey];
-    if (record.updated_at)
-      record.updated_at = scrubDateTime(new Date().toISOString());
-    const update = Object.keys(record)
-      .map((k) => `${k} = ?`)
-      .join(`, `);
-    const values = Object.values(record);
-    const sql = `UPDATE ${this.table} SET ${update} WHERE ${primaryKey} = ?`;
-    if (DEBUG_SQL) console.log(`UPDATE`, sql, values);
-    db.prepare(sql).run(...values, pval);
-    record[primaryKey] = pval;
-  }
-
-  /**
-   * This one should be self-explanatory. Find a record.
-   */
-  find(where) {
-    return this.findAll(where)[0];
-  }
-
-  /**
-   * This all records that match our where criteria.
-   */
-  findAll(where) {
-    const { filter, values } = composeWhere(where);
-    const sql = `SELECT * FROM ${this.table} WHERE ${filter}`;
-    if (DEBUG_SQL) console.log(`FIND`, sql, values);
-    return db.prepare(sql).all(values).filter(Boolean);
-  }
-
-  /**
    * Get me all records. You get a choice in ordering, but
    * you probably want to make sure that you're not using
    * this with a million-row table or the like =D
@@ -81,30 +45,7 @@ class Model {
     }
     return db.prepare(sql).all();
   }
-
-  /**
-   * Insert a record into this table, using the column values
-   * in the colVals object. Columns that, in the database, have
-   * a default value may be left off.
-   */
-  insert(colVals) {
-    const keys = Object.keys(colVals);
-    const values = Object.values(colVals);
-    const sql = `INSERT INTO ${this.table} (${keys.join(`,`)}) VALUES (${keys.map((v) => `?`).join(`,`)})`;
-    if (DEBUG_SQL) console.log(`INSERT`, sql, values);
-    db.prepare(sql).run(...values);
-  }
-
-  /**
-   * Does what it says in the function name.
-   */
-  findOrCreate(where = {}) {
-    const row = this.find(where);
-    if (row) return row;
-    this.insert(where);
-    return this.find(where);
-  }
-
+  
   /**
    * Create a new record in this table. Does a find() first, to
    * make sure you're not trying to create a record that already
@@ -131,6 +72,65 @@ class Model {
     const sql = `DELETE FROM ${this.table} WHERE ${filter}`;
     if (DEBUG_SQL) console.log(`DELETE`, sql, values);
     return db.prepare(sql).run(values);
+  }
+
+  /**
+   * This one should be self-explanatory. Find a record.
+   */
+  find(where) {
+    return this.findAll(where)[0];
+  }
+
+  /**
+   * This all records that match our where criteria.
+   */
+  findAll(where) {
+    const { filter, values } = composeWhere(where);
+    const sql = `SELECT * FROM ${this.table} WHERE ${filter}`;
+    if (DEBUG_SQL) console.log(`FIND`, sql, values);
+    return db.prepare(sql).all(values).filter(Boolean);
+  }
+
+  /**
+   * Does what it says in the function name.
+   */
+  findOrCreate(where = {}) {
+    const row = this.find(where);
+    if (row) return row;
+    this.insert(where);
+    return this.find(where);
+  }
+
+  /**
+   * Insert a record into this table, using the column values
+   * in the colVals object. Columns that, in the database, have
+   * a default value may be left off.
+   */
+  insert(colVals) {
+    const keys = Object.keys(colVals);
+    const values = Object.values(colVals);
+    const sql = `INSERT INTO ${this.table} (${keys.join(`,`)}) VALUES (${keys.map((v) => `?`).join(`,`)})`;
+    if (DEBUG_SQL) console.log(`INSERT`, sql, values);
+    db.prepare(sql).run(...values);
+  }
+
+  /**
+   * Save a record - if the primary key is not "id", you
+   * will need to explicitly specify it as second argument.
+   */
+  save(record, primaryKey = `id`) {
+    const pval = record[primaryKey];
+    delete record[primaryKey];
+    if (record.updated_at)
+      record.updated_at = scrubDateTime(new Date().toISOString());
+    const update = Object.keys(record)
+      .map((k) => `${k} = ?`)
+      .join(`, `);
+    const values = Object.values(record);
+    const sql = `UPDATE ${this.table} SET ${update} WHERE ${primaryKey} = ?`;
+    if (DEBUG_SQL) console.log(`UPDATE`, sql, values);
+    db.prepare(sql).run(...values, pval);
+    record[primaryKey] = pval;
   }
 }
 

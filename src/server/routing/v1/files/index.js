@@ -35,6 +35,21 @@ files.get(`/dir/:project`, bindCommonValues, getDirListing, (_req, res) =>
 );
 
 /**
+ * Get a file's content.
+ */
+files.get(
+  `/content/:project/:filename*`,
+  bindCommonValues,
+  getMimeType,
+  (req, res) => {
+    // FIXME: this should throw an error if the user is trying to access
+    //        private files and they don't have the right permissions.
+    res.set(`Content-Type`, res.locals.mimeType);
+    res.send(res.locals.data);
+  }
+);
+
+/**
  * Create a file
  */
 files.post(
@@ -68,28 +83,6 @@ files.post(
 );
 
 /**
- * Get a file's content.
- */
-files.get(
-  `/content/:project/:filename*`,
-  bindCommonValues,
-  getMimeType,
-  (req, res) => {
-    // FIXME: this should throw an error if the user is trying to access
-    //        private files and they don't have the right permissions.
-    res.set(`Content-Type`, res.locals.mimeType);
-    res.send(res.locals.data);
-  }
-);
-
-/**
- * Rename/move a file
- */
-files.post(`/rename/:project/:slug*`, ...prechecks, moveFile, (req, res) =>
-  res.send(`ok`)
-);
-
-/**
  * Process a file change request: only members and owners should be able to
  * effect file changes. Regular "vieewers" should get ignored entirely.
  */
@@ -99,6 +92,13 @@ files.post(
   parseBodyText,
   patchFile,
   (_req, res) => res.send(res.locals.fileHash)
+);
+
+/**
+ * Rename/move a file
+ */
+files.post(`/rename/:project/:slug*`, ...prechecks, moveFile, (req, res) =>
+  res.send(`ok`)
 );
 
 /**
