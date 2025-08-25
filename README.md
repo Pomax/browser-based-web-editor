@@ -10,7 +10,7 @@ This is an attempt at implementing a friendly browser-based web content editor, 
 1. You'll also need `git` installed. Normally that goes without saying, but in this case we're also using it as an under-the-hood tool for performing version control for project content so you can't just copy this repo's source code, you _need_ `git` installed properly.
 1. You'll also need docker installed, which has different instructions depending on the OS you're using.
 1. And you'll want `caddy` installed, for reverse-proxying container ports so you can just load https://projectname.localhost
-1. Finally, you need `sqlite3` installed. Rinse and repeat for linux or MacOs, on Windows you'll want to donwnload the `sqlite-tools-win-x64-somenumbershere.zip` from https://www.sqlite.org/download.html, create a `C:\Program Files\Sqlite3`, and unpack the zip file into that, then add that folder to your PATH (The "Docker" section below goes over how you do that for docker, just do the same for sqlite3).
+1. Finally, you need `sqlite3` installed. Rinse and repeat for linux or MacOs, on Windows you'll want to download the `sqlite-tools-win-x64-somenumbershere.zip` from https://www.sqlite.org/download.html, create a `C:\Program Files\Sqlite3`, and unpack the zip file into that, then add that folder to your PATH (The "Docker" section below goes over how you do that for docker, just do the same for sqlite3).
 
 With those prerequisites met:
 
