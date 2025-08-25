@@ -1,5 +1,5 @@
 import net from "node:net";
-import { readFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync } from "node:fs";
 import { join, resolve, sep, posix } from "node:path";
 import { exec } from "node:child_process";
 import express from "express";
@@ -29,6 +29,22 @@ const COMMIT_TIMEOUT_MS = 5_000;
 
 // We can't save timeouts to req.session so we need a separate tracker
 const COMMIT_TIMEOUTS = {};
+
+/**
+ * You'd think existSync is enough, but no,
+ * it's unreliable on Windows, where checking
+ * for a file that doesn't exist may report
+ * "true" if that file eventually gets written
+ * and I have no idea why. Super fun bug.
+ */
+export function pathExists(path) {
+  try {
+    const stats = lstatSync(path);
+    if (stats.isDirectory()) return true;
+    return existsSync(path) && stats.size > 0;
+  } catch (e) {}
+  return false;
+}
 
 /**
  * Used for docker bindings

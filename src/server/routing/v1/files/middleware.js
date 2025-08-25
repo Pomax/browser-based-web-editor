@@ -1,7 +1,6 @@
 import mime from "mime";
 
 import {
-  existsSync,
   mkdirSync,
   readFileSync,
   renameSync,
@@ -10,9 +9,10 @@ import {
   writeFileSync,
 } from "node:fs";
 
-import { lstat } from "node:fs/promises";
+import { lstatSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { getAccessFor, MEMBER } from "../../../database/index.js";
+import { pathExists } from "../../../helpers.js";
 
 import {
   CONTENT_DIR,
@@ -82,7 +82,7 @@ export function createFile(req, res, next) {
   const slug = fileName.substring(fileName.lastIndexOf(`/`) + 1);
   const dirs = fileName.replace(`/${slug}`, ``);
   mkdirSync(dirs, { recursive: true });
-  if (!existsSync(fileName)) {
+  if (!pathExists(fileName)) {
     if (slug.includes(`.`)) {
       writeFileSync(fileName, ``);
     } else {
@@ -157,7 +157,7 @@ export async function deleteFile(req, res, next) {
   const { lookups, fileName } = res.locals;
   const projectName = lookups.project.name;
   const fullPath = resolve(fileName);
-  const isDir = (await lstat(fullPath)).isDirectory();
+  const isDir = lstatSync(fullPath).isDirectory();
   try {
     if (isDir) {
       rmSync(fullPath, { recursive: true });

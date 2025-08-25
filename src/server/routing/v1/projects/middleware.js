@@ -5,7 +5,6 @@ import {
   cpSync,
   createReadStream,
   createWriteStream,
-  existsSync,
   lstatSync,
   mkdirSync,
   readFileSync,
@@ -19,6 +18,7 @@ import archiver from "archiver";
 import {
   CONTENT_DIR,
   execPromise,
+  pathExists,
   makeSafeProjectName,
   setupGit,
 } from "../../../helpers.js";
@@ -93,7 +93,7 @@ function cloneProject(source, projectName, isStarter) {
     source = `__starter_projects/${source || `empty`}`;
   }
 
-  if (!existsSync(dir)) {
+  if (!pathExists(dir)) {
     mkdirSync(dir);
     cpSync(dir.replace(projectName, source), dir, { recursive: true });
     try {
@@ -123,13 +123,13 @@ export async function loadProject(req, res, next) {
   const { id: projectId, name: projectName } = project;
   const dir = join(CONTENT_DIR, projectName);
 
-  if (!existsSync(dir)) {
+  if (!pathExists(dir)) {
     // not sure this is possible, but...
     return next(new Error(`No such project`));
   }
 
   // ensure there's a git dir
-  if (!existsSync(`${dir}/.git`)) {
+  if (!pathExists(`${dir}/.git`)) {
     console.log(`adding git tracking for ${dir}`);
     execSync(`cd ${dir} && git init && cd ..`);
   }
@@ -222,7 +222,7 @@ export async function updateProjectSettings(req, res, next) {
   const containerDir = join(newDir, `.container`);
 
   if (projectName !== newName) {
-    if (existsSync(newDir)) {
+    if (pathExists(newDir)) {
       return next(new Error("Cannot rename project"));
     }
   }
@@ -334,7 +334,7 @@ export async function createProjectDownload(req, res, next) {
   const { dir, lookups } = res.locals;
   const projectName = lookups.project.name;
   const zipDir = resolve(join(CONTENT_DIR, `__archives`));
-  if (!existsSync(zipDir)) mkdirSync(zipDir);
+  if (!pathExists(zipDir)) mkdirSync(zipDir);
   const dest = resolve(zipDir, projectName) + `.zip`;
   res.locals.zipFile = dest;
 

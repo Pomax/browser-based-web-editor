@@ -42,6 +42,7 @@ function addGithubAuth(app) {
         service: profile.provider,
         service_id: profile.id,
       };
+      console.log(`running processUserLogin`);
       return done(null, processUserLogin(user));
     }
   );

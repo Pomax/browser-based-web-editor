@@ -1,6 +1,6 @@
-import { existsSync, unlinkSync, rmSync } from "node:fs";
+import { unlinkSync, rmSync } from "node:fs";
 import { stopContainer } from "../../docker/docker-helpers.js";
-import { CONTENT_DIR } from "../helpers.js";
+import { CONTENT_DIR, pathExists } from "../helpers.js";
 import { Models } from "./models.js";
 
 const { User, Project, Access, Admin, UserSuspension, Login } = Models;
@@ -12,13 +12,15 @@ export function processUserLogin(userObject) {
   return __processUserLogin(userObject);
 }
 
+const firstTimeSetup = `.finish-setup`;
+
 // switch-binding based on whether this is first time setup
-let __processUserLogin = existsSync(`.finish-setup`)
+let __processUserLogin = pathExists(firstTimeSetup)
   ? __processFirstTimeUserLogin
   : processUserLoginNormally;
 
 // This will be the usual function binding, where users
-// are added to the database but they are not enabled 
+// are added to the database but they are not enabled
 // by default, and an admin will have to approve them.
 function processUserLoginNormally(userObject) {
   const { userName, service, service_id } = userObject;
@@ -56,13 +58,14 @@ function processUserLoginNormally(userObject) {
 function __processFirstTimeUserLogin(userObject) {
   __processUserLogin = processUserLoginNormally;
   const { userName, service, service_id } = userObject;
+  console.log(`First time login: marking ${userName} as admin`);
   const u = User.create({ name: userName });
   Login.create({ user_id: u.id, service, service_id });
   Admin.create({ user_id: u.id });
   u.enabled_at = u.created_at;
   User.save(u);
-  unlinkSync(`.finish-setup`);
-  return u;
+  unlinkSync(firstTimeSetup);
+  return { ...u, admin: true };
 }
 
 /**

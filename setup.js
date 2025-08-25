@@ -13,10 +13,10 @@ import readline from "node:readline";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import sqlite3 from "better-sqlite3";
 import { setupCaddy } from "./src/caddy/caddy.js";
-import { slugify } from "./src/server/helpers.js";
+import { pathExists, slugify } from "./src/server/helpers.js";
 import dotenv from "@dotenvx/dotenvx";
 dotenv.config({ quiet: true });
 
@@ -26,7 +26,8 @@ const stdin = readline.createInterface({
 });
 
 const STDIO = process.argv.includes(`--debug`) ? `inherit` : `ignore`;
-const BYPASS_FINISH = existsSync(`./data/data.sqlite3`);
+const dbPath = `./data/data.sqlite3`;
+const BYPASS_FINISH = pathExists(dbPath);
 const DOCKER_MAINTENANCE = process.argv.includes(`--clean`);
 const noop = () => {};
 
@@ -99,7 +100,7 @@ Run "npm start", log in, and have fun!
     // enables the user account, and flips the admin switch for it.
     else {
       const token = `${Math.random()}`.substring(2);
-      writeFileSync(join(moduleDir, `finish-setup`), token);
+      writeFileSync(join(moduleDir, `.finish-setup`), token);
 
       console.log(`
 Setup complete.
@@ -361,8 +362,6 @@ CMD sh .container/run.sh
  * database file in the right place, and if not, create it.
  */
 async function setupSqlite() {
-  const dbPath = `./data/data.sqlite3`;
-
   // Do we need to bootstrap the db? (note that this may include
   // simply creating a missing table, not rebuilding the full db)
   execSync(`sqlite3 ${dbPath} ".read ./data/schema.sql"`);
