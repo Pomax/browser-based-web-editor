@@ -3,7 +3,7 @@ html {
   overflow: unset;
 
   width: 100%;
-  background: #681704;
+  background: #fbdd85;
   display: flex;
   align-content: center;
   justify-content: center;
@@ -52,7 +52,7 @@ html {
 
       li {
         position: relative;
-        background: #fffaee;
+        background: #fffdfa;
         border: 1px solid black;
         padding: 1em;
         margin-top: 0.5em;
