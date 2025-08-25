@@ -16,6 +16,7 @@ import { dirname, join } from "node:path";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import sqlite3 from "better-sqlite3";
 import { setupCaddy } from "./src/caddy/caddy.js";
+import { slugify } from "./src/server/helpers.js";
 import dotenv from "@dotenvx/dotenvx";
 dotenv.config({ quiet: true });
 
@@ -205,7 +206,7 @@ async function setupEnv() {
   // Do we need to do any host setup?
   if (!WEB_EDITOR_HOSTNAME || !WEB_EDITOR_APPS_HOSTNAME) {
     console.log(`
-The system uses two domains, one for the editor website and one for 
+The system uses two domains, one for the editor website and one for
 hosting projects. If you want to run this somewhere "on the web" you'll
 need to provide hostnames so that things can be hooked up properly,
 but even if you just want to run this locally, we'll need some "fake"
@@ -384,6 +385,7 @@ async function setupSqlite() {
       `.container`,
       `settings.json`
     );
+    const slug = slugify(name);
     const settings = JSON.parse(readFileSync(settingsFile).toString());
     const { description, run_script, default_file, default_collapse } =
       settings;
@@ -391,14 +393,13 @@ async function setupSqlite() {
     // Create or update the project record:
     let result = db.prepare(`SELECT * FROM projects WHERE name = ?`).get(name);
     if (!result) {
-      db.prepare(`INSERT INTO projects (name, description) VALUES (?, ?)`).run(
-        name,
-        description
-      );
+      db.prepare(
+        `INSERT INTO projects (name, slug, description) VALUES (?, ?, ?)`
+      ).run(name, slug, description);
       result = db.prepare(`SELECT * FROM projects WHERE name = ?`).get(name);
       const { id } = result;
       db.prepare(
-        `INSERT INTO project_settings (project_id, default_file, default_collapse, run_script) VALUES (?,?)`
+        `INSERT INTO project_settings (project_id, default_file, default_collapse, run_script) VALUES (?,?,?,?)`
       ).run(id, default_file ?? ``, default_collapse ?? ``, run_script);
       db.prepare(`INSERT INTO starter_projects (project_id) VALUES (?)`).run(
         id

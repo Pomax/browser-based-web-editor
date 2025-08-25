@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   enabled_at TEXT
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS user_names ON users(name);
+CREATE INDEX IF NOT EXISTS user_names ON users(name);
 
 CREATE TABLE IF NOT EXISTS admin_table (
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
@@ -56,8 +56,8 @@ CREATE TABLE IF NOT EXISTS projects (
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS project_names ON projects(name);
-CREATE UNIQUE INDEX IF NOT EXISTS project_slugs ON projects(slug);
+CREATE INDEX IF NOT EXISTS project_names ON projects(name);
+CREATE INDEX IF NOT EXISTS project_slugs ON projects(slug);
 
 CREATE TABLE IF NOT EXISTS starter_projects (
   project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE
