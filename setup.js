@@ -15,8 +15,8 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import sqlite3 from "better-sqlite3";
-import dotenv from "@dotenvx/dotenvx";
 import { setupCaddy } from "./src/caddy/caddy.js";
+import dotenv from "@dotenvx/dotenvx";
 dotenv.config({ quiet: true });
 
 const stdin = readline.createInterface({
@@ -37,7 +37,7 @@ if (filePath.startsWith(process.argv[1])) {
     checkDependencies,
     setupEnv,
     setupDocker,
-    DOCKER_MAINTENANCE ? noop : setupCaddy,
+    DOCKER_MAINTENANCE ? noop : () => setupCaddy(process.env),
     DOCKER_MAINTENANCE ? noop : setupSqlite
   );
 }
@@ -64,7 +64,7 @@ function randomSecret() {
   let randomSecret = ``;
   while (randomSecret.length < 40) {
     randomSecret += String.fromCharCode(
-      0x29 + (((0x7e - 0x29) * Math.random()) | 0)
+      0x30 + (((0x7a - 0x30) * Math.random()) | 0)
     );
   }
   return randomSecret;
@@ -232,6 +232,9 @@ project containers.
     }
   }
 
+  // Used to lock container-starts so only Caddy can trigger them:
+  const WEB_EDITOR_APP_SECRET = randomSecret().replace(/\W/g, ``);
+
   // Docker naming setup?
   if (!WEB_EDITOR_IMAGE_NAME) {
     console.log(`
@@ -277,6 +280,7 @@ codebase will read in every time it starts up.
     `LOCAL_DEV_TESTING=true
 WEB_EDITOR_HOSTNAME=${WEB_EDITOR_HOSTNAME}
 WEB_EDITOR_APPS_HOSTNAME=${WEB_EDITOR_APPS_HOSTNAME}
+WEB_EDITOR_APP_SECRET=${WEB_EDITOR_APP_SECRET}
 WEB_EDITOR_IMAGE_NAME=${WEB_EDITOR_IMAGE_NAME}
 SESSION_SECRET=${randomSecret()}
 MAGIC_LINK_SECRET=${randomSecret()}
@@ -292,6 +296,7 @@ GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}
   Object.assign(process.env, {
     WEB_EDITOR_HOSTNAME,
     WEB_EDITOR_APPS_HOSTNAME,
+    WEB_EDITOR_APP_SECRET,
     WEB_EDITOR_IMAGE_NAME,
     GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET,

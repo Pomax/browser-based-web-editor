@@ -6,7 +6,11 @@ import { watchForRebuild } from "./watcher.js";
 import { setupCaddy, startCaddy } from "../caddy/caddy.js";
 import { setupTemplating } from "./templating.js";
 
-// And our environment.
+// And our environment. Note that this kicks in AFTER
+// the import tree ahs been built, so we can't actually
+// rely on process.env being what it should be at the
+// top level of any module that doesn't also run the
+// dotenv.config function as part of its own code...
 import dotenv from "@dotenvx/dotenvx";
 dotenv.config({ quiet: true });
 

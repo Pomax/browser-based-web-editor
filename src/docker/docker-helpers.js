@@ -9,11 +9,8 @@ import { getProjectEnvironmentVariables } from "../server/database/index.js";
  * @param {*} projectName
  */
 export async function runContainer(projectName) {
-  // TODO: Check the database to make sure this project is even
-  //       allowed to start, rather than being suspended.
-  //       This includes confirming that there is at least one
-  //       enabled user associated with the project, because if
-  //       not, this project is implicitly suspended.
+  // note: we assume the caller already checked for project
+  // suspension, so we don't try to use the database here.
 
   console.log(`attempting to run container ${projectName}`);
   let port = await getFreePort();
@@ -72,6 +69,8 @@ export async function runContainer(projectName) {
   }
 
   updateCaddyFile(projectName, port);
+
+  return `success`;
 }
 
 /**

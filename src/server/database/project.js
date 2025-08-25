@@ -61,6 +61,11 @@ export function getStarterProjects() {
   return StarterProject.all().map((s) => Project.find({ id: s.project_id }));
 }
 
+export function isProjectSuspended(projectNameOrId) {
+  const p = getProject(projectNameOrId);
+  return !!ProjectSuspension.find({ project_id: p.id });
+}
+
 /**
  * ...docs go here...
  */

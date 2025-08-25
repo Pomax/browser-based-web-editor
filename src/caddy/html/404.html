@@ -26,6 +26,6 @@
     if (result.status === 200) {
       return location.reload();
     }
-    setTimeout(() => tryToLoad(timeout + 100), timeout);
+    setTimeout(() => tryToLoad(timeout * 1.5), timeout);
   })();
 </script>

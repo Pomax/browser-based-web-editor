@@ -1,22 +1,19 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { execSync, spawn } from "node:child_process";
 import { join } from "node:path";
-import dotenv from "@dotenvx/dotenvx";
-dotenv.config({ quiet: true });
 
-const { WEB_EDITOR_APPS_HOSTNAME } = process.env;
 const caddyFile = join(import.meta.dirname, `Caddyfile`);
 const defaultCaddyFile = join(import.meta.dirname, `Caddyfile.default`);
 
 /**
  * Create (or reset) our Caddyfile
  */
-export function setupCaddy() {
-  const { WEB_EDITOR_HOSTNAME, WEB_EDITOR_APPS_HOSTNAME } = process.env;
+export function setupCaddy(env = process.env) {
   const config = readFileSync(defaultCaddyFile)
     .toString()
-    .replace(`$WEB_EDITOR_HOSTNAME`, WEB_EDITOR_HOSTNAME)
-    .replace(`$WEB_EDITOR_APPS_HOSTNAME`, `*.${WEB_EDITOR_APPS_HOSTNAME}`);
+    .replace(`$WEB_EDITOR_HOSTNAME`, env.WEB_EDITOR_HOSTNAME)
+    .replace(`$WEB_EDITOR_APPS_HOSTNAME`, `*.${env.WEB_EDITOR_APPS_HOSTNAME}`)
+    .replace(`$WEB_EDITOR_APP_SECRET`, env.WEB_EDITOR_APP_SECRET);
   writeFileSync(caddyFile, config);
 }
 
@@ -63,9 +60,9 @@ process.on("SIGINT", () => {
  * @param {*} name
  * @param {*} port
  */
-export function updateCaddyFile(name, port) {
+export function updateCaddyFile(name, port, env = process.env) {
   const data = readFileSync(caddyFile).toString();
-  const host = `${name}.${WEB_EDITOR_APPS_HOSTNAME}`;
+  const host = `${name}.${env.WEB_EDITOR_APPS_HOSTNAME}`;
   const index = data.indexOf(host);
   if (index >= 0) {
     // Update the binding

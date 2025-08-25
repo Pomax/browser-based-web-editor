@@ -8,6 +8,11 @@ import helmet from "helmet";
 import ubase from "ubase.js";
 import { touch } from "./database/project.js";
 
+// Explicit env loading as we rely on process.env
+// at the module's top level scope...
+import dotenv from "@dotenvx/dotenvx";
+dotenv.config({ quiet: true });
+
 export const isWindows = process.platform === `win32`;
 export const npm = isWindows ? `npm. cmd` : `npm`;
 

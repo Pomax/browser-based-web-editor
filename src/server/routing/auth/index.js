@@ -5,13 +5,10 @@ import { Strategy as MagicLoginStrategy } from "passport-magic-link";
 import { loginWithGithub, handleGithubCallback, logout } from "./middleware.js";
 import { processUserLogin } from "../../database/index.js";
 
-export function addPassportAuth(app) {
-  app.use(passport.initialize());
-  app.use(passport.session());
-
-  addGithubAuth(app);
-  addEmailAuth(app);
-}
+// Explicit env loading as we rely on process.env
+// at the module's top level scope...
+import dotenv from "@dotenvx/dotenvx";
+dotenv.config({ quiet: true });
 
 const githubSettings = {
   clientID: process.env.GITHUB_CLIENT_ID,
@@ -25,6 +22,13 @@ const magicSettings = {
   tokenField: "token",
   verifyUserAfterToken: true,
 };
+
+export function addPassportAuth(app) {
+  app.use(passport.initialize());
+  app.use(passport.session());
+  addGithubAuth(app);
+  addEmailAuth(app);
+}
 
 /**
  * Set up github auth
