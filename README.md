@@ -23,7 +23,7 @@ The main page has a login link that uses github authentication (for now). After 
 
 Note that the first user to log in after the initial setup becomes the default admin user. Any admin user will have a link to the admin page available, which is a fairly bare bones but fully features, letting you enable/disable and (un)suspend users, or just delete their account (take that, spammers!), (un)suspend or delete projects, and perform container maintenance (which right now just means "hit the stop button" =D).
 
-Also note that there are, technically, two login options, but the second is a dev-only "magic link" email login form that doesn't actually email anyone. Its only purpose is to let admins create test user accounts for messing around with. Always fun to suspend or delete test users!
+Also note that there are, technically, two login options _if the `LOCAL_DEV_TESTING` env var is set to `true` (which it will be, by default). This second option is a dev-only "magic link" email login form that doesn't actually email anyone and instead logs the activation link to the console's stdout... its only purpose is to let admins create test user accounts for messing around with. Always fun to suspend or delete test users!
 
 ## Docker?
 
