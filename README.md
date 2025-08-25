@@ -96,13 +96,13 @@ This is currently one-way, using POST operations, rather than two-way using webs
 
 ## This website looks... Spartan
 
-There's a decades old recipe for doing software development:
+To reiterate on the previous paragraph, there's a decades old recipe for doing software development:
 
 1. make it work,
 2. make it work properly (aka "make it fast", "make it secure", etc.),
 3. make it nice
 
-We're still in phase 1.
+We're still in phase 1. We're close to phase 2! But we're still in phase 1.
 
 ## What can we currently do?
 
