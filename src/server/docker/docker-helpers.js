@@ -1,8 +1,8 @@
 import { sep } from "node:path";
-import { getFreePort } from "../server/helpers.js";
+import { getFreePort } from "../helpers.js";
 import { exec, execSync } from "child_process";
 import { removeCaddyEntry, updateCaddyFile } from "../caddy/caddy.js";
-import { getProjectEnvironmentVariables } from "../server/database/index.js";
+import { getProjectEnvironmentVariables } from "../database/index.js";
 
 /**
  * ...docs go here...

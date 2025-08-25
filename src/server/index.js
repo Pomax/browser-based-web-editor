@@ -3,7 +3,7 @@ import express from "express";
 import { setDefaultAspects, execPromise } from "./helpers.js";
 import { setupRoutes } from "./routing/index.js";
 import { watchForRebuild } from "./watcher.js";
-import { setupCaddy, startCaddy } from "../caddy/caddy.js";
+import { setupCaddy, startCaddy } from "./caddy/caddy.js";
 import { setupTemplating } from "./templating.js";
 
 // And our environment. Note that this kicks in AFTER

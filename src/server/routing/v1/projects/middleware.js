@@ -29,7 +29,7 @@ import {
   renameContainer,
   restartContainer as restartDockerContainer,
   runContainer,
-} from "../../../../docker/docker-helpers.js";
+} from "../../../docker/docker-helpers.js";
 
 import {
   MEMBER,
@@ -46,7 +46,7 @@ import {
   updateSettingsForProject,
 } from "../../../database/index.js";
 
-import { removeCaddyEntry } from "../../../../caddy/caddy.js";
+import { removeCaddyEntry } from "../../../caddy/caddy.js";
 
 /**
  * ...docs go here...

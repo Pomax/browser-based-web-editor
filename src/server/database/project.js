@@ -1,4 +1,4 @@
-import { stopContainer } from "../../docker/docker-helpers.js";
+import { stopContainer } from "../docker/docker-helpers.js";
 
 import {
   runQuery,

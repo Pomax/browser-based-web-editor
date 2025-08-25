@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import sqlite3 from "better-sqlite3";
-import { setupCaddy } from "./src/caddy/caddy.js";
+import { setupCaddy } from "./src/server/caddy/caddy.js";
 import { pathExists, slugify } from "./src/server/helpers.js";
 import dotenv from "@dotenvx/dotenvx";
 dotenv.config({ quiet: true });
@@ -328,7 +328,7 @@ function setupDocker() {
     // generate a new version of the base image
     execSync(`docker build -t ${WEB_EDITOR_IMAGE_NAME} .`, {
       shell: true,
-      cwd: `./src/docker`,
+      cwd: `./src/server/docker`,
       stdio: STDIO,
     });
 
@@ -345,7 +345,7 @@ function setupDocker() {
   } catch (e) {
     execSync(`docker build -t ${WEB_EDITOR_IMAGE_NAME} .`, {
       shell: true,
-      cwd: `./src/docker`,
+      cwd: `./src/server/docker`,
       stdio: STDIO,
     });
   }

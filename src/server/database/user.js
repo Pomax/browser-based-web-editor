@@ -1,5 +1,5 @@
 import { unlinkSync, rmSync } from "node:fs";
-import { stopContainer } from "../../docker/docker-helpers.js";
+import { stopContainer } from "../docker/docker-helpers.js";
 import { CONTENT_DIR, pathExists } from "../helpers.js";
 import { Models } from "./models.js";
 

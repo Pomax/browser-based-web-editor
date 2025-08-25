@@ -22,7 +22,7 @@ import { getDirListing } from "../files/middleware.js";
 
 import { Router } from "express";
 import multer from "multer";
-import { runContainer } from "../../../../docker/docker-helpers.js";
+import { runContainer } from "../../../docker/docker-helpers.js";
 import { isProjectSuspended } from "../../../database/project.js";
 export const projects = Router();
 
