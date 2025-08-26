@@ -2,8 +2,6 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { execSync, spawn } from "node:child_process";
 import { join } from "node:path";
 
-console.log(`local path: ${import.meta.dirname}`);
-
 const caddyFile = join(import.meta.dirname, `Caddyfile`);
 const defaultCaddyFile = join(import.meta.dirname, `Caddyfile.default`);
 
