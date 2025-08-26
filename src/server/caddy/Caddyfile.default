@@ -13,8 +13,8 @@ $WEB_EDITOR_APPS_HOSTNAME {
 
 (proxy_error_handling) {
 	handle_errors {
-		rewrite * /{err.status_code}.html 
-		root * ./src/caddy/html/
+		rewrite * /{err.status_code}.html
+		root * ./src/server/caddy/html/
 		file_server
-	}	
+	}
 }

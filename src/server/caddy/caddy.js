@@ -5,6 +5,8 @@ import { join } from "node:path";
 const caddyFile = join(import.meta.dirname, `Caddyfile`);
 const defaultCaddyFile = join(import.meta.dirname, `Caddyfile.default`);
 
+console.log(`using Caddyfile:`, caddyFile);
+
 /**
  * Create (or reset) our Caddyfile
  */
