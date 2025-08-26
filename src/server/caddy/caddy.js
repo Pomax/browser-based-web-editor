@@ -11,9 +11,12 @@ const defaultCaddyFile = join(import.meta.dirname, `Caddyfile.default`);
 export function setupCaddy(env = process.env) {
   const config = readFileSync(defaultCaddyFile)
     .toString()
-    .replace(`$WEB_EDITOR_HOSTNAME`, env.WEB_EDITOR_HOSTNAME)
-    .replace(`$WEB_EDITOR_APPS_HOSTNAME`, `*.${env.WEB_EDITOR_APPS_HOSTNAME}`)
-    .replace(`$WEB_EDITOR_APP_SECRET`, env.WEB_EDITOR_APP_SECRET);
+    .replaceAll(`$WEB_EDITOR_HOSTNAME`, env.WEB_EDITOR_HOSTNAME)
+    .replaceAll(
+      `$WEB_EDITOR_APPS_HOSTNAME`,
+      `*.${env.WEB_EDITOR_APPS_HOSTNAME}`
+    )
+    .replaceAll(`$WEB_EDITOR_APP_SECRET`, env.WEB_EDITOR_APP_SECRET);
   writeFileSync(caddyFile, config);
 }
 
@@ -90,7 +93,8 @@ export function updateCaddyFile(name, port, env = process.env) {
  * @param {*} name
  */
 export function removeCaddyEntry(name) {
-  const re = new RegExp(`\n${name}\\.app\\.localhost \\{[^}]+\\}\n`, `gm`);
+  const host = `${name}.${env.WEB_EDITOR_APPS_HOSTNAME}`;
+  const re = new RegExp(`\n${host} \\{[^}]+\\}\n`, `gm`);
   const data = readFileSync(caddyFile).toString().replace(re, ``);
   writeFileSync(caddyFile, data);
   spawn(`caddy`, [`reload`, `--config`, caddyFile], {
