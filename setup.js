@@ -16,7 +16,7 @@ import { dirname, join } from "node:path";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import sqlite3 from "better-sqlite3";
 import { setupCaddy } from "./src/server/caddy/caddy.js";
-import { pathExists, slugify } from "./src/server/helpers.js";
+import { pathExists, slugify } from "./src/helpers.js";
 import dotenv from "@dotenvx/dotenvx";
 dotenv.config({ quiet: true });
 
