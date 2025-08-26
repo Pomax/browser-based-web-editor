@@ -10,7 +10,7 @@
   {% if project.description %}
   <p>{{ project.description | para | safe}}</p>
   {% endif %} {% if user %}
-  <button data-project-id="{{ project.id }}" class="edit-project">edit</button>
+  <button data-project-id="{{ project.id }}" class="edit-project-settings">settings</button>
   <button data-project-name="{{ project.name }}" class="delete-project">
     delete
   </button>

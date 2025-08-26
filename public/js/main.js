@@ -51,7 +51,7 @@ if (starter && button) {
   /**
    * Hook up the "edit project" buttons
    */
-  Array.from(document.querySelectorAll(`button.edit-project`)).forEach((e) => {
+  Array.from(document.querySelectorAll(`button.edit-project-settings`)).forEach((e) => {
     const { projectId } = e.dataset;
     e.addEventListener(`click`, async () => {
       showEditDialog(projectId);

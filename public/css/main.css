@@ -83,14 +83,14 @@ html {
           }
         }
 
-        .edit-project,
+        .edit-project-settings,
         .delete-project {
           position: absolute;
           top: -1em;
           cursor: pointer;
         }
 
-        .edit-project {
+        .edit-project-settings {
           left: 0;
           background: blue;
           color: white;
