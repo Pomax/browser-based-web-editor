@@ -35,6 +35,17 @@ const filePath = fileURLToPath(import.meta.url);
 const moduleDir = dirname(filePath);
 if (filePath.startsWith(process.argv[1])) {
   setup(
+    () => {
+      // Pretty crucial:
+      const minimum = 22;
+      const v = checkFor(`node`);
+      const m = v.match(/v(\d+)/)[1];
+      const version = parseFloat(m);
+      if (version < minimum) {
+        console.error(`This platform requires node v${minimum} or newer`);
+        throw "";
+      }
+    },
     runNpmInstall,
     checkDependencies,
     setupEnv,
@@ -143,10 +154,9 @@ function checkDependencies() {
 /**
  * Generic "see if this command works" code.
  */
-function checkFor(cmd, missing) {
+function checkFor(cmd, missing = []) {
   try {
-    execSync(`${cmd} --version`, { env: process.env });
-    return true;
+    return execSync(`${cmd} --version`, { env: process.env }).toString().trim();
   } catch (e) {
     missing.push(cmd);
     console.log(e);
