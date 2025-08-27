@@ -55,7 +55,7 @@ This should already be installed? But `sudo apt update` and then `sudo apt insta
 
 ### Install Node.js
 
-We're obviously going to need Node.js, which I highly recommend you install [using NVM](https://first-project.webblythings.online/), and then once that's done (and you made sure to run the command to make `nvm` an active command without needing to restart), running:
+We're obviously going to need Node.js, which I highly recommend you install [using NVM](https://github.com/nvm-sh/nvm), and then once that's done (and you made sure to run the command to make `nvm` an active command without needing to restart), running:
 
 ```
 nvm install 22

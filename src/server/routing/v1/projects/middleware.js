@@ -263,8 +263,13 @@ export async function loadProjectHistory(req, res, next) {
  */
 export async function remixProject(req, res, next) {
   const { user, lookups } = res.locals;
-  const { project } = lookups;
 
+  // Just to make sure
+  if (!user.enabled_at) {
+    return next(new Error(`Your account has not been activated yet`));
+  }
+
+  const { project } = lookups;
   const newName = makeSafeProjectName(
     req.params.newname ?? `${user.name}-${project.name}`
   );

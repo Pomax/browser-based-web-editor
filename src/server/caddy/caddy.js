@@ -110,7 +110,7 @@ ${host} {
  * Remove an entry from the Caddyfile
  * @param {*} name
  */
-export function removeCaddyEntry(name) {
+export function removeCaddyEntry(name, env = process.env) {
   const host = `${name}.${env.WEB_EDITOR_APPS_HOSTNAME}`;
   const re = new RegExp(`\n${host} \\{[^}]+\\}\n`, `gm`);
   const data = readFileSync(caddyFile).toString().replace(re, ``);
