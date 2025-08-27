@@ -1,7 +1,7 @@
 import net from "node:net";
 import { existsSync, lstatSync, readFileSync } from "node:fs";
 import { join, resolve, sep, posix } from "node:path";
-import { exec } from "node:child_process";
+import { exec, execSync } from "node:child_process";
 import express from "express";
 import nocache from "nocache";
 import helmet from "helmet";
