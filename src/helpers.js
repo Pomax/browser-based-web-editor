@@ -207,6 +207,7 @@ export function setDefaultAspects(app) {
  */
 export async function setupGit(dir, projectName) {
   console.log(`setupGit in`, dir);
+  console.log(`cwd`, process.cwd());
 
   if (!pathExists(`${dir}/.git`)) {
     console.log(`adding git tracking for ${dir}`);
