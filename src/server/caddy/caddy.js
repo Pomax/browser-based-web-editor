@@ -16,7 +16,10 @@ export function setupCaddy(env = process.env) {
       `$WEB_EDITOR_APPS_HOSTNAME`,
       `*.${env.WEB_EDITOR_APPS_HOSTNAME}`
     )
-    .replaceAll(`$WEB_EDITOR_APP_SECRET`, env.WEB_EDITOR_APP_SECRET);
+    .replaceAll(`$WEB_EDITOR_APP_SECRET`, env.WEB_EDITOR_APP_SECRET)
+    .replaceAll(`$TLS_DNS_PROVIDER`, env.TLS_DNS_PROVIDER)
+    .replaceAll(`$TLS_DNS_API_KEY`, env.TLS_DNS_API_KEY)
+    .replace(/\ttls[\s\r\n]*{[\s\r\n]*dns false false[\s\r\n]*}\n/m, ``);
   writeFileSync(caddyFile, config);
 }
 
@@ -84,7 +87,7 @@ export function updateCaddyFile(name, port, env = process.env) {
         ? ``
         : `
 \ttls {
-\t\tdns ${TLS_DNS_PROVIDER} {env.TLS_DNS_API_KEY}
+\t\tdns ${TLS_DNS_PROVIDER} ${TLS_DNS_API_KEY}
 \t}`;
 
     const entry = `

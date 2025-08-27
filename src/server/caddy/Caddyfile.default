@@ -9,6 +9,9 @@ $WEB_EDITOR_HOSTNAME {
 $WEB_EDITOR_APPS_HOSTNAME {
 	rewrite /v1/projects/start/{labels.2}/$WEB_EDITOR_APP_SECRET
 	reverse_proxy localhost:8000
+	tls {
+		dns $TLS_DNS_PROVIDER $TLS_DNS_API_KEY
+	}
 }
 
 (proxy_error_handling) {
