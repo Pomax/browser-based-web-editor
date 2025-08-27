@@ -301,9 +301,9 @@ This will require knowing your DNS provider and your API key for that provider.
     const setupTLS = await question(`Add TLS information now? [y/n]`);
     if (setupTLS.toLowerCase().startsWith(`y`)) {
       TLS_DNS_PROVIDER = await question(
-        `TLS DNS provider? (e.g. digitalocean)`
+        `TLS DNS provider (e.g. digitalocean)`
       );
-      TLS_DNS_API_KEY = await question(`TLS DNS provider API key?`);
+      TLS_DNS_API_KEY = await question(`TLS DNS provider API key`);
     }
   }
 
