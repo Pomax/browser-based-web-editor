@@ -143,7 +143,7 @@ projects.post(
   getProjectSettings,
   updateProjectSettings,
   (_req, res) =>
-    res.send(`/v1/projects/edit/${res.locals.lookups.project.name}`)
+    res.send(`/v1/projects/edit/${res.locals.projectName}`)
 );
 
 /**

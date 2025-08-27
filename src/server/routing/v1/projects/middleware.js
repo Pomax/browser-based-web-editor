@@ -346,10 +346,11 @@ export async function updateProjectSettings(req, res, next) {
       renameSync(join(CONTENT_DIR, projectName), newDir);
       renameContainer(projectName, newName);
       console.log(`rebinding res.locals.projectName to ${newName}`);
-      res.locals.projectName = newName;
     }
 
-    // Do we need to update our container files?
+    res.locals.projectName = newName;
+
+      // Do we need to update our container files?
     let containerChange = false;
     if (run_script !== newSettings.run_script) {
       containerChange = true;
