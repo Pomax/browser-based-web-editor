@@ -300,9 +300,7 @@ This will require knowing your DNS provider and your API key for that provider.
 
     const setupTLS = await question(`Add TLS information now? [y/n]`);
     if (setupTLS.toLowerCase().startsWith(`y`)) {
-      TLS_DNS_PROVIDER = await question(
-        `TLS DNS provider (e.g. digitalocean)`
-      );
+      TLS_DNS_PROVIDER = await question(`TLS DNS provider (e.g. digitalocean)`);
       TLS_DNS_API_KEY = await question(`TLS DNS provider API key`);
     }
   }
@@ -311,18 +309,18 @@ This will require knowing your DNS provider and your API key for that provider.
   writeFileSync(
     join(moduleDir, `.env`),
     `LOCAL_DEV_TESTING=true
-WEB_EDITOR_HOSTNAME=${WEB_EDITOR_HOSTNAME}
-WEB_EDITOR_APPS_HOSTNAME=${WEB_EDITOR_APPS_HOSTNAME}
-WEB_EDITOR_APP_SECRET=${WEB_EDITOR_APP_SECRET}
-WEB_EDITOR_IMAGE_NAME=${WEB_EDITOR_IMAGE_NAME}
-SESSION_SECRET=${randomSecret()}
-MAGIC_LINK_SECRET=${randomSecret()}
-GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
-GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
-GITHUB_APP_HOST=${GITHUB_APP_HOST}
-GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}
-TLS_DNS_PROVIDER=${TLS_DNS_PROVIDER}
-TLS_DNS_API_KEY=${TLS_DNS_API_KEY}
+WEB_EDITOR_HOSTNAME="${WEB_EDITOR_HOSTNAME}"
+WEB_EDITOR_APPS_HOSTNAME="${WEB_EDITOR_APPS_HOSTNAME}"
+WEB_EDITOR_APP_SECRET="${WEB_EDITOR_APP_SECRET}"
+WEB_EDITOR_IMAGE_NAME="${WEB_EDITOR_IMAGE_NAME}"
+SESSION_SECRET="${randomSecret()}"
+MAGIC_LINK_SECRET="${randomSecret()}"
+GITHUB_CLIENT_ID="${GITHUB_CLIENT_ID}"
+GITHUB_CLIENT_SECRET="${GITHUB_CLIENT_SECRET}"
+GITHUB_APP_HOST="${GITHUB_APP_HOST}"
+GITHUB_CALLBACK_URL="${GITHUB_CALLBACK_URL}"
+TLS_DNS_PROVIDER="${TLS_DNS_PROVIDER}"
+TLS_DNS_API_KEY="${TLS_DNS_API_KEY}"
 `
   );
 
