@@ -212,6 +212,8 @@ async function setupEnv() {
     GITHUB_CLIENT_SECRET,
     GITHUB_APP_HOST,
     GITHUB_CALLBACK_URL,
+    TLS_DNS_PROVIDER,
+    TLS_DNS_API_KEY,
   } = process.env;
 
   // Do we need to do any host setup?
@@ -286,6 +288,25 @@ codebase will read in every time it starts up.
   GITHUB_APP_HOST = `https://\${WEB_EDITOR_HOSTNAME}`;
   GITHUB_CALLBACK_URL = `https://\${WEB_EDITOR_HOSTNAME}/auth/github/callback`;
 
+  if (!TLS_DNS_API_KEY) {
+    TLS_DNS_PROVIDER = `false`;
+    TLS_DNS_API_KEY = `false`;
+
+    console.log(`
+If you're running setup as part of a deployment, you will need to provide
+caddy with the information it needs to negotiate DNS "ACME" connections.
+This will require knowing your DNS provider and your API key for that provider.
+`);
+
+    const setupTLS = await question(`Add TLS information now? [y/n]`);
+    if (setupTLS.toLowerCase().startsWith(`y`)) {
+      TLS_DNS_PROVIDER = await question(
+        `TLS DNS provider? (e.g. digitalocean)`
+      );
+      TLS_DNS_API_KEY = await question(`TLS DNS provider API key?`);
+    }
+  }
+
   // (Re)generate the .env file
   writeFileSync(
     join(moduleDir, `.env`),
@@ -300,6 +321,8 @@ GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
 GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
 GITHUB_APP_HOST=${GITHUB_APP_HOST}
 GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}
+TLS_DNS_PROVIDER=${TLS_DNS_PROVIDER}
+TLS_DNS_API_KEY=${TLS_DNS_API_KEY}
 `
   );
 
@@ -314,6 +337,8 @@ GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}
     GITHUB_CLIENT_SECRET,
     GITHUB_APP_HOST,
     GITHUB_CALLBACK_URL,
+    TLS_DNS_PROVIDER,
+    TLS_DNS_API_KEY,
   });
 }
 

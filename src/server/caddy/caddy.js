@@ -78,7 +78,22 @@ export function updateCaddyFile(name, port, env = process.env) {
     }
   } else {
     // Create a new binding
-    const entry = `\n${host} {\n\treverse_proxy localhost:${port}\n\timport proxy_error_handling\n}\n`;
+    const { TLS_DNS_PROVIDER, TLS_DNS_API_KEY } = env;
+    const tls =
+      !TLS_DNS_API_KEY || TLS_DNS_API_KEY === `false`
+        ? ``
+        : `
+\ttls {
+\t\tdns ${TLS_DNS_PROVIDER} ${TLS_DNS_API_KEY}
+\t}`;
+
+    const entry = `
+${host} {
+\treverse_proxy localhost:${port}${tls}
+\timport proxy_error_handling
+}
+`;
+
     writeFileSync(caddyFile, data + entry);
   }
 
