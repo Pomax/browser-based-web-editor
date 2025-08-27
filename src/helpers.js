@@ -219,7 +219,7 @@ export async function setupGit(dir, projectName) {
     `user.name "${projectName}"`,
     `user.email "actions@browsertests.local"`,
   ]) {
-    execSync(`git config --local ${cfg}`, { cwd: dir });
+    execSync(`cd ${dir} && git config --local ${cfg}`);
   }
 }
 
