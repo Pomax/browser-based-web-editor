@@ -1,7 +1,7 @@
 import net from "node:net";
 import { existsSync, lstatSync, readFileSync } from "node:fs";
 import { join, resolve, sep, posix } from "node:path";
-import { exec, execSync } from "node:child_process";
+import { exec } from "node:child_process";
 import express from "express";
 import nocache from "nocache";
 import helmet from "helmet";
@@ -206,20 +206,12 @@ export function setDefaultAspects(app) {
  * Make git not guess at the name and email for commits.
  */
 export async function setupGit(dir, projectName) {
-  console.log(`setupGit in`, dir);
-  console.log(`cwd`, process.cwd());
-
-  if (!pathExists(`${dir}/.git`)) {
-    console.log(`adding git tracking for ${dir}`);
-    execSync(`cd ${dir} && git init && cd ..`);
-  }
-  
   for (let cfg of [
     `init.defaultBranch main`,
     `user.name "${projectName}"`,
     `user.email "actions@browsertests.local"`,
   ]) {
-    execSync(`cd ${dir} && git config --local ${cfg}`);
+    await execPromise(`git config --local ${cfg}`, { cwd: dir });
   }
 }
 
