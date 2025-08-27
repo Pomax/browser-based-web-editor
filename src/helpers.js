@@ -206,6 +206,11 @@ export function setDefaultAspects(app) {
  * Make git not guess at the name and email for commits.
  */
 export async function setupGit(dir, projectName) {
+  if (!pathExists(`${dir}/.git`)) {
+    console.log(`adding git tracking for ${dir}`);
+    execSync(`cd ${dir} && git init && cd ..`);
+  }
+  
   for (let cfg of [
     `init.defaultBranch main`,
     `user.name "${projectName}"`,
