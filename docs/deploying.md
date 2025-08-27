@@ -1,6 +1,6 @@
 # Deploying this platform to DigitalOcean
 
-I'm going to assume the instructions are similar on other platforms, but given that I personally deployed it to DO using a Ubuntu 22, we're using that as reference.
+I'm going to assume the instructions are similar on other platforms, but given that I personally deployed it to DO using a Ubuntu 20, we're using that as reference.
 
 ## Software Prerequisites
 
@@ -73,6 +73,15 @@ If so: time to move on to the next step.
 
 Oh thank god, something we can finally just `apt install` again!
 
+### PM2
+
+Node is fine and all, but we're going to be running this in as a deployed production application, and we don't want an uncaught `throw` to take the entire thing down: we'll be using [pm2](https://pm2.keymetrics.io/) to make sure that if our platform errors out, or even if our droplet restarts, things just go right back to running.
+
+```
+npm i -g pm2
+```
+
+
 ## Get some domain names!
 
 You'll want to register two domains. In my case, I went with `webblythings.com` for the editor, and `webblythings.online` for the app hosting. These domains were then set up to point to DO's name servers, and then on the DO side, under networking -> domains, I added two A records for `@` and `make` on the .com domain, both pointing to my droplet's IP, and then also two A records for `@` and `*` on the .online domain, also pointing to my droplet's IP.
@@ -93,6 +102,17 @@ Log into DO and go to https://cloud.digitalocean.com/account/api/tokens, then ge
 
 Again: hang on to that key, you'll need this one during setup, too.
 
+## Clone the project
+
+Standard fare:
+
+```
+cd ~
+git clone https://github.com/Pomax/browser-based-web-editor.git
+cd browser-based-web-editor
+npm i
+```
+
 ## Run the setup script
 
 Finally, the hopefully easy part:
@@ -109,7 +129,28 @@ When asked whether you want to set up TLS, the answer is yes. This will ask you 
 
 ## Finish up
 
-This should run to completion and tell you to run `npm start`, which you should probably do!
+This should run to completion and tell you to run `npm start`, which is what you do for local dev, but for production deployment we'll want to run things through `pm2` instead:
+
+```
+pm2 start "npm start"
+```
+
+Then, because we want `pm2` to autorun on droplet restart:
+
+```
+pm2 save
+pm2 startup systemd
+```
+
+This may tell you that you need to run a sudo command. If so... run that =)
+
+Then make sure pm2 is enabled as a service:
+
+```
+systemctl enable pm2-root
+```
+
+## Confirm things work!
 
 The platform will be in "first sign in" mode, so load up the editor URL that gets printed to the console, and click the github login link. Grant permission to your app and you should end up getting redirected to the editor main page, this time with your name, and text that says you're an admin.
 
