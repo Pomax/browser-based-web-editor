@@ -84,7 +84,7 @@ export function updateCaddyFile(name, port, env = process.env) {
         ? ``
         : `
 \ttls {
-\t\tdns ${TLS_DNS_PROVIDER} {${TLS_DNS_API_KEY}}
+\t\tdns ${TLS_DNS_PROVIDER} {env.TLS_DNS_API_KEY}
 \t}`;
 
     const entry = `
