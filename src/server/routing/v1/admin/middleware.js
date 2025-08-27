@@ -25,7 +25,7 @@ export function deleteContainer(req, res, next) {
 }
 
 export function stopContainer(req, res, next) {
-  Docker.stopContainer(req.params.id);
+  Docker.stopContainer(req.params.image);
   next();
 }
 

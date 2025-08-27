@@ -16,7 +16,7 @@
       <button>remove</button>
     </form>
     {% else %}
-    <form action="/v1/admin/container/stop/{{ container.id }}" method="post">
+    <form action="/v1/admin/container/stop/{{ container.image }}" method="post">
       <button>stop</button>
     </form>
     {% endif %}

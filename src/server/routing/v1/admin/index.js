@@ -29,7 +29,7 @@ admin.get(`/`, ...prechecks, loadAdminData, (req, res) =>
 );
 
 admin.post(`/container/remove/:id`, ...prechecks, deleteContainer, back);
-admin.post(`/container/stop/:id`, ...prechecks, stopContainer, back);
+admin.post(`/container/stop/:image`, ...prechecks, stopContainer, back);
 
 admin.post(`/user/delete/:uid`, ...prechecks, deleteUser, back);
 admin.post(`/user/disable/:uid`, ...prechecks, disableUser, back);
