@@ -206,6 +206,8 @@ export function setDefaultAspects(app) {
  * Make git not guess at the name and email for commits.
  */
 export async function setupGit(dir, projectName) {
+  console.log(`setupGit in`, dir);
+
   if (!pathExists(`${dir}/.git`)) {
     console.log(`adding git tracking for ${dir}`);
     execSync(`cd ${dir} && git init && cd ..`);
@@ -216,7 +218,7 @@ export async function setupGit(dir, projectName) {
     `user.name "${projectName}"`,
     `user.email "actions@browsertests.local"`,
   ]) {
-    await execPromise(`git config --local ${cfg}`, { cwd: dir });
+    execSync(`git config --local ${cfg}`, { cwd: dir });
   }
 }
 
